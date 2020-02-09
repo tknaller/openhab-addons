@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<binding:binding id="appletv" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:binding="https://openhab.org/schemas/binding/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/binding/v1.0.0 https://openhab.org/schemas/binding-1.0.0.xsd">
+
+	<name>AppleTV Binding</name>
+	<description>This is the binding for AppleTV.</description>
+	<author>Markus Michels</author>
+
+	<config-description>
+		<parameter name="autoDiscovery" type="boolean">
+			<default>true</default>
+			<label>Enable Auto Discovery</label>
+			<description>If enabled new Apple-TVs will be discovered in the background. This could be disabled when you discovered all of your devices. You could use the manual discovery from Paper UIs Inbox at any time.</description>
+		</parameter>
+
+		<parameter name="updateInterval" type="integer">
+			<default>3</default>
+			<label>Status Update Interval</label>
+			<description>The play status (e.g. position) gets updated periodically. Default: 3sec - avoid too much polling by selecting a meaningful value, especially if you have multiple Apple-TVs.</description>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="libPath" type="text">
+			<default></default>
+			<label>Library Path</label>
+			<description>The binding brings some required modules, which will be installed in the selected folder. Default: A temporary folder in &lt;temp-dir&gt;/ohlib-&lt;generated id&gt;, The changes gets active next time the binding is started.</description>
+			<advanced>true</advanced>
+		</parameter>
+	</config-description>
+
+</binding:binding>
