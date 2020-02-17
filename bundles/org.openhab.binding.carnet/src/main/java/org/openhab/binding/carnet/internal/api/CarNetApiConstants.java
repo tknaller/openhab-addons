@@ -36,6 +36,10 @@ public class CarNetApiConstants {
     public static final String CNAPI_HEADER_AGENT = "User-Agent: okhttp/2.3.0";
     public static final String CNAPI_HEADER_AUTH_AUDI = "Authorization: AudiAuth 1 {0}"; // {0} = Token
 
+    public static final String CNAPI_CONTENT_FORM_URLENC = "application/x-www-form-urlencoded";
+
+    public static int CNAPI_TIMEOUT_MS = 30 * 1000;
+
     // URIs: {0}=brand, {1} = VIN
     public static final String CNAPI_URI_GET_TOKEN = "core/auth/v1/{0}/DE/token";
     public static final String CNAPI_URI_VEHICLE_LIST = "usermanagement/users/v1/{0}/DE/vehicles";

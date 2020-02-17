@@ -5,28 +5,32 @@
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
 	<!-- Sample Thing Type -->
-	<thing-type id="sample">
-		<label>CarNet Binding Thing</label>
-		<description>Sample thing for CarNet Binding</description>
+	<thing-type id="vehicle">
+		<label>Vehicle Thing</label>
+		<description>The thing represents one vehicle</description>
 
-		<channels>
-			<channel id="channel1" typeId="sample-channel" />
-		</channels>
+        <channel-groups>
+            <channel-group id="general" typeId="vehicleData">
+                <label>Vehicle</label>
+            </channel-group>
+        </channel-groups>
 
-		<config-description>
-			<parameter name="config1" type="text" required="true">
-				<label>Sample Parameter</label>
-				<description>This is a sample text configuration parameter</description>
-			</parameter>
-		</config-description>
-
+        <config-description-ref uri="thing-type:carnet:vehicle" />
 	</thing-type>
 
-	<!-- Sample Channel Type -->
-	<channel-type id="sample-channel">
-		<item-type>carnetItem</item-type>
+    <channel-group-type id="vehicleData">
+        <label>Relay</label>
+        <description>A Shelly relay channel</description>
+        <channels>
+            <channel id="vin" typeId="vin" />
+        </channels>
+    </channel-group-type>
+
+	<channel-type id="vin">
+        <item-type>String</item-type>
 		<label>CarNet Binding Channel</label>
 		<description>Sample channel for CarNet Binding</description>
+        <state readOnly="true"/>
 	</channel-type>
 
 </thing:thing-descriptions>
