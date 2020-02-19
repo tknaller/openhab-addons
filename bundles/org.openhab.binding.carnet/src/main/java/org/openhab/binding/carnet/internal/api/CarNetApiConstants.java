@@ -31,23 +31,26 @@ public class CarNetApiConstants {
 
     // HTTP header attributes
     public static final String CNAPI_HEADER_TYPE = "Accept: application/json";
-    public static final String CNAPI_HEADER_APP = "X-App-Name: eRemote";
-    public static final String CNAPI_HEADER_APP_VERS = "X-App-Version: 1.0.0";
-    public static final String CNAPI_HEADER_AGENT = "User-Agent: okhttp/2.3.0";
-    public static final String CNAPI_HEADER_AUTH_AUDI = "Authorization: AudiAuth 1 {0}"; // {0} = Token
+    public static final String CNAPI_HEADER_APP = "X-App-Name";
+    public static final String CNAPI_HEADER_APP_VALUE = "eRemote";
+    public static final String CNAPI_HEADER_VERS = "X-App-Version";
+    public static final String CNAPI_HEADER_VERS_VALUE = "1.0.0";
+    public static final String CNAPI_HEADER_USER_AGENT = "okhttp/2.3.0";
+    public static final String CNAPI_AUTH_AUDI_VERS = "1";
 
-    public static final String CNAPI_CONTENT_FORM_URLENC = "application/x-www-form-urlencoded";
+    public static final String CNAPI_CONTENTT_FORM_URLENC = "application/x-www-form-urlencoded";
+    public static final String CNAPI_ACCEPTT_JSON = "application/json";
 
     public static int CNAPI_TIMEOUT_MS = 30 * 1000;
 
     // URIs: {0}=brand, {1} = VIN
-    public static final String CNAPI_URI_GET_TOKEN = "core/auth/v1/{0}/DE/token";
-    public static final String CNAPI_URI_VEHICLE_LIST = "usermanagement/users/v1/{0}/DE/vehicles";
-    public static final String CNAPI_URI_VEHICLE_DETAILS = "promoter/portfolio/v1/{0}/DE/vehicle//{1}/carportdata";
-    public static final String CNAPI_URI_VEHICLE_STATUS = "bs/vsr/v1/{0}/DE/vehicles/{1}/status";
-    public static final String CNAPI_URI_VEHICLE_POSITION = "bs/cf/v1/{0}/DE/vehicles/{1}/position";
-    public static final String CNAPI_URI_CHARGER_STATUS = "bs/batterycharge/v1/{0}/DE/vehicles/{1}/charger";
-    public static final String CNAPI_URI_CMD_HONK = "bs/rhf/v1/{0}/DE/vehicles/{1}/honkAndFlash";
+    public static final String CNAPI_URI_GET_TOKEN = "core/auth/v1/{0}/{1}/token";
+    public static final String CNAPI_URI_VEHICLE_LIST = "usermanagement/users/v1/{0}/{1}/vehicles";
+    public static final String CNAPI_URI_VEHICLE_DETAILS = "promoter/portfolio/v1/{0}/{1}/vehicle//{2}/carportdata";
+    public static final String CNAPI_URI_VEHICLE_STATUS = "bs/vsr/v1/{0}/{1}/vehicles/{2}/status";
+    public static final String CNAPI_URI_VEHICLE_POSITION = "bs/cf/v1/{0}/{1}/vehicles/{2}/position";
+    public static final String CNAPI_URI_CHARGER_STATUS = "bs/batterycharge/v1/{0}/{1}/vehicles/{2}/charger";
+    public static final String CNAPI_URI_CMD_HONK = "bs/rhf/v1/{0}/{1}/vehicles/{2}/honkAndFlash";
 
     public static final String CNID_MAINTENANCE_INTERVAL_DISTANCE_TO_OIL_CHANGE = "0x0203010001";
     public static final String CNID_MAINTENANCE_INTERVAL_TIME_TO_OIL_CHANGE = "0x0203010002";

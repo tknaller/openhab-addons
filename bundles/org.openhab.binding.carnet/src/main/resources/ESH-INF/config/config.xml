@@ -13,8 +13,20 @@
         <parameter name="brand" type="text" required="true">
             <label>Brand</label>
             <description>CarNet Brand.</description>
+            <options>
+                <option value="Audi">Audi</option>
+                <option value="VW">Volkswagen</option>
+                <option value="Skoda">Skoda</option>
+            </options>            
         </parameter>
-		<parameter name="user" type="text" required="false" groupName="authentication">
+        <parameter name="country" type="text" required="true">
+            <label>Country</label>
+            <description>Country in which the vehicle was bought.</description>
+            <options>
+                <option value="DE">Germany</option>
+            </options>            
+        </parameter>
+		<parameter name="user" type="text" required="true" groupName="authentication">
 			<label>Online User</label>
 			<description>User name for the CarNet Login.</description>
 		</parameter>

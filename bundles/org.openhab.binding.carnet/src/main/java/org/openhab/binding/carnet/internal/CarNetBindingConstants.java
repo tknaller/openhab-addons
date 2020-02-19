@@ -29,7 +29,7 @@ import org.eclipse.smarthome.core.thing.ThingTypeUID;
 @NonNullByDefault
 public class CarNetBindingConstants {
 
-    private static final String BINDING_ID = "carnet";
+    public static final String BINDING_ID = "carnet";
 
     // List of all Thing Type UIDs
     public static final ThingTypeUID THING_TYPE_ACCOUNT = new ThingTypeUID(BINDING_ID, "account");
@@ -40,4 +40,12 @@ public class CarNetBindingConstants {
     // List of all Channel ids
     public static final String CHANNEL_GROUP_GENERAL = "general";
     public static final String CHANNEL_GENERAL_VIN = "vin";
+
+    public static final String PROPERTY_VIN = "vin";
+    public static final String PROPERTY_BRAND = "brand";
+    public static final String PROPERTY_MODEL = "model";
+    public static final String PROPERTY_COLOR = "color";
+    public static final String PROPERTY_MMI = "mmi";
+    public static final String PROPERTY_ENGINE = "engine";
+    public static final String PROPERTY_TRANS = "transmission";
 }

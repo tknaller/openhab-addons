@@ -6,7 +6,7 @@
 
 	<!-- Sample Thing Type -->
 	<thing-type id="vehicle">
-		<label>Vehicle Thing</label>
+		<label>Vehicle</label>
 		<description>The thing represents one vehicle</description>
 
         <channel-groups>
@@ -19,8 +19,8 @@
 	</thing-type>
 
     <channel-group-type id="vehicleData">
-        <label>Relay</label>
-        <description>A Shelly relay channel</description>
+        <label>Vehicle</label>
+        <description>Information on the vehicle</description>
         <channels>
             <channel id="vin" typeId="vin" />
         </channels>
@@ -28,8 +28,8 @@
 
 	<channel-type id="vin">
         <item-type>String</item-type>
-		<label>CarNet Binding Channel</label>
-		<description>Sample channel for CarNet Binding</description>
+		<label>VIN</label>
+		<description>The Vehicle Identification number - a unique ID to identify the vehicle</description>
         <state readOnly="true"/>
 	</channel-type>
 
