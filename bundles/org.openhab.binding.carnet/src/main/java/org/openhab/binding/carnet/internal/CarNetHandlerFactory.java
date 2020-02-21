@@ -33,6 +33,7 @@ import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.type.DynamicStateDescriptionProvider;
 import org.eclipse.smarthome.io.net.http.HttpClientFactory;
+import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.discovery.CarNetDiscoveryService;
 import org.openhab.binding.carnet.internal.handler.CarNetAccountHandler;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
@@ -56,6 +57,7 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     private @Nullable DynamicStateDescriptionProvider stateDescriptionProvider;
     private @Nullable LocaleProvider localeProvider;
     private @Nullable TranslationProvider i18nProvider;
+    private @Nullable CarNetApi api;
     private final Map<ThingUID, @Nullable ServiceRegistration<?>> discoveryServiceRegistrations = new HashMap<>();
 
     @Override
@@ -68,12 +70,13 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
         if (THING_TYPE_ACCOUNT.equals(thingTypeUID)) {
+            api = new CarNetApi(httpClient);
             CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, httpClient,
-                    stateDescriptionProvider);
+                    stateDescriptionProvider, api);
             registerDeviceDiscoveryService(handler);
             return handler;
         } else if (THING_TYPE_VEHICLE.equals(thingTypeUID)) {
-            return new CarNetVehicleHandler(thing);
+            return new CarNetVehicleHandler(thing, api);
         }
 
         return null;

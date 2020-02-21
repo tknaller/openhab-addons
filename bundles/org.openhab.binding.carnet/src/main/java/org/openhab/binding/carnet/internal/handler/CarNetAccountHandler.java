@@ -56,10 +56,11 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
      * @param bridge Bridge object representing a FRITZ!Box
      */
     public CarNetAccountHandler(Bridge bridge, @Nullable HttpClient httpClient,
-            @Nullable DynamicStateDescriptionProvider stateDescriptionProvider) {
+            @Nullable DynamicStateDescriptionProvider stateDescriptionProvider, CarNetApi api) {
         super(bridge);
         this.httpClient = httpClient;
         this.stateDescriptionProvider = stateDescriptionProvider;
+        this.api = api;
         // applyTemplateChannelUID = new ChannelUID(bridge.getUID(), CHANNEL_APPLY_TEMPLATE);
     }
 
@@ -89,8 +90,8 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         Map<String, String> properties = new TreeMap<String, String>();
 
         config = getConfigAs(CarNetAccountConfiguration.class);
-        api = new CarNetApi(httpClient, config);
-        Validate.notNull(api, "Unable to create API instance");
+        Validate.notNull(api, "API not initialized");
+        api.setConfig(config);
         api.initialize();
         @SuppressWarnings("null")
         CarNetApiToken token = api.getToken();

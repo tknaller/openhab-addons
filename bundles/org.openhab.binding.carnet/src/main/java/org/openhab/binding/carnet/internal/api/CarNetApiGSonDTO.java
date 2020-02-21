@@ -31,6 +31,8 @@ public class CarNetApiGSonDTO {
          * }
          */
         String error;
+        @SerializedName("error_code")
+        String code;
         @SerializedName("error_description")
         String text;
     }
@@ -89,5 +91,87 @@ public class CarNetApiGSonDTO {
         }
 
         public CNVehicleDetails carportData;
+    }
+
+    public static class CarNetVehicleStatus {
+
+        public static class CNStoredVehicleDataResponse {
+            public static class CNVehicleData {
+                public static class CNStatusData {
+                    /*
+                     * "id":"0x0101010001",
+                     * "field": [
+                     * {
+                     * "id":"0x0101010001",
+                     * "tsCarSentUtc":"2020-02-20T19:05:18Z",
+                     * "tsCarSent":"2020-02-20T20:05:45",
+                     * "tsCarCaptured":"2020-02-20T20:05:45","
+                     * tsTssReceivedUtc":"2020-02-20T19:09:57Z",
+                     * "milCarCaptured":3944,
+                     * "milCarSent":3944,
+                     * "value":"echo"
+                     * }
+                     * ]
+                     */
+                    public static class CNStatusField {
+                        public String id;
+                        public String tsCarSentUtc;
+                        public String tsCarSent;
+                        public String tsCarCaptured;
+                        public String tsTssReceivedUtc;
+                        public Integer milCarCaptured;
+                        public Integer milCarSent;
+                        public String value;
+                        public String unit;
+                    }
+
+                    public String id;
+                    @SerializedName("field")
+                    public ArrayList<CNStatusField> fields;
+                }
+
+                public ArrayList<CNStatusData> data;
+            }
+
+            public String vin;
+            public CNVehicleData vehicleData;
+        }
+
+        @SerializedName("StoredVehicleDataResponse")
+        public CNStoredVehicleDataResponse storedVehicleDataResponse;
+    }
+
+    public static class CarNetVehiclePosition {
+        /*
+         * {
+         * "findCarResponse":
+         * { "Position":{"timestampCarSent":"0002-11-28T00:00:00","timestampTssReceived":"2020-02-21T20:11:10Z",
+         * "carCoordinate":{"latitude":49529343,"longitude":-1568820},
+         * "timestampCarSentUTC":"2020-02-21T20:11:00Z","timestampCarCaptured":"0002-11-28T00:00:00"},
+         * "parkingTimeUTC":"2020-02-21T20:08:52Z"}
+         * }
+         */
+        public static class CNFindCarResponse {
+            public static class CNPosition {
+                public static class CNCarCoordinates {
+                    public Integer latitude;
+                    public Integer longitude;
+                }
+
+                public CNCarCoordinates carCoordinate;
+                public String timestampCarSent;
+                public String timestampTssReceived;
+            }
+
+            @SerializedName("Position")
+            public CNPosition carPosition;
+            public String parkingTimeUTC;
+        }
+
+        public CNFindCarResponse findCarResponse;
+    }
+
+    public static class CarNetDestinations {
+        public String destinations;
     }
 }

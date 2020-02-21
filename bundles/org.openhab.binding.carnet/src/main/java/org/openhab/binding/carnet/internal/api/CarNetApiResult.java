@@ -16,18 +16,19 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiErrorMessage;
+
+import com.google.gson.Gson;
 
 @NonNullByDefault
 public class CarNetApiResult {
-    private final Logger logger = LoggerFactory.getLogger(CarNetApiResult.class);
-
     public String url = "";
     public String method = "";
-    public Integer resultCode = 0;
-    public String result = "";
     public String response = "";
+    public Integer httpCode = 0;
+    public String httpReason = "";
+    @Nullable
+    CarNetApiErrorMessage apiError = null;
 
     public CarNetApiResult() {
     }
@@ -40,37 +41,18 @@ public class CarNetApiResult {
     public CarNetApiResult(String url, String method, Integer responseCode, String response) {
         this.method = method;
         this.url = url;
-        this.resultCode = responseCode;
+        this.httpCode = 0;
         this.response = response;
     }
 
     @SuppressWarnings("null")
     public CarNetApiResult(@Nullable ContentResponse contentResponse) {
-        if (contentResponse != null) {
-            resultCode = contentResponse.getStatus();
-            result = contentResponse.getReason();
-            response = contentResponse.getContentAsString().trim();
-
-            Request request = contentResponse.getRequest();
-            if (request != null) {
-                url = request.getURI().toString();
-                method = request.getMethod();
-            }
-        }
+        fillFromResponse(contentResponse);
     }
 
     public CarNetApiResult(@Nullable ContentResponse contentResponse, Throwable e) {
-        response = e.toString();
-        if (contentResponse != null) {
-            resultCode = contentResponse.getStatus();
-            result = contentResponse.getReason();
-
-            Request request = contentResponse.getRequest();
-            if (request != null) {
-                url = request.getURI().toString();
-                method = request.getMethod();
-            }
-        }
+        fillFromResponse(contentResponse);
+        response = response + "(" + e.toString() + ")";
     }
 
     public CarNetApiResult(@Nullable Request request, Throwable e) {
@@ -81,7 +63,23 @@ public class CarNetApiResult {
         }
     }
 
-    public CarNetApiResult get() {
-        return this;
+    private void fillFromResponse(@Nullable ContentResponse contentResponse) {
+        if (contentResponse != null) {
+            response = contentResponse.getContentAsString().trim();
+            httpCode = contentResponse.getStatus();
+            httpReason = contentResponse.getReason();
+
+            Request request = contentResponse.getRequest();
+            if (request != null) {
+                url = request.getURI().toString();
+                method = request.getMethod();
+            }
+
+            if (response.contains("\"error\":")) {
+                Gson gson = new Gson();
+                apiError = gson.fromJson(response, CarNetApiErrorMessage.class);
+            }
+        }
     }
+
 }

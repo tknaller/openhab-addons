@@ -12,17 +12,30 @@
  */
 package org.openhab.binding.carnet.internal.handler;
 
+import static org.openhab.binding.carnet.internal.CarNetBindingConstants.PROPERTY_VIN;
+
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
+import org.openhab.binding.carnet.internal.CarNetException;
+import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetDestinations;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData.CNStatusField;
+import org.openhab.binding.carnet.internal.api.CarNetIdMapper;
+import org.openhab.binding.carnet.internal.api.CarNetIdMapper.CNIdMapEntry;
 import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,21 +52,23 @@ public class CarNetVehicleHandler extends BaseThingHandler {
     private final Logger logger = LoggerFactory.getLogger(CarNetVehicleHandler.class);
     private String thingName = "";
     private Map<String, Object> channelData = new HashMap<>();
+    private @Nullable final CarNetApi api;
+    private String vin = "";
+    private static final CarNetIdMapper idMap = new CarNetIdMapper();
 
     private @Nullable CarNetVehicleConfiguration config;
 
-    public CarNetVehicleHandler(Thing thing) {
+    public CarNetVehicleHandler(Thing thing, @Nullable CarNetApi api) {
         super(thing);
+        this.api = api;
     }
 
     @Override
     public void initialize() {
-        // logger.debug("Start initializing!");
-        config = getConfigAs(CarNetVehicleConfiguration.class);
-
+        logger.debug("Initializing!");
         updateStatus(ThingStatus.UNKNOWN);
 
-        // Example for background initialization:
+        // Start asynchronous thing initialization
         scheduler.execute(() -> {
             if (initializeThing()) {
                 updateStatus(ThingStatus.ONLINE);
@@ -64,9 +79,63 @@ public class CarNetVehicleHandler extends BaseThingHandler {
 
     }
 
+    /**
+     * (re-)initialize the thing
+     *
+     * @return true=successful
+     */
+    @SuppressWarnings("null")
     boolean initializeThing() {
+
         channelData = new HashMap<>(); // clear any cached channels
-        return true;
+        config = getConfigAs(CarNetVehicleConfiguration.class);
+        Validate.notNull(api, "API not yet initialized");
+        boolean successful = true;
+        String error = "";
+
+        Map<String, String> properties = getThing().getProperties();
+        vin = properties.get(PROPERTY_VIN) != null ? properties.get(PROPERTY_VIN).toUpperCase() : "";
+        Validate.notNull(vin, "Unable to get VIN from thing properties!");
+        Validate.notEmpty(vin, "Unable to get VIN from thing properties!");
+
+        // Try to query status information from vehicle
+        try {
+            logger.debug("{}: Get Vehicle Status", vin);
+            CarNetVehicleStatus status = api.getVehicleStatus(vin);
+            for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
+                for (CNStatusField field : data.fields) {
+                    CNIdMapEntry map = idMap.find(field.id);
+                    if (map != null) {
+                        logger.info("{}: {}={}{}", vin, map.symbolicName, gs(field.value), gs(field.unit));
+                    } else {
+                        logger.debug("{}: Unknown data field  {}.{}, value={} {}", vin, data.id, field.id, field.value,
+                                field.unit);
+                    }
+                }
+            }
+
+            logger.debug("{}: Get Vehicle Position", vin);
+            CarNetVehiclePosition position = api.getVehiclePosition(vin);
+
+            CarNetDestinations destinations = api.getDestinations(vin);
+        } catch (CarNetException e) {
+            if (e.getMessage().toLowerCase().contains("disabled ")) {
+                // Status service in the vehicle is disabled
+                logger.debug("{}: Status service is disabled, check Data Privacy settings in MMI", vin);
+            } else {
+                successful = false;
+            }
+        }
+
+        if (successful) {
+            // try {
+            // } catch (CarNetException e) {
+            // }
+        }
+        if (!successful) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
+        }
+        return successful;
     }
 
     /**
@@ -92,5 +161,9 @@ public class CarNetVehicleHandler extends BaseThingHandler {
         } catch (NullPointerException e) {
         } finally {
         }
+    }
+
+    private String gs(@Nullable String s) {
+        return s != null ? s : "";
     }
 }

@@ -25,6 +25,8 @@ import org.openhab.binding.carnet.internal.api.CarNetApiResult;
  * @author Markus Michels - Initial contribution
  */
 public class CarNetException extends Exception {
+    private static final long serialVersionUID = -5809459454769761821L;
+
     private Throwable e = null;
     private CarNetApiResult apiResult = new CarNetApiResult();
 
@@ -76,7 +78,7 @@ public class CarNetException extends Exception {
         }
 
         String url = !apiResult.url.isEmpty() ? MessageFormat.format("{0} {1} (HTTP {2} {3})", apiResult.method,
-                apiResult.url, apiResult.resultCode, apiResult.result) : "";
+                apiResult.url, apiResult.httpCode, apiResult.httpReason) : "";
         String resultString = !apiResult.response.isEmpty()
                 ? MessageFormat.format(", result = '{0}'", apiResult.response)
                 : "";

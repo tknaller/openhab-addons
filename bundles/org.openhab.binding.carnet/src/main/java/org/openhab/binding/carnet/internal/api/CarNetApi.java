@@ -36,8 +36,11 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiErrorMessage;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetDestinations;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus;
 import org.openhab.binding.carnet.internal.config.CarNetAccountConfiguration;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.slf4j.Logger;
@@ -55,19 +58,24 @@ public class CarNetApi {
     private final Logger logger = LoggerFactory.getLogger(CarNetVehicleHandler.class);
     private final @Nullable HttpClient httpClient;
     private final Gson gson = new Gson();
-    private CarNetAccountConfiguration config = new CarNetAccountConfiguration();
+    private @Nullable CarNetAccountConfiguration config;
 
     private @Nullable CarNetApiToken token = null;
 
     @SuppressWarnings("null")
-    public CarNetApi(@Nullable HttpClient httpClient, @Nullable CarNetAccountConfiguration config) {
-        logger.debug("Initializing CarNet API, brand={}", config.brand);
-        this.config = config;
+    public CarNetApi(@Nullable HttpClient httpClient) {
+        logger.debug("Initializing CarNet API");
         Validate.notNull(httpClient);
         this.httpClient = httpClient;
     }
 
+    public void setConfig(@Nullable CarNetAccountConfiguration config) {
+        logger.debug("Setting up CarNet API for brand {} ({}), user {}", config.brand, config.country, config.user);
+        this.config = config;
+    }
+
     public void initialize() throws CarNetException {
+        Validate.notNull(config, "API initialize: Configuration not available");
         createToken();
     }
 
@@ -103,9 +111,33 @@ public class CarNetApi {
         return details;
     }
 
+    public CarNetVehicleStatus getVehicleStatus(String vin) throws CarNetException {
+        Map<String, String> headers = fillAppHeaders();
+        String json = httpGet(CNAPI_URI_VEHICLE_STATUS, null, headers, vin);
+        CarNetVehicleStatus status = gson.fromJson(json, CarNetVehicleStatus.class);
+        Validate.notNull(status, "Unable to get vehicle details!");
+        return status;
+    }
+
+    public CarNetVehiclePosition getVehiclePosition(String vin) throws CarNetException {
+        Map<String, String> headers = fillAppHeaders();
+        String json = httpGet(CNAPI_URI_VEHICLE_POSITION, null, headers, vin);
+        CarNetVehiclePosition position = gson.fromJson(json, CarNetVehiclePosition.class);
+        Validate.notNull(position, "Unable to get vehicle position!");
+        return position;
+    }
+
+    public CarNetDestinations getDestinations(String vin) throws CarNetException {
+        Map<String, String> headers = fillAppHeaders();
+        String json = httpGet(CNAPI_URI_DESTINATIONS, null, headers, vin);
+        CarNetDestinations destinations = gson.fromJson(json, CarNetDestinations.class);
+        Validate.notNull(destinations, "Unable to get vehicle position!");
+        return destinations;
+    }
+
     private Map<String, String> fillAppHeaders() {
         Map<String, String> headers = new TreeMap<String, String>();
-        Validate.notNull(token);
+        Validate.notNull(token, "Token must not be null!");
         String auth = MessageFormat.format("{0} {1} {2}", token.authType, CNAPI_AUTH_AUDI_VERS, token.accesToken);
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_VALUE);
         headers.put(CNAPI_HEADER_VERS, CNAPI_HEADER_VERS_VALUE);
@@ -174,7 +206,8 @@ public class CarNetApi {
             logger.trace("HTTP Response: {}", response);
             if (response.contains("\"error\":")) {
                 CarNetApiErrorMessage error = gson.fromJson(response, CarNetApiErrorMessage.class);
-                throw new CarNetException("Authentication failed (" + error.error + "): " + error.text);
+                throw new CarNetException(
+                        "Authentication failed (" + error.code + ", " + error.error + "): " + error.text);
             }
             if (contentResponse.getStatus() != HttpStatus.OK_200) {
                 throw new CarNetException("API Call failed", apiResult);
