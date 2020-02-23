@@ -30,11 +30,11 @@ public class CarNetApiGSonDTO {
          * "error_description": "Missing Username"
          * }
          */
-        String error;
+        String error = "";
         @SerializedName("error_code")
-        String code;
+        String code = "";
         @SerializedName("error_description")
-        String text;
+        String description = "";
     }
 
     public static class CarNetApiToken {
@@ -172,6 +172,10 @@ public class CarNetApiGSonDTO {
     }
 
     public static class CarNetDestinations {
+        public String destinations;
+    }
+
+    public static class CarNetHistory {
         public String destinations;
     }
 }

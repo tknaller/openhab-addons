@@ -22,6 +22,7 @@ import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.openhab.binding.carnet.internal.CarNetDeviceListener;
 import org.openhab.binding.carnet.internal.CarNetException;
+import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
@@ -55,7 +56,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
      *
      * @param bridge Bridge object representing a FRITZ!Box
      */
-    public CarNetAccountHandler(Bridge bridge, @Nullable HttpClient httpClient,
+    public CarNetAccountHandler(Bridge bridge, @Nullable HttpClient httpClient, @Nullable CarNetTextResources resources,
             @Nullable DynamicStateDescriptionProvider stateDescriptionProvider, CarNetApi api) {
         super(bridge);
         this.httpClient = httpClient;

@@ -37,6 +37,7 @@ import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiErrorMessage;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetDestinations;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetHistory;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
@@ -131,8 +132,16 @@ public class CarNetApi {
         Map<String, String> headers = fillAppHeaders();
         String json = httpGet(CNAPI_URI_DESTINATIONS, null, headers, vin);
         CarNetDestinations destinations = gson.fromJson(json, CarNetDestinations.class);
-        Validate.notNull(destinations, "Unable to get vehicle position!");
+        Validate.notNull(destinations, "Unable to get vehicle destinations!");
         return destinations;
+    }
+
+    public CarNetHistory getHistory(String vin) throws CarNetException {
+        Map<String, String> headers = fillAppHeaders();
+        String json = httpGet(CNAPI_URI_HISTORY, null, headers, vin);
+        CarNetHistory history = gson.fromJson(json, CarNetHistory.class);
+        Validate.notNull(history, "Unable to get vehicle history!");
+        return history;
     }
 
     private Map<String, String> fillAppHeaders() {
@@ -207,7 +216,7 @@ public class CarNetApi {
             if (response.contains("\"error\":")) {
                 CarNetApiErrorMessage error = gson.fromJson(response, CarNetApiErrorMessage.class);
                 throw new CarNetException(
-                        "Authentication failed (" + error.code + ", " + error.error + "): " + error.text);
+                        "Authentication failed (" + error.code + ", " + error.error + "): " + error.description);
             }
             if (contentResponse.getStatus() != HttpStatus.OK_200) {
                 throw new CarNetException("API Call failed", apiResult);

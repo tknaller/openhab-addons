@@ -10,20 +10,33 @@
 		<description>The thing represents one vehicle</description>
 
         <channel-groups>
-            <channel-group id="general" typeId="vehicleData">
-                <label>Vehicle</label>
-            </channel-group>
+            <channel-group id="general" typeId="general"/>
+            <channel-group id="status" typeId="status"/>
+            <channel-group id="windows" typeId="windows"/>
+            <channel-group id="doors" typeId="doors"/>
         </channel-groups>
 
         <config-description-ref uri="thing-type:carnet:vehicle" />
 	</thing-type>
 
-    <channel-group-type id="vehicleData">
+    <channel-group-type id="general">
         <label>Vehicle</label>
-        <description>Information on the vehicle</description>
+        <description>General information on the vehicle</description>
         <channels>
             <channel id="vin" typeId="vin" />
         </channels>
+    </channel-group-type>
+    <channel-group-type id="status">
+        <label>Status</label>
+        <description>Vehicle status</description>
+    </channel-group-type>
+    <channel-group-type id="windows">
+        <label>Window Status</label>
+        <description>Status of the windows</description>
+    </channel-group-type>
+    <channel-group-type id="doors">
+        <label>Door Status</label>
+        <description>Status of all doors"</description>
     </channel-group-type>
 
 	<channel-type id="vin">

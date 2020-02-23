@@ -57,6 +57,7 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     private @Nullable DynamicStateDescriptionProvider stateDescriptionProvider;
     private @Nullable LocaleProvider localeProvider;
     private @Nullable TranslationProvider i18nProvider;
+    private @Nullable CarNetTextResources resources;
     private @Nullable CarNetApi api;
     private final Map<ThingUID, @Nullable ServiceRegistration<?>> discoveryServiceRegistrations = new HashMap<>();
 
@@ -69,14 +70,17 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
+        if (resources == null) {
+            resources = new CarNetTextResources(this.getBundleContext().getBundle(), i18nProvider, localeProvider);
+        }
         if (THING_TYPE_ACCOUNT.equals(thingTypeUID)) {
             api = new CarNetApi(httpClient);
-            CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, httpClient,
+            CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, httpClient, resources,
                     stateDescriptionProvider, api);
             registerDeviceDiscoveryService(handler);
             return handler;
         } else if (THING_TYPE_VEHICLE.equals(thingTypeUID)) {
-            return new CarNetVehicleHandler(thing, api);
+            return new CarNetVehicleHandler(thing, api, resources);
         }
 
         return null;

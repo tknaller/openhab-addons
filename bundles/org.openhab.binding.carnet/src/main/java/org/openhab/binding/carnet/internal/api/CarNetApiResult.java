@@ -65,7 +65,8 @@ public class CarNetApiResult {
 
     private void fillFromResponse(@Nullable ContentResponse contentResponse) {
         if (contentResponse != null) {
-            response = contentResponse.getContentAsString().trim();
+            String r = contentResponse.getContentAsString();
+            response = r != null ? r : "";
             httpCode = contentResponse.getStatus();
             httpReason = contentResponse.getReason();
 
