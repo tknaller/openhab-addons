@@ -21,15 +21,15 @@ import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.thing.Channel;
+import org.eclipse.smarthome.core.thing.ChannelGroupUID;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
+import org.eclipse.smarthome.core.thing.binding.ThingHandlerCallback;
 import org.eclipse.smarthome.core.thing.binding.builder.ChannelBuilder;
-import org.eclipse.smarthome.core.thing.binding.builder.ThingBuilder;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupTypeUID;
-import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.openhab.binding.carnet.internal.CarNetException;
@@ -180,7 +180,9 @@ public class CarNetVehicleHandler extends BaseThingHandler {
         }
     }
 
+    @SuppressWarnings("null")
     private void createChannel(String channelId, String itemType) throws CarNetException {
+        Validate.notNull(resources);
         String label = resources.getText("channel-type.carnet." + channelId + ".label");
         String description = resources.getText("channel-type.carnet." + channelId + ".description");
         String groupId = resources.getText("channel-type.carnet." + channelId + ".group");
@@ -190,36 +192,37 @@ public class CarNetVehicleHandler extends BaseThingHandler {
         if (groupId.isEmpty()) {
             groupId = CHANNEL_GROUP_STATUS;
         }
-        ChannelGroupTypeUID groupTypeUID = new ChannelGroupTypeUID(BINDING_ID, groupId);
-        ChannelTypeUID channelTypeUID = new ChannelTypeUID(BINDING_ID, channelId);
+        ChannelGroupTypeUID groupTypeUID = new ChannelGroupTypeUID(BINDING_ID, channelId);
+        // ChannelTypeUID channelTypeUID = new ChannelTypeUID(BINDING_ID, channelId);
 
-        if (label.isEmpty() || itemType.isEmpty()) {
+        if (label.contains(".label") || label.isEmpty() || itemType.isEmpty()) {
             throw new CarNetException(resources.getText("exception.channeldef-not-found", channelId));
         }
         if (getThing().getChannel(channelId) == null) {
             // the channel does not exist yet, so let's add it
             logger.debug("Auto-creating channel '{}' ({})", channelId, getThing().getUID());
-            ThingBuilder updatedThing = editThing();
-            Channel channel = ChannelBuilder.create(new ChannelUID(getThing().getUID(), channelId), itemType)
-                    .withType(channelTypeUID).withLabel(label).withDescription(description).build();
-            updatedThing.withChannel(channel);
-            updateThing(updatedThing.build());
-
             /*
-             * ThingHandlerCallback callback = getCallback();
-             * if (callback != null) {
-             * for (ChannelBuilder channelBuilder : callback.createChannelBuilders(
-             * new ChannelGroupUID(getThing().getUID(), groupId), groupTypeUID)) {
-             * Channel newChannel = channelBuilder.build(),
-             * existingChannel = getThing().getChannel(newChannel.getUID().getId());
-             * if (existingChannel != null) {
-             * logger.trace("Thing '{}' already has an existing channel '{}'. Omit adding new channel '{}'.",
-             * getThing().getUID(), existingChannel.getUID(), newChannel.getUID());
-             * continue;
-             * }
-             * }
-             * }
+             * ThingBuilder updatedThing = editThing();
+             * Channel channel = ChannelBuilder.create(new ChannelUID(getThing().getUID(), channelId), itemType)
+             * .withType(channelTypeUID).withLabel(label).withDescription(description).build();
+             * updatedThing.withChannel(channel);
+             * updateThing(updatedThing.build());
              */
+
+            ThingHandlerCallback callback = getCallback();
+            if (callback != null) {
+                for (ChannelBuilder channelBuilder : callback
+                        .createChannelBuilders(new ChannelGroupUID(getThing().getUID(), groupId), groupTypeUID)) {
+                    Channel newChannel = channelBuilder.build(),
+                            existingChannel = getThing().getChannel(newChannel.getUID().getId());
+                    if (existingChannel != null) {
+                        logger.trace("Thing '{}' already has an existing channel '{}'. Omit adding new channel '{}'.",
+                                getThing().getUID(), existingChannel.getUID(), newChannel.getUID());
+                        continue;
+                    }
+                }
+            }
+
         }
     }
 
