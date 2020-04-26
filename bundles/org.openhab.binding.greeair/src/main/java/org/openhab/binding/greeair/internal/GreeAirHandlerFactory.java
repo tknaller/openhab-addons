@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.greeair.internal;
 
-import static org.openhab.binding.greeair.internal.GreeAirBindingConstants.*;
+import static org.openhab.binding.greeair.internal.GreeAirBindingConstants.THING_TYPE_GREEAIRCON;
 
 import java.util.Collections;
 import java.util.Set;
@@ -24,19 +24,21 @@ import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandlerFactory;
+import org.openhab.binding.greeair.internal.handler.GreeAirHandler;
 import org.osgi.service.component.annotations.Component;
 
 /**
  * The {@link GreeAirHandlerFactory} is responsible for creating things and thing
  * handlers.
  *
- * @author Markus Michels - Initial contribution
+ * @author John Cunha - Initial contribution
+ * @author Markus Michels - Refactoring, adapted to OH 2.5x
  */
 @NonNullByDefault
 @Component(configurationPid = "binding.greeair", service = ThingHandlerFactory.class)
 public class GreeAirHandlerFactory extends BaseThingHandlerFactory {
 
-    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.singleton(THING_TYPE_SAMPLE);
+    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.singleton(THING_TYPE_GREEAIRCON);
 
     @Override
     public boolean supportsThingType(ThingTypeUID thingTypeUID) {
@@ -47,7 +49,7 @@ public class GreeAirHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
-        if (THING_TYPE_SAMPLE.equals(thingTypeUID)) {
+        if (THING_TYPE_GREEAIRCON.equals(thingTypeUID)) {
             return new GreeAirHandler(thing);
         }
 

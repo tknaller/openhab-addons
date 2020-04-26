@@ -12,15 +12,63 @@
  */
 package org.openhab.binding.greeair.internal;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * The {@link GreeAirConfiguration} class contains fields mapping thing configuration parameters.
  *
- * @author Markus Michels - Initial contribution
+ * @author John Cunha - Initial contribution
+ * @author Markus Michels - Refactoring, adapted to OH 2.5x
  */
+@NonNullByDefault
 public class GreeAirConfiguration {
+    private String ipAddress = "";
+    private String broadcastAddress = "";
+    private int refresh = 0;
 
-    /**
-     * Sample configuration parameter. Replace with your own.
-     */
-    public String config1;
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public String getBroadcastAddress() {
+        return broadcastAddress;
+    }
+
+    public void setRefresh(Integer refresh) {
+        this.refresh = refresh;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public void setBroadcastAddress(String ipAddress) {
+        this.broadcastAddress = ipAddress;
+    }
+
+    public Integer getRefresh() {
+        return refresh;
+    }
+
+    public boolean isValid() {
+        try {
+            if (ipAddress.isEmpty()) {
+                return false;
+            }
+            if (broadcastAddress.isEmpty()) {
+                return false;
+            }
+            if (refresh <= 0) {
+                throw new IllegalArgumentException("Refresh time must be positive number!");
+            }
+            return true;
+        } catch (Exception err) {
+            return false;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "GreeAirconConfig{ipAddress=" + ipAddress + "}";
+    }
 }
