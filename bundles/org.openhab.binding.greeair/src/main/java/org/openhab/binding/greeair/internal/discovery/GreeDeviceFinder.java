@@ -46,7 +46,7 @@ public class GreeDeviceFinder {
     private final Logger logger = LoggerFactory.getLogger(GreeDeviceFinder.class);
 
     protected final InetAddress mIPAddress;
-    protected HashMap<String, GreeDevice> mDevicesHashMap = new HashMap<>();
+    protected HashMap<String, GreeAirDevice> mDevicesHashMap = new HashMap<>();
 
     public GreeDeviceFinder() {
         mIPAddress = InetAddress.getLoopbackAddress(); // dummy
@@ -118,12 +118,12 @@ public class GreeDeviceFinder {
                 // Now make sure the device is reported as a Gree device
                 if (scanResponseGson.packJson.brand.equals("gree")) {
                     // Create a new GreeDevice
-                    GreeDevice newDevice = new GreeDevice();
+                    GreeAirDevice newDevice = new GreeAirDevice();
                     newDevice.setAddress(remoteAddress);
                     newDevice.setPort(remotePort);
                     newDevice.setScanResponseGson(scanResponseGson);
 
-                    AddDevice(newDevice);
+                    addDevice(newDevice);
                 }
             } catch (SocketTimeoutException e) {
                 // We've received a timeout so lets quit searching for devices
@@ -132,26 +132,26 @@ public class GreeDeviceFinder {
         }
     }
 
-    public void AddDevice(GreeDevice newDevice) {
+    public void addDevice(GreeAirDevice newDevice) {
         mDevicesHashMap.put(newDevice.getId(), newDevice);
     }
 
-    public GreeDevice GetDevice(String id) {
+    public GreeAirDevice getDevice(String id) {
         return mDevicesHashMap.get(id);
     }
 
-    public HashMap<String, GreeDevice> GetDevices() {
+    public HashMap<String, GreeAirDevice> getDevices() {
         return mDevicesHashMap;
     }
 
-    public GreeDevice getDeviceByIPAddress(String ipAddress) {
-        GreeDevice returnDevice = null;
+    public GreeAirDevice getDeviceByIPAddress(String ipAddress) {
+        GreeAirDevice returnDevice = null;
 
         Set<String> keySet = mDevicesHashMap.keySet();
         Iterator<String> iter = keySet.iterator();
         while (returnDevice == null && iter.hasNext()) {
             Object thiskey = iter.next();
-            GreeDevice currDevice = mDevicesHashMap.get(thiskey);
+            GreeAirDevice currDevice = mDevicesHashMap.get(thiskey);
             if (currDevice != null && currDevice.getAddress().getHostAddress().equals(ipAddress)) {
                 returnDevice = currDevice;
             }
@@ -160,7 +160,7 @@ public class GreeDeviceFinder {
         return returnDevice;
     }
 
-    public Integer GetScannedDeviceCount() {
+    public Integer getScannedDeviceCount() {
         return new Integer(mDevicesHashMap.size());
     }
 }

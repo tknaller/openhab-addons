@@ -4,8 +4,7 @@
 	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
-	<!-- Sample Thing Type -->
-	<thing-type id="sample">
+	<thing-type id="airconditioner">
 		<label>Gree Air Conditioner</label>
 		<description>A GreeAir Thing</description>
 
@@ -24,9 +23,22 @@
 		</channels>
 
 		<config-description>
-			<parameter name="config1" type="text" required="true">
-				<label>Sample Parameter</label>
-				<description>This is a sample text configuration parameter</description>
+			<parameter name="ipAddress" type="text" required="true">
+				<label>Device IP Address</label>
+				<description>IP-Address of the Shelly device.</description>
+				<context>network-address</context>
+			</parameter>
+			<parameter name="broadcastAddress" type="text" required="true">
+				<label>Subnet Broadcast Address</label>
+				<description>Broadcast IP address of the local subnet.</description>
+				<context>network-address</context>
+			</parameter>
+			<parameter name="refresh" type="integer" required="true" unit="s">
+				<label>Update Interval</label>
+				<description>Interval to query an update from the device.</description>
+				<default>60</default>
+				<unitLabel>seconds</unitLabel>
+				<advanced>true</advanced>
 			</parameter>
 		</config-description>
 

@@ -12,10 +12,7 @@
  */
 package org.openhab.binding.greeair.internal;
 
-import static org.openhab.binding.greeair.internal.GreeAirBindingConstants.THING_TYPE_GREEAIRCON;
-
-import java.util.Collections;
-import java.util.Set;
+import static org.openhab.binding.greeair.internal.GreeAirBindingConstants.*;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -37,8 +34,6 @@ import org.osgi.service.component.annotations.Component;
 @NonNullByDefault
 @Component(configurationPid = "binding.greeair", service = ThingHandlerFactory.class)
 public class GreeAirHandlerFactory extends BaseThingHandlerFactory {
-
-    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.singleton(THING_TYPE_GREEAIRCON);
 
     @Override
     public boolean supportsThingType(ThingTypeUID thingTypeUID) {

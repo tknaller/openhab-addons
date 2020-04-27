@@ -34,7 +34,7 @@ import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.greeair.internal.GreeAirConfiguration;
-import org.openhab.binding.greeair.internal.discovery.GreeDevice;
+import org.openhab.binding.greeair.internal.discovery.GreeAirDevice;
 import org.openhab.binding.greeair.internal.discovery.GreeDeviceFinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,8 +51,7 @@ public class GreeAirHandler extends BaseThingHandler {
     private final Logger logger = LoggerFactory.getLogger(GreeAirHandler.class);
     private GreeAirConfiguration config = new GreeAirConfiguration();
     private GreeDeviceFinder deviceFinder = new GreeDeviceFinder();
-    private GreeDevice thisDevice = new GreeDevice();
-    private String ipAddress = "";
+    private GreeAirDevice thisDevice = new GreeAirDevice();
     private @Nullable DatagramSocket clientSocket;
 
     private int refreshTime = 0;
@@ -76,7 +75,6 @@ public class GreeAirHandler extends BaseThingHandler {
 
         scheduler.execute(() -> {
             initializeThing();
-            updateStatus(ThingStatus.ONLINE);
         });
     }
 
@@ -89,11 +87,11 @@ public class GreeAirHandler extends BaseThingHandler {
                     "Invalid GreeAircon config. Check configuration.");
             return;
         }
-        ipAddress = config.getIpAddress();
-        refreshTime = config.getRefresh();
 
         // Now Scan For Airconditioners
         try {
+            refreshTime = config.getRefresh();
+
             // Create a new Datagram socket with a specified timeout
             DatagramSocket newSocket = new DatagramSocket();
             clientSocket = newSocket;
@@ -102,15 +100,15 @@ public class GreeAirHandler extends BaseThingHandler {
             // Firstly, lets find all Gree Airconditioners on the network
             deviceFinder = new GreeDeviceFinder(config.getBroadcastAddress());
             deviceFinder.Scan(clientSocket);
-            logger.debug("GreeAircon found {} Gree Devices during scanning", deviceFinder.GetScannedDeviceCount());
+            logger.debug("GreeAircon found {} Gree Devices during scanning", deviceFinder.getScannedDeviceCount());
 
             // Now check that this one is amongst the air conditioners that responded.
-            GreeDevice newDevice = deviceFinder.getDeviceByIPAddress(ipAddress);
+            GreeAirDevice newDevice = deviceFinder.getDeviceByIPAddress(config.getIpAddress());
             if (newDevice != null) {
                 // Ok, our device responded
                 // Now let's Bind with it
                 thisDevice = newDevice;
-                thisDevice.bindWithDevice(newSocket);
+                thisDevice.bindWithDevice(clientSocket);
                 if (thisDevice.getIsBound()) {
                     logger.info("Gree AirConditioner Device {} from was Succesfully bound", thing.getUID());
                     updateStatus(ThingStatus.ONLINE);
@@ -124,7 +122,6 @@ public class GreeAirHandler extends BaseThingHandler {
             logger.debug("Initialization failed: unknown host {}", config.getBroadcastAddress(), e);
         } catch (Exception e) {
             logger.debug("Initialization failed", e);
-            // e.printstackTrace();
         }
         updateStatus(ThingStatus.OFFLINE);
     }

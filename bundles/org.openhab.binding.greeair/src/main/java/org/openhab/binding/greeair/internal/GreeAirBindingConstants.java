@@ -12,6 +12,9 @@
  */
 package org.openhab.binding.greeair.internal;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 
 /**
@@ -23,9 +26,10 @@ import org.eclipse.smarthome.core.thing.ThingTypeUID;
 // @NonNullByDefault
 public class GreeAirBindingConstants {
 
-    private static final String BINDING_ID = "greeair";
+    public static final String BINDING_ID = "greeair";
 
-    public static final ThingTypeUID THING_TYPE_GREEAIRCON = new ThingTypeUID(BINDING_ID, "greeair");
+    public static final ThingTypeUID THING_TYPE_GREEAIRCON = new ThingTypeUID(BINDING_ID, "airconditioner");
+    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.singleton(THING_TYPE_GREEAIRCON);
 
     /**
      * Contains the Port that is used to communicate using UDP with Gree Airconditioners. .
@@ -67,12 +71,13 @@ public class GreeAirBindingConstants {
     // public static final String DATAGRAM_BROADCAST_IP_ADDRESS = "192.168.1.255";
 
     // List of all Thing Type UIDs
-    public static final ThingTypeUID GREE_THING_TYPE = new ThingTypeUID(BINDING_ID, "greeairthing");
+    public static final ThingTypeUID GREE_THING_TYPE = new ThingTypeUID(BINDING_ID, "airconditioner");
 
     /**
      * Contains the IP network address of the Gree Airconditioner.
      */
-    public static final String THING_PROPERTY_IP = "ipAddress";
+    public static final String PROPERTY_IP = "ipAddress";
+    public static final String PROPERTY_BROADCAST = "broadcastAddress";
 
     // List of all Channel ids
     public static final String POWER_CHANNEL = "power";

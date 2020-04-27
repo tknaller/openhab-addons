@@ -50,8 +50,8 @@ import com.sun.istack.Nullable;
  *
  * @author John Cunha - Initial contribution
  */
-public class GreeDevice {
-    private final Logger logger = LoggerFactory.getLogger(GreeDevice.class);
+public class GreeAirDevice {
+    private final Logger logger = LoggerFactory.getLogger(GreeAirDevice.class);
     private final static Charset UTF8_CHARSET = Charset.forName("UTF-8");
     private final static HashMap<String, HashMap<String, Integer>> tempRanges = createTempRangeMap();
     private boolean mIsBound = false;
@@ -63,7 +63,7 @@ public class GreeDevice {
     private @Nullable GreeStatusResponse4GsonDTO statusResponseGson;
     private @Nullable GreeStatusResponsePack4GsonDTO prevStatusResponsePackGson;
 
-    public GreeDevice() {
+    public GreeAirDevice() {
 
     }
 
@@ -95,12 +95,20 @@ public class GreeDevice {
         return mKey;
     }
 
+    public String getId() {
+        return mScanResponseGson.packJson.mac;
+    }
+
     public String getName() {
         return mScanResponseGson.packJson.name;
     }
 
-    public String getId() {
-        return mScanResponseGson.packJson.mac;
+    public String getVendor() {
+        return mScanResponseGson.packJson.brand + " " + mScanResponseGson.packJson.vender;
+    }
+
+    public String getModel() {
+        return mScanResponseGson.packJson.series + " " + mScanResponseGson.packJson.model;
     }
 
     public GreeScanResponse4GsonDTO getScanResponseGson() {
