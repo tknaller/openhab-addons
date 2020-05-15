@@ -49,6 +49,8 @@ import org.slf4j.LoggerFactory;
  * sent to one of the channels.
  *
  * @author Markus Michels - Initial contribution
+ * @author Lorenzo Bernardi - Additional contribution
+ *
  */
 @NonNullByDefault
 public class CarNetVehicleHandler extends BaseThingHandler {
@@ -182,9 +184,10 @@ public class CarNetVehicleHandler extends BaseThingHandler {
         Validate.notNull(resources);
         String label = resources.getText("channel-type.carnet." + channelId + ".label");
         String description = resources.getText("channel-type.carnet." + channelId + ".description");
+        String groupId = groupName;
 
-        if (groupName.isEmpty()) {
-            groupName = CHANNEL_GROUP_STATUS;
+        if (groupId.isEmpty()) {
+            groupId = CHANNEL_GROUP_STATUS;
         }
 
         // ChannelGroupTypeUID groupTypeUID = new ChannelGroupTypeUID(BINDING_ID, groupId);
@@ -193,13 +196,13 @@ public class CarNetVehicleHandler extends BaseThingHandler {
         if (label.contains(".label") || label.isEmpty() || itemType.isEmpty()) {
             throw new CarNetException(resources.getText("exception.channeldef-not-found", channelId));
         }
-        if (getThing().getChannel(groupName + "#" + channelId) == null) {
+        if (getThing().getChannel(groupId + "#" + channelId) == null) {
             // the channel does not exist yet, so let's add it
             logger.debug("Auto-creating channel '{}' ({})", channelId, getThing().getUID());
 
             ThingBuilder updatedThing = editThing();
             Channel channel = ChannelBuilder
-                    .create(new ChannelUID(getThing().getUID(), groupName + "#" + channelId), itemType)
+                    .create(new ChannelUID(getThing().getUID(), groupId + "#" + channelId), itemType)
                     .withType(channelTypeUID).withLabel(label).withDescription(description).withKind(ChannelKind.STATE)
                     .build();
             updatedThing.withChannel(channel);
