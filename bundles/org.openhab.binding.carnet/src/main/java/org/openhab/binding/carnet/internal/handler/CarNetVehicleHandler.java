@@ -20,6 +20,8 @@ import java.util.Map;
 import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.smarthome.core.library.types.DecimalType;
+import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -80,6 +82,7 @@ public class CarNetVehicleHandler extends BaseThingHandler {
         scheduler.execute(() -> {
             if (initializeThing()) {
                 updateStatus(ThingStatus.ONLINE);
+                updateVehicleStatus();
             } else {
                 updateStatus(ThingStatus.OFFLINE);
             }
@@ -226,7 +229,86 @@ public class CarNetVehicleHandler extends BaseThingHandler {
         }
     }
 
+    private void updateVehicleStatus() {
+
+        channelData = new HashMap<>(); // clear any cached channels
+        config = getConfigAs(CarNetVehicleConfiguration.class);
+        Validate.notNull(api, "API not yet initialized");
+        boolean successful = true;
+        String error = "";
+
+        Map<String, String> properties = getThing().getProperties();
+        vin = gs(properties.get(PROPERTY_VIN)).toUpperCase();
+        Validate.notEmpty(vin, "Unable to get VIN from thing properties!");
+
+        // Try to query status information from vehicle
+        try {
+            logger.debug("{}: Get Vehicle Status", vin);
+            CarNetVehicleStatus status = api.getVehicleStatus(vin);
+            for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
+                for (CNStatusField field : data.fields) {
+                    CNIdMapEntry map = idMap.find(field.id);
+                    if (map != null) {
+                        logger.info("Updating {}: {}={}{} (channel {}#{})", vin, map.symbolicName, gs(field.value),
+                                gs(field.unit), gs(map.groupName), gs(map.channelName));
+                        if (!map.channelName.isEmpty()) {
+                            Channel channel = getThing().getChannel(map.groupName + "#" + map.channelName);
+                            if (channel != null) {
+                                logger.debug("Trying to update channel {} with value {}", channel.getUID(),
+                                        gs(field.value));
+                                switch (map.itemType) {
+                                    case "Number":
+                                        String val = "0";
+                                        if (!gs(field.value).isEmpty()) {
+                                            val = gs(field.value);
+                                        }
+                                        updateState(channel.getUID(), new DecimalType(val));
+                                        break;
+                                    case "Switch":
+                                        updateState(channel.getUID(), OnOffType.from(gs(field.value)));
+                                        break;
+                                    default:
+                                        logger.warn("Unknown type {}", map.itemType);
+                                }
+                            } else {
+                                logger.debug("Channel {}#{} not found", map.groupName, map.channelName);
+                            }
+                        }
+                    } else {
+                        logger.debug("{}: Unknown data field  {}.{}, value={} {}", vin, data.id, field.id, field.value,
+                                field.unit);
+                    }
+                }
+            }
+
+            // logger.debug("{}: Get Vehicle Position", vin);
+            // CarNetVehiclePosition position = api.getVehiclePosition(vin);
+
+            // CarNetDestinations destinations = api.getDestinations(vin);
+
+            // CarNetHistory history = api.getHistory(vin);
+        } catch (CarNetException e) {
+            if (e.getMessage().toLowerCase().contains("disabled ")) {
+                // Status service in the vehicle is disabled
+                logger.debug("{}: Status service is disabled, check Data Privacy settings in MMI", vin);
+            } else {
+                successful = false;
+            }
+        }
+
+        if (successful) {
+            updateStatus(ThingStatus.ONLINE);
+            // try {
+            // } catch (CarNetException e) {
+            // }
+        }
+        if (!successful) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
+        }
+    }
+
     private String gs(@Nullable String s) {
         return s != null ? s : "";
     }
+
 }
