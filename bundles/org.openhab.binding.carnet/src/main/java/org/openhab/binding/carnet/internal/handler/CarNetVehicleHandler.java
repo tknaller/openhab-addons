@@ -28,7 +28,6 @@ import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.thing.binding.builder.ChannelBuilder;
 import org.eclipse.smarthome.core.thing.binding.builder.ThingBuilder;
-import org.eclipse.smarthome.core.thing.type.ChannelGroupTypeUID;
 import org.eclipse.smarthome.core.thing.type.ChannelKind;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.types.Command;
@@ -117,7 +116,7 @@ public class CarNetVehicleHandler extends BaseThingHandler {
                                 gs(map.channelName));
                         if (!map.channelName.isEmpty()) {
                             if (!map.channelName.startsWith(CHANNEL_GROUP_TYRES) || !field.value.contains("1")) {
-                                createChannel(map.channelName, map.itemType);
+                                createChannel(map.channelName, map.itemType, map.groupName);
                             }
                         }
                     } else {
@@ -179,33 +178,28 @@ public class CarNetVehicleHandler extends BaseThingHandler {
     }
 
     @SuppressWarnings("null")
-    private void createChannel(String channelId, String itemType) throws CarNetException {
+    private void createChannel(String channelId, String itemType, String groupName) throws CarNetException {
         Validate.notNull(resources);
         String label = resources.getText("channel-type.carnet." + channelId + ".label");
         String description = resources.getText("channel-type.carnet." + channelId + ".description");
-        String groupId = resources.getText("channel-type.carnet." + channelId + ".group").trim();
 
-        if (groupId.endsWith(".group")) {
-            groupId = "";
-        }
-        if (groupId.isEmpty()) {
-            groupId = CHANNEL_GROUP_STATUS;
+        if (groupName.isEmpty()) {
+            groupName = CHANNEL_GROUP_STATUS;
         }
 
-        ChannelGroupTypeUID groupTypeUID = new ChannelGroupTypeUID(BINDING_ID, groupId);
-        logger.debug("groupTypeUID[{}];groupId[{}]", groupTypeUID, groupId);
+        // ChannelGroupTypeUID groupTypeUID = new ChannelGroupTypeUID(BINDING_ID, groupId);
         ChannelTypeUID channelTypeUID = new ChannelTypeUID(BINDING_ID, channelId);
 
         if (label.contains(".label") || label.isEmpty() || itemType.isEmpty()) {
             throw new CarNetException(resources.getText("exception.channeldef-not-found", channelId));
         }
-        if (getThing().getChannel(groupId + "#" + channelId) == null) {
+        if (getThing().getChannel(groupName + "#" + channelId) == null) {
             // the channel does not exist yet, so let's add it
-            logger.debug("Auto-creating channel '{}' ({}) [group:{}]", channelId, getThing().getUID(), groupTypeUID);
+            logger.debug("Auto-creating channel '{}' ({})", channelId, getThing().getUID());
 
             ThingBuilder updatedThing = editThing();
             Channel channel = ChannelBuilder
-                    .create(new ChannelUID(getThing().getUID(), groupId + "#" + channelId), itemType)
+                    .create(new ChannelUID(getThing().getUID(), groupName + "#" + channelId), itemType)
                     .withType(channelTypeUID).withLabel(label).withDescription(description).withKind(ChannelKind.STATE)
                     .build();
             updatedThing.withChannel(channel);
