@@ -16,6 +16,8 @@ import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -64,6 +66,7 @@ public class CarNetVehicleHandler extends BaseThingHandler {
     private @Nullable final CarNetTextResources resources;
     private String vin = "";
     private static final CarNetIdMapper idMap = new CarNetIdMapper();
+    private @Nullable ScheduledFuture<?> pollingJob;
 
     private @Nullable CarNetVehicleConfiguration config;
 
@@ -82,12 +85,11 @@ public class CarNetVehicleHandler extends BaseThingHandler {
         scheduler.execute(() -> {
             if (initializeThing()) {
                 updateStatus(ThingStatus.ONLINE);
-                updateVehicleStatus();
+                setupPollingJob(0);
             } else {
                 updateStatus(ThingStatus.OFFLINE);
             }
         });
-
     }
 
     /**
@@ -180,6 +182,13 @@ public class CarNetVehicleHandler extends BaseThingHandler {
         } catch (NullPointerException e) {
         } finally {
         }
+    }
+
+    @Override
+    public void dispose() {
+        cancelPollingJob();
+
+        super.dispose();
     }
 
     @SuppressWarnings("null")
@@ -304,6 +313,28 @@ public class CarNetVehicleHandler extends BaseThingHandler {
         }
         if (!successful) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
+        }
+    }
+
+    /**
+     * Sets up a polling job (using the scheduler) with the given interval.
+     *
+     * @param initialWaitTime The delay before the first refresh. Maybe 0 to immediately
+     *            initiate a refresh.
+     */
+    private void setupPollingJob(int initialWaitTime) {
+        cancelPollingJob();
+        logger.trace("Setting up polling job with fixed delay {} minutes, starting in {} minutes", 10, initialWaitTime);
+        pollingJob = scheduler.scheduleWithFixedDelay(() -> updateVehicleStatus(), initialWaitTime, 10,
+                TimeUnit.MINUTES);
+    }
+
+    /**
+     * Cancels the polling job (if one was setup).
+     */
+    private void cancelPollingJob() {
+        if (pollingJob != null) {
+            pollingJob.cancel(false);
         }
     }
 
