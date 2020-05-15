@@ -41,10 +41,11 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_GROUP_GENERAL = "general";
     public static final String CHANNEL_GENERAL_VIN = "vin";
 
+    // List of all ChannelGroups
     public static final String CHANNEL_GROUP_STATUS = "status";
     public static final String CHANNEL_GROUP_WINDOWS = "windows";
     public static final String CHANNEL_GROUP_DOORS = "doors";
-    public static final String CHANNEL_GROUP_TIRES = "tires";
+    public static final String CHANNEL_GROUP_TYRES = "tyres";
 
     public static final String PROPERTY_VIN = "vin";
     public static final String PROPERTY_BRAND = "brand";

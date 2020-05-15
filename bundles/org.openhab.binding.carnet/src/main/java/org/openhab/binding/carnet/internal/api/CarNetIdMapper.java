@@ -78,13 +78,13 @@ public class CarNetIdMapper {
         add("STATE_RIGHT_REAR_WINDOW", "0x0301050007", "windowRearRightState", "Switch");
         add("POSITION_RIGHT_REAR_WINDOW", "0x0301050008", "windowRearRightPos", "Number");
 
-        add("TYRE_PRESSURE_LEFT_FRONT_CURRENT_VALUE", "0x0301060001", "tirePresFrontLeft", "Number");
+        add("TYRE_PRESSURE_LEFT_FRONT_CURRENT_VALUE", "0x0301060001", "tyrePresFrontLeft", "Number");
         add("TYRE_PRESSURE_LEFT_FRONT_DESIRED_VALUE", "0x0301060002");
-        add("TYRE_PRESSURE_LEFT_REAR_CURRENT_VALUE", "0x0301060003", "tirePresRearLeft", "Number");
+        add("TYRE_PRESSURE_LEFT_REAR_CURRENT_VALUE", "0x0301060003", "tyrePresRearLeft", "Number");
         add("TYRE_PRESSURE_LEFT_REAR_DESIRED_VALUE", "0x0301060004");
-        add("TYRE_PRESSURE_RIGHT_FRONT_CURRENT_VALUE", "0x0301060005", "tirePresFrontRight", "Number");
+        add("TYRE_PRESSURE_RIGHT_FRONT_CURRENT_VALUE", "0x0301060005", "tyrePresFrontRight", "Number");
         add("TYRE_PRESSURE_RIGHT_FRONT_DESIRED_VALUE", "0x0301060006");
-        add("TYRE_PRESSURE_RIGHT_REAR_CURRENT_VALUE", "0x0301060007", "tirePresRearRight", "Number");
+        add("TYRE_PRESSURE_RIGHT_REAR_CURRENT_VALUE", "0x0301060007", "tyrePresRearRight", "Number");
         add("TYRE_PRESSURE_RIGHT_REAR_DESIRED_VALUE", "0x0301060008");
         add("TYRE_PRESSURE_SPARE_TYRE_CURRENT_VALUE", "0x0301060009");
         add("TYRE_PRESSURE_SPARE_TYRE_DESIRED_VALUE", "0x030106000A");

@@ -4,7 +4,7 @@
 	xmlns:config-description="https://openhab.org/schemas/config-description/v1.0.0"
 	xsi:schemaLocation="https://openhab.org/schemas/config-description/v1.0.0 https://openhab.org/schemas/config-description-1.0.0.xsd">
 
-	<config-description uri="bridge-type:carnet:apiaccount">
+	<config-description uri="bridge-type:carnet:account">
 		<parameter-group name="authentication">
 			<label>Authentication</label>
 			<description>Authentication settings.</description>
@@ -24,6 +24,7 @@
             <description>Country in which the vehicle was bought.</description>
             <options>
                 <option value="DE">Germany</option>
+                <option value="BE">Belgium</option>
             </options>            
         </parameter>
 		<parameter name="user" type="text" required="true" groupName="authentication">

@@ -14,6 +14,7 @@
             <channel-group id="status" typeId="status"/>
             <channel-group id="windows" typeId="windows"/>
             <channel-group id="doors" typeId="doors"/>
+            <channel-group id="tyres" typeId="tyres"/>
         </channel-groups>
 
         <config-description-ref uri="thing-type:carnet:vehicle" />
@@ -36,7 +37,11 @@
     </channel-group-type>
     <channel-group-type id="doors">
         <label>Door Status</label>
-        <description>Status of all doors"</description>
+        <description>Status of all doors</description>
+    </channel-group-type>
+    <channel-group-type id="tyres">
+        <label>Tyres Status</label>
+        <description>Status of all tyres</description>
     </channel-group-type>
 
 	<channel-type id="vin">
