@@ -114,8 +114,8 @@ public class CarNetVehicleHandler extends BaseThingHandler {
                 for (CNStatusField field : data.fields) {
                     CNIdMapEntry map = idMap.find(field.id);
                     if (map != null) {
-                        logger.info("{}: {}={}{} (channel {})", vin, map.symbolicName, gs(field.value), gs(field.unit),
-                                gs(map.channelName));
+                        logger.info("{}: {}={}{} (channel {}#{})", vin, map.symbolicName, gs(field.value),
+                                gs(field.unit), gs(map.groupName), gs(map.channelName));
                         if (!map.channelName.isEmpty()) {
                             if (!map.channelName.startsWith(CHANNEL_GROUP_TYRES) || !field.value.contains("1")) {
                                 createChannel(map.channelName, map.itemType, map.groupName);
