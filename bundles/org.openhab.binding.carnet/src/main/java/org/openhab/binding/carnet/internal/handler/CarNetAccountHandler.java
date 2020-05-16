@@ -24,8 +24,8 @@ import org.openhab.binding.carnet.internal.CarNetDeviceListener;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
+import org.openhab.binding.carnet.internal.api.CarNetAccessToken;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
 import org.openhab.binding.carnet.internal.config.CarNetAccountConfiguration;
@@ -54,7 +54,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
     /**
      * Constructor
      *
-     * @param bridge Bridge object representing a FRITZ!Box
+     * @param bridge Bridge object representing a CarNet account
      */
     public CarNetAccountHandler(Bridge bridge, @Nullable HttpClient httpClient, @Nullable CarNetTextResources resources,
             @Nullable DynamicStateDescriptionProvider stateDescriptionProvider, CarNetApi api) {
@@ -94,8 +94,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         Validate.notNull(api, "API not initialized");
         api.setConfig(config);
         api.initialize();
-        @SuppressWarnings("null")
-        CarNetApiToken token = api.getToken();
+        CarNetAccessToken token = api.getToken();
         if (token == null) {
             throw new CarNetException("Unable to get access token!");
         }

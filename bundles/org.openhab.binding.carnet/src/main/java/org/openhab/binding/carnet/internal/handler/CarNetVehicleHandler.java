@@ -44,6 +44,7 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleSta
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData.CNStatusField;
 import org.openhab.binding.carnet.internal.api.CarNetIdMapper;
 import org.openhab.binding.carnet.internal.api.CarNetIdMapper.CNIdMapEntry;
+import org.openhab.binding.carnet.internal.config.CarNetAccountConfiguration;
 import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +70,7 @@ public class CarNetVehicleHandler extends BaseThingHandler {
     private @Nullable ScheduledFuture<?> pollingJob;
 
     private @Nullable CarNetVehicleConfiguration config;
+    private @Nullable CarNetAccountConfiguration accountConfig;
 
     public CarNetVehicleHandler(Thing thing, @Nullable CarNetApi api, @Nullable CarNetTextResources resources) {
         super(thing);
@@ -80,6 +82,8 @@ public class CarNetVehicleHandler extends BaseThingHandler {
     public void initialize() {
         logger.debug("Initializing!");
         updateStatus(ThingStatus.UNKNOWN);
+
+        accountConfig = getConfigAs(CarNetAccountConfiguration.class);
 
         // Start asynchronous thing initialization
         scheduler.execute(() -> {
@@ -322,10 +326,18 @@ public class CarNetVehicleHandler extends BaseThingHandler {
      * @param initialWaitTime The delay before the first refresh. Maybe 0 to immediately
      *            initiate a refresh.
      */
+    @SuppressWarnings("null")
     private void setupPollingJob(int initialWaitTime) {
         cancelPollingJob();
-        logger.trace("Setting up polling job with fixed delay {} minutes, starting in {} minutes", 10, initialWaitTime);
-        pollingJob = scheduler.scheduleWithFixedDelay(() -> updateVehicleStatus(), initialWaitTime, 10,
+
+        int pollingInterval = 10;
+        // TODO: fix null pointer exception (handle getting config from bridge or add refresh interval per vehicle)
+        // if (accountConfig != null) {
+        // pollingInterval = accountConfig.pollingInterval;
+        // }
+        logger.trace("Setting up polling job with fixed delay {} minutes, starting in {} minutes", pollingInterval,
+                initialWaitTime);
+        pollingJob = scheduler.scheduleWithFixedDelay(() -> updateVehicleStatus(), initialWaitTime, pollingInterval,
                 TimeUnit.MINUTES);
     }
 

@@ -61,7 +61,8 @@ public class CarNetApi {
     private final Gson gson = new Gson();
     private @Nullable CarNetAccountConfiguration config;
 
-    private @Nullable CarNetApiToken token = null;
+    // private @Nullable CarNetApiToken token = null;
+    private @Nullable CarNetAccessToken token = null;
 
     @SuppressWarnings("null")
     public CarNetApi(@Nullable HttpClient httpClient) {
@@ -81,21 +82,24 @@ public class CarNetApi {
     }
 
     @SuppressWarnings("null")
-    protected @Nullable CarNetApiToken createToken() throws CarNetException {
+    protected @Nullable CarNetAccessToken createToken() throws CarNetException {
+        if (token != null && !token.isExpired()) {
+            return token;
+        }
 
         Map<String, String> headers = new TreeMap<String, String>();
         headers.put(HttpHeader.CONTENT_TYPE.toString(), CNAPI_CONTENTT_FORM_URLENC);
         String data = "grant_type=password&username=" + config.user + "&password=" + config.password;
         String json = httpPost(CNAPI_URI_GET_TOKEN, null, headers, data, "");
         // process token
-        token = gson.fromJson(json, CarNetApiToken.class);
-        if ((token.accesToken == null) || token.accesToken.isEmpty()) {
+        CarNetApiToken apitoken = gson.fromJson(json, CarNetApiToken.class);
+        if ((apitoken.accesToken == null) || apitoken.accesToken.isEmpty()) {
             throw new CarNetException("Authentication failed: Unable to get access token!");
         }
+        token = new CarNetAccessToken(apitoken);
         return token;
     }
 
-    @SuppressWarnings("null")
     public CarNetVehicleList getVehicles() throws CarNetException {
         Map<String, String> headers = fillAppHeaders();
         String json = httpGet(CNAPI_URI_VEHICLE_LIST, null, headers, "");
@@ -144,10 +148,11 @@ public class CarNetApi {
         return history;
     }
 
-    private Map<String, String> fillAppHeaders() {
+    private Map<String, String> fillAppHeaders() throws CarNetException {
         Map<String, String> headers = new TreeMap<String, String>();
+        createToken();
         Validate.notNull(token, "Token must not be null!");
-        String auth = MessageFormat.format("{0} {1} {2}", token.authType, CNAPI_AUTH_AUDI_VERS, token.accesToken);
+        String auth = MessageFormat.format("{0} {1} {2}", token.authType, CNAPI_AUTH_AUDI_VERS, token.accessToken);
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_VALUE);
         headers.put(CNAPI_HEADER_VERS, CNAPI_HEADER_VERS_VALUE);
         headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
@@ -168,7 +173,7 @@ public class CarNetApi {
     }
 
     /**
-     * Sends a HTTP GET request using the synchronous client
+     * Sends a HTTP POST request using the synchronous client
      *
      * @param path Path of the requested resource
      * @return response
@@ -231,7 +236,7 @@ public class CarNetApi {
         }
     }
 
-    public @Nullable CarNetApiToken getToken() {
+    public @Nullable CarNetAccessToken getToken() {
         return token;
     }
 
