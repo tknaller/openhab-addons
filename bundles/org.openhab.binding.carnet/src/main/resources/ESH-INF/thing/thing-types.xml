@@ -27,6 +27,7 @@
 		<description>General information on the vehicle</description>
 		<channels>
 			<channel id="vin" typeId="vin" />
+            <channel id="update" typeId="update" />
 		</channels>
 	</channel-group-type>
 	<channel-group-type id="status">
@@ -60,5 +61,10 @@
 		<description>The Vehicle Identification number - a unique ID to identify the vehicle</description>
 		<state readOnly="true" />
 	</channel-type>
+    <channel-type id="update">
+        <item-type>Switch</item-type>
+        <label>Update Car Data</label>
+        <description>Every change to this channel requests an update of the vehicle information</description>
+    </channel-type>
 
 </thing:thing-descriptions>
