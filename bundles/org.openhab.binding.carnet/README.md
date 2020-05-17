@@ -1,8 +1,15 @@
 # CarNet Binding
 
-_Give some details about what this binding is meant for - a protocol, system, specific device._
+The CarNet binding allows to connect to the CarNet API and retrieve vehicle information.
 
-_If possible, provide some resources like pictures, a YouTube video, etc. to give an impression of what can be done with this binding. You can place such resources into a `doc` folder next to this README.md._
+The following Brands are currently supported:
+
+- Audi
+
+The following Brands might be supported in the future:
+
+- VW
+- Skoda
 
 ## Supported Things
 
@@ -38,6 +45,8 @@ _Describe what is needed to manually configure a thing, either through the (Pape
 _Note that it is planned to generate some part of this based on the XML files within ```src/main/resources/ESH-INF/thing``` of your binding._
 
 ## Channels
+
+Channels are dynamically created based on what is returned by the CarNet API. This highly depends on the brand, model and options of the vehicle.
 
 _Here you should provide information about available channel types, what their meaning is and how they can be used._
 
