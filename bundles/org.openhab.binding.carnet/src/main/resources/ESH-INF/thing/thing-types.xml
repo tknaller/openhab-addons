@@ -11,8 +11,8 @@
 
 		<channel-groups>
 			<channel-group id="general" typeId="general" />
-			<channel-group id="gas" typeId="gas" />
 			<channel-group id="status" typeId="status" />
+            <channel-group id="gas" typeId="gas" />
 			<channel-group id="windows" typeId="windows" />
 			<channel-group id="doors" typeId="doors" />
 			<channel-group id="tires" typeId="tires" />

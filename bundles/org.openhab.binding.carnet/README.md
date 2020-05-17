@@ -1,56 +1,64 @@
 # CarNet Binding
 
-_Give some details about what this binding is meant for - a protocol, system, specific device._
-
-_If possible, provide some resources like pictures, a YouTube video, etc. to give an impression of what can be done with this binding. You can place such resources into a `doc` folder next to this README.md._
-
-## Supported Things
-
-_Please describe the different supported things / devices within this section._
-_Which different types are supported, which models were tested etc.?_
-_Note that it is planned to generate some part of this based on the XML files within ```src/main/resources/ESH-INF/thing``` of your binding._
+This binding integrates the CarNet service provided by Audi, Volkswagen and other brands.
+It provides access to status information and control functions for compatible vehicles, which have activated the service.
+The API provides a lot of diagnostic data and provide access to remote control functions like lock/unlock door.
 
 ## Discovery
 
-_Describe the available auto-discovery features here. Mention for what it works and what needs to be kept in mind when using it._
+The binding supports automated discovery of vehicles.
+The CarNet Account Thing has to be added manually giving the nessesary credentials.
+Once the account is online the binding can query all registered vehicles and creates a vehicle thing for each of them.
 
 ## Binding Configuration
 
-_If your binding requires or supports general configuration settings, please create a folder ```cfg``` and place the configuration file ```<bindingId>.cfg``` inside it. In this section, you should link to this file and provide some information about the options. The file could e.g. look like:_
+The binding itself has no configuration options
 
-```
-# Configuration for the Philips Hue Binding
-#
-# Default secret key for the pairing of the Philips Hue Bridge.
-# It has to be between 10-40 (alphanumeric) characters
-# This may be changed by the user for security reasons.
-secret=openHABSecret
-```
+## Supported Things
 
-_Note that it is planned to generate some part of this based on the information that is available within ```src/main/resources/ESH-INF/binding``` of your binding._
+### CarNet Account (account)
 
-_If your binding does not offer any generic configurations, you can remove this section completely._
+The Account thing implements the online connect to the CarNet backend.
+An account is required to setup the connection (register on the manufacture's portal, e.g. myAudi.de).
+The vehicle needs to be registered already at that time.
+
+The account thing has no channels.
+
+### Vehicle
+
+The thing type vehicle represents a registered vehicle.
+The vehicle is associated with an account and an online connection is reqiored to access the service.
+The vehicle is identified by the unique Vehicle Identification Number (VIN).
+
+The API provides a large number of vehicle data items.
+The binding wraps those to channels in different groups.
+
+|Group      |Channel      |Type     |read-only|Desciption                                                  |
+|-----------|-------------|---------|---------|------------------------------------------------------------|
+|general    |vin          |String   |yes      |Vehicle Identification Number (VIN)                         |
+|           |lock         |Switch   |no       |Remotely open/close the vehicle's door lock.                |
+|           |update       |Switch   |no       |ON: Request data update for this vehicle.                   |
+|status     |             |         |         |Various channels representing the general verhicle status   |
+|gas        |             |         |         |Various channels related to gas/electrical consumption      |
+|maintenance|             |         |         |Various channels related to vehicle maintenance             |
+|doors      |             |         |         |Various channels, e.g. lock states of the doors             |
+|tires      |             |         |         |Various channels, e.g. tire pressure etc.                   |
 
 ## Thing Configuration
 
-_Describe what is needed to manually configure a thing, either through the (Paper) UI or via a thing-file. This should be mainly about its mandatory and optional configuration parameters. A short example entry for a thing file can help!_
+|Parameter         |Description                                               |Mandatory|Default           |
+|------------------|----------------------------------------------------------|---------|------------------|
+|                  |                                                          |    yes  |none              |
 
-_Note that it is planned to generate some part of this based on the XML files within ```src/main/resources/ESH-INF/thing``` of your binding._
-
-## Channels
-
-_Here you should provide information about available channel types, what their meaning is and how they can be used._
-
-_Note that it is planned to generate some part of this based on the XML files within ```src/main/resources/ESH-INF/thing``` of your binding._
-
-| channel  | type   | description                  |
-|----------|--------|------------------------------|
-| control  | Switch | This is the control channel  |
 
 ## Full Example
 
-_Provide a full usage example based on textual configuration files (*.things, *.items, *.sitemap)._
+.things
 
-## Any custom content here!
+.items
 
-_Feel free to add additional sections for whatever you think should also be mentioned about your binding!_
+.sitemap
+
+.rule
+
+
