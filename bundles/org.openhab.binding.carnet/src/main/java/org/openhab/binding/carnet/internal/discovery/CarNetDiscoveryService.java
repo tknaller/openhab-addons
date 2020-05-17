@@ -25,11 +25,12 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryResult;
 import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
-import org.eclipse.smarthome.core.i18n.LocaleProvider;
-import org.eclipse.smarthome.core.i18n.TranslationProvider;
+import org.eclipse.smarthome.core.thing.ThingStatus;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.openhab.binding.carnet.internal.CarNetDeviceListener;
 import org.openhab.binding.carnet.internal.CarNetException;
+import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.handler.CarNetAccountHandler;
 import org.osgi.framework.Bundle;
@@ -46,17 +47,18 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 public class CarNetDiscoveryService extends AbstractDiscoveryService implements CarNetDeviceListener {
     private final Logger logger = LoggerFactory.getLogger(CarNetDiscoveryService.class);
+    private final CarNetAccountHandler accountHandler;
+    private final CarNetTextResources resources;
     private ThingUID bridgeUID;
-    private CarNetAccountHandler handler;
     private static final int TIMEOUT = 10;
 
-    public CarNetDiscoveryService(CarNetAccountHandler bridgeHandler, Bundle bundle,
-            @Nullable TranslationProvider i18nProvider, @Nullable LocaleProvider localeProvider) {
+    public CarNetDiscoveryService(CarNetAccountHandler bridgeHandler, Bundle bundle, CarNetTextResources resources) {
         super(SUPPORTED_THING_TYPES_UIDS, TIMEOUT);
-
-        this.handler = bridgeHandler;
+        Validate.notNull(bridgeHandler);
+        this.resources = resources;
+        this.accountHandler = bridgeHandler;
         this.bridgeUID = bridgeHandler.getThing().getUID();
-        // this.translatorService = new ICloudTextTranslator(bundle, i18nProvider, localeProvider);
+
     }
 
     @Override
@@ -80,24 +82,25 @@ public class CarNetDiscoveryService extends AbstractDiscoveryService implements 
 
     @Override
     protected void startScan() {
-        if (handler != null) {
-            try {
-                handler.initializeThing();
-            } catch (CarNetException e) {
-                logger.debug("Discovery failed: {}", e.getMessage());
-            }
+        try {
+            accountHandler.initializeThing();
+        } catch (CarNetException e) {
+            logger.debug("Discovery failed: {}", e.getMessage());
         }
     }
 
     public void activate() {
-        Validate.notNull(handler);
-        handler.registerListener(this);
+        accountHandler.registerListener(this);
     }
 
     @Override
     public void deactivate() {
         super.deactivate();
-        Validate.notNull(handler);
-        handler.unregisterListener(this);
+        accountHandler.unregisterListener(this);
+    }
+
+    @Override
+    public void stateChanged(ThingStatus status, ThingStatusDetail detail, String message) {
+
     }
 }

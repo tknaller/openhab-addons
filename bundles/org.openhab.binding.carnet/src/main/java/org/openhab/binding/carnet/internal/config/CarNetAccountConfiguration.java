@@ -12,18 +12,21 @@
  */
 package org.openhab.binding.carnet.internal.config;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * The {@link CarNetVehicleConfiguration} class contains fields mapping thing configuration parameters.
  *
  * @author Markus Michels - Initial contribution
  */
+@NonNullByDefault
 public class CarNetAccountConfiguration {
 
-    public String brand;
+    public String brand = "";
     public String country = "DE";
 
-    public String user;
-    public String password;
+    public String user = "";
+    public String password = "";
 
-    public Integer pollingInterval;
+    public Integer pollingInterval = 15;
 }

@@ -43,9 +43,11 @@ public class CarNetBindingConstants {
 
     // List of all ChannelGroups
     public static final String CHANNEL_GROUP_STATUS = "status";
+    public static final String CHANNEL_GROUP_GAS = "gas";
+    public static final String CHANNEL_GROUP_MAINT = "maintenance";
     public static final String CHANNEL_GROUP_WINDOWS = "windows";
     public static final String CHANNEL_GROUP_DOORS = "doors";
-    public static final String CHANNEL_GROUP_TYRES = "tyres";
+    public static final String CHANNEL_GROUP_TIRES = "tires";
 
     public static final String PROPERTY_VIN = "vin";
     public static final String PROPERTY_BRAND = "brand";
@@ -54,4 +56,8 @@ public class CarNetBindingConstants {
     public static final String PROPERTY_MMI = "mmi";
     public static final String PROPERTY_ENGINE = "engine";
     public static final String PROPERTY_TRANS = "transmission";
+
+    public static final String ITEMT_STRING = "String";
+    public static final String ITEMT_NUMBER = "Number";
+    public static final String ITEMT_SWITCH = "Switch";
 }

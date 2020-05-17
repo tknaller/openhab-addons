@@ -12,6 +12,10 @@
  */
 package org.openhab.binding.neohub.internal;
 
+import static org.openhab.binding.neohub.internal.NeoHubBindingConstants.*;
+
+import javax.measure.Unit;
+
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.Bridge;
@@ -24,7 +28,6 @@ import org.eclipse.smarthome.core.thing.binding.BridgeHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,13 +46,11 @@ public class NeoBaseHandler extends BaseThingHandler {
     /*
      * error messages
      */
-    private static final String MSG_HUB_CONFIG = "hub needs to be initialized!";
-    private static final String MSG_HUB_COMM = "error communicating with the hub!";
     private static final String MSG_FMT_DEVICE_CONFIG = "device {} needs to configured in hub!";
     private static final String MSG_FMT_DEVICE_COMM = "device {} not communicating with hub!";
     private static final String MSG_FMT_COMMAND_OK = "command for {} succeeded.";
     private static final String MSG_FMT_COMMAND_BAD = "{} is an invalid or empty command!";
-    private static final String MSG_MISSING_PARAM = "Missing parameter \"deviceNameInHub\"";
+    private static final String MSG_DEVICE_NAME_NOT_CONFIGURED = "The parameter \"deviceNameInHub\" is not configured";
 
     /*
      * an object used to de-bounce state changes between openHAB and the NeoHub
@@ -80,54 +81,46 @@ public class NeoBaseHandler extends BaseThingHandler {
     @Override
     public void initialize() {
         config = getConfigAs(NeoBaseConfiguration.class);
-
         if (config == null || config.deviceNameInHub == null || config.deviceNameInHub.isEmpty()) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, MSG_MISSING_PARAM);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, MSG_DEVICE_NAME_NOT_CONFIGURED);
             return;
         }
-        refreshStateOnline(getNeoHub());
+
+        NeoHubHandler hub = getNeoHub();
+        if (hub == null) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, MSG_HUB_CONFIG);
+            return;
+        }
+
+        updateStatus(ThingStatus.UNKNOWN, ThingStatusDetail.CONFIGURATION_PENDING);
     }
 
     // ======== helper methods used by this class or descendants ===========
-
-    /**
-     * refresh the handler online state
-     * 
-     * @return true if the handler is online
-     */
-    private boolean refreshStateOnline(NeoHubHandler hub) {
-        if (hub == null) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE);
-            logger.warn("Unexpected situation - please report a bug: " + MSG_HUB_CONFIG);
-            return false;
-        }
-
-        if (!hub.isConfigured(config.deviceNameInHub)) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE);
-            logger.warn("Unexpected situation - please report a bug: " + MSG_FMT_DEVICE_CONFIG, getThing().getLabel());
-            return false;
-        }
-
-        if (!hub.isOnline(config.deviceNameInHub)) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-            logger.debug(MSG_FMT_DEVICE_COMM, getThing().getLabel());
-            return false;
-        }
-
-        updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE);
-        return true;
-    }
 
     /*
      * this method is called back by the NeoHub handler to inform this handler about
      * polling results from the hub handler
      */
-    public void toBaseSendPollResponse(NeoHubHandler hub, NeoHubInfoResponse infoResponse) {
-        NeoHubInfoResponse.DeviceInfo myInfo;
+    public void toBaseSendPollResponse(NeoHubInfoResponse infoResponse, Unit<?> temperatureUnit) {
+        NeoHubInfoResponse.DeviceInfo deviceInfo = infoResponse.getDeviceInfo(config.deviceNameInHub);
 
-        if (refreshStateOnline(hub) && (myInfo = infoResponse.getDeviceInfo(config.deviceNameInHub)) != null) {
-            toOpenHabSendChannelValues(myInfo);
+        if (deviceInfo == null) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR);
+            logger.warn(MSG_FMT_DEVICE_CONFIG, getThing().getLabel());
+            return;
         }
+
+        if (deviceInfo.isOffline()) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+            logger.debug(MSG_FMT_DEVICE_COMM, getThing().getLabel());
+            return;
+        }
+
+        if (getThing().getStatus() != ThingStatus.ONLINE) {
+            updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE);
+        }
+
+        toOpenHabSendChannelValues(deviceInfo, temperatureUnit);
     }
 
     /*
@@ -155,27 +148,27 @@ public class NeoBaseHandler extends BaseThingHandler {
                  * issue command, check result, and update status accordingly
                  */
                 switch (hub.toNeoHubSendChannelValue(cmdStr)) {
-                case SUCCEEDED:
-                    logger.debug(MSG_FMT_COMMAND_OK, getThing().getLabel());
+                    case SUCCEEDED:
+                        logger.debug(MSG_FMT_COMMAND_OK, getThing().getLabel());
 
-                    if (getThing().getStatus() != ThingStatus.ONLINE) {
-                        updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE);
-                    }
+                        if (getThing().getStatus() != ThingStatus.ONLINE) {
+                            updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE);
+                        }
 
-                    // initialize the de-bouncer for this channel
-                    debouncer.initialize(channelId);
+                        // initialize the de-bouncer for this channel
+                        debouncer.initialize(channelId);
 
-                    break;
+                        break;
 
-                case ERR_COMMUNICATION:
-                    logger.debug(MSG_HUB_COMM);
-                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-                    break;
+                    case ERR_COMMUNICATION:
+                        logger.debug(MSG_HUB_COMM);
+                        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+                        break;
 
-                case ERR_INITIALIZATION:
-                    logger.warn("Unexpected situation - please report a bug: " + MSG_HUB_CONFIG);
-                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE);
-                    break;
+                    case ERR_INITIALIZATION:
+                        logger.warn(MSG_HUB_CONFIG);
+                        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE);
+                        break;
                 }
             } else {
                 logger.debug(MSG_HUB_CONFIG);
@@ -226,7 +219,7 @@ public class NeoBaseHandler extends BaseThingHandler {
      * NOTE: descendant classes MUST override this method method by which the
      * handler informs openHAB about channel state changes
      */
-    protected void toOpenHabSendChannelValues(NeoHubInfoResponse.DeviceInfo deviceInfo) {
+    protected void toOpenHabSendChannelValues(NeoHubInfoResponse.DeviceInfo deviceInfo, Unit<?> temperatureUnit) {
     }
 
     protected OnOffType invert(OnOffType value) {

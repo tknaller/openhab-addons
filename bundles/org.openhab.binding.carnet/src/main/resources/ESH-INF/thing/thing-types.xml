@@ -9,46 +9,56 @@
 		<label>Vehicle</label>
 		<description>The thing represents one vehicle</description>
 
-        <channel-groups>
-            <channel-group id="general" typeId="general"/>
-            <channel-group id="status" typeId="status"/>
-            <channel-group id="windows" typeId="windows"/>
-            <channel-group id="doors" typeId="doors"/>
-            <channel-group id="tyres" typeId="tyres"/>
-        </channel-groups>
+		<channel-groups>
+			<channel-group id="general" typeId="general" />
+			<channel-group id="gas" typeId="gas" />
+			<channel-group id="status" typeId="status" />
+			<channel-group id="windows" typeId="windows" />
+			<channel-group id="doors" typeId="doors" />
+			<channel-group id="tires" typeId="tires" />
+			<channel-group id="maintenance" typeId="maintenance" />
+		</channel-groups>
 
-        <config-description-ref uri="thing-type:carnet:vehicle" />
+		<config-description-ref uri="thing-type:carnet:vehicle" />
 	</thing-type>
 
-    <channel-group-type id="general">
-        <label>Vehicle</label>
-        <description>General information on the vehicle</description>
-        <channels>
-            <channel id="vin" typeId="vin" />
-        </channels>
-    </channel-group-type>
-    <channel-group-type id="status">
-        <label>Status</label>
-        <description>Vehicle status</description>
-    </channel-group-type>
-    <channel-group-type id="windows">
-        <label>Window Status</label>
-        <description>Status of the windows</description>
-    </channel-group-type>
-    <channel-group-type id="doors">
-        <label>Door Status</label>
-        <description>Status of all doors</description>
-    </channel-group-type>
-    <channel-group-type id="tyres">
-        <label>Tyres Status</label>
-        <description>Status of all tyres</description>
-    </channel-group-type>
+	<channel-group-type id="general">
+		<label>Vehicle</label>
+		<description>General information on the vehicle</description>
+		<channels>
+			<channel id="vin" typeId="vin" />
+		</channels>
+	</channel-group-type>
+	<channel-group-type id="status">
+		<label>Status</label>
+		<description>Vehicle Status</description>
+	</channel-group-type>
+	<channel-group-type id="gas">
+		<label>Gas / Electrical</label>
+		<description>Status values around gas or electrical</description>
+	</channel-group-type>
+	<channel-group-type id="maintenance">
+		<label>Maintenance</label>
+		<description>Maintenance Data</description>
+	</channel-group-type>
+	<channel-group-type id="windows">
+		<label>Windows</label>
+		<description>Status of the windows</description>
+	</channel-group-type>
+	<channel-group-type id="doors">
+		<label>Doors</label>
+		<description>Status of all doors</description>
+	</channel-group-type>
+	<channel-group-type id="tires">
+		<label>Tires</label>
+		<description>Status of all tires</description>
+	</channel-group-type>
 
 	<channel-type id="vin">
-        <item-type>String</item-type>
+		<item-type>String</item-type>
 		<label>VIN</label>
 		<description>The Vehicle Identification number - a unique ID to identify the vehicle</description>
-        <state readOnly="true"/>
+		<state readOnly="true" />
 	</channel-type>
 
 </thing:thing-descriptions>

@@ -43,7 +43,6 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleLis
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus;
 import org.openhab.binding.carnet.internal.config.CarNetAccountConfiguration;
-import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,22 +55,20 @@ import com.google.gson.Gson;
  */
 @NonNullByDefault
 public class CarNetApi {
-    private final Logger logger = LoggerFactory.getLogger(CarNetVehicleHandler.class);
-    private final @Nullable HttpClient httpClient;
+    private final Logger logger = LoggerFactory.getLogger(CarNetApi.class);
+    private final HttpClient httpClient;
     private final Gson gson = new Gson();
-    private @Nullable CarNetAccountConfiguration config;
+    private CarNetAccountConfiguration config = new CarNetAccountConfiguration();
 
-    // private @Nullable CarNetApiToken token = null;
-    private @Nullable CarNetAccessToken token = null;
+    private @Nullable CarNetApiToken token = null;
 
-    @SuppressWarnings("null")
     public CarNetApi(@Nullable HttpClient httpClient) {
         logger.debug("Initializing CarNet API");
         Validate.notNull(httpClient);
         this.httpClient = httpClient;
     }
 
-    public void setConfig(@Nullable CarNetAccountConfiguration config) {
+    public void setConfig(CarNetAccountConfiguration config) {
         logger.debug("Setting up CarNet API for brand {} ({}), user {}", config.brand, config.country, config.user);
         this.config = config;
     }
@@ -244,8 +241,6 @@ public class CarNetApi {
      * Constructs an URL from the stored information, a specified path and a specified argument string
      *
      */
-
-    @SuppressWarnings("null")
     private String getBrandUrl(String uriTemplate, @Nullable String args, String vin) throws MalformedURLException {
         String path = MessageFormat.format(uriTemplate, config.brand, config.country, vin);
         return getUrl(path.isEmpty() ? path : path + (args != null ? "?" + args : ""));

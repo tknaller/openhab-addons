@@ -16,6 +16,8 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.carnet.internal.api.CarNetApiResult;
 
 /**
@@ -24,10 +26,11 @@ import org.openhab.binding.carnet.internal.api.CarNetApiResult;
  *
  * @author Markus Michels - Initial contribution
  */
+@NonNullByDefault
 public class CarNetException extends Exception {
     private static final long serialVersionUID = -5809459454769761821L;
 
-    private Throwable e = null;
+    private @Nullable Throwable e = null;
     private CarNetApiResult apiResult = new CarNetApiResult();
 
     public CarNetException(String message) {

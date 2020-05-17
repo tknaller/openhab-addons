@@ -12,16 +12,16 @@
  */
 package org.openhab.io.homekit.internal;
 
-import java.util.List;
+import static org.openhab.io.homekit.internal.HomekitAccessoryType.DUMMY;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.items.GroupItem;
 import org.eclipse.smarthome.core.items.Item;
-import org.eclipse.smarthome.core.items.ItemRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,76 +30,48 @@ import org.slf4j.LoggerFactory;
  *
  * @author Andy Lintner - Initial contribution
  */
+@NonNullByDefault
 public class HomekitTaggedItem {
-    class BadItemConfigurationException extends Exception {
-        private static final long serialVersionUID = 2199765638404197193L;
-
-        public BadItemConfigurationException(String reason) {
-            super(reason);
-        }
-    }
+    private final Logger logger = LoggerFactory.getLogger(HomekitTaggedItem.class);
 
     private static final Map<Integer, String> CREATED_ACCESSORY_IDS = new ConcurrentHashMap<>();
-
     /**
      * The type of HomekitDevice we've decided this was. If the item is question is the member of a group which is a
      * HomekitDevice, then this is null.
      */
-    private HomekitAccessoryType homekitAccessoryType;
-    private HomekitCharacteristicType homekitCharacteristicType;
     private final Item item;
-    private Logger logger = LoggerFactory.getLogger(HomekitTaggedItem.class);
+    private final HomekitAccessoryType homekitAccessoryType;
+    private @Nullable HomekitCharacteristicType homekitCharacteristicType;
+    private @Nullable Map<String, Object> configuration;
+    private @Nullable GroupItem parentGroupItem;
     private final int id;
-    private GroupItem parentGroupItem;
 
-    public HomekitTaggedItem(Item item, ItemRegistry itemRegistry) {
+    public HomekitTaggedItem(Item item, HomekitAccessoryType homekitAccessoryType,
+            @Nullable Map<String, Object> configuration) {
         this.item = item;
-
-        try {
-            homekitAccessoryType = HomekitAccessoryType.fromItem(item);
-            homekitCharacteristicType = HomekitCharacteristicType.fromItem(item);
-            if (homekitAccessoryType != null && homekitCharacteristicType != null) {
-                throw new BadItemConfigurationException(
-                        "Items cannot be tagged as both a characteristic and an accessory type");
-            }
-            List<GroupItem> matchingGroupItems = findMyAccessoryGroups(item, itemRegistry);
-
-            switch (matchingGroupItems.size()) {
-                case 0: // Does not belong to a accessory group
-                    if (homekitCharacteristicType != null) {
-                        throw new BadItemConfigurationException(
-                                "Item is tagged as a characteristic, but does not belong to a root accessory group");
-                    }
-
-                    parentGroupItem = null;
-                    break;
-                case 1: // Belongs to exactly one accessory group
-                    if (item instanceof GroupItem) {
-                        throw new BadItemConfigurationException("Nested Accessory Groups are not supported");
-                    }
-
-                    parentGroupItem = matchingGroupItems.get(0);
-                    break;
-                default: // Belongs to more than one accessory group
-                    throw new BadItemConfigurationException(
-                            "Item belongs to multiple Groups which are tagged as Homekit devices.");
-            }
-
-        } catch (BadItemConfigurationException e) {
-            logger.warn("Item {} was misconfigured: {}. Excluding item from homekit.", item.getName(), e.getMessage());
-            homekitAccessoryType = null;
-            homekitCharacteristicType = null;
-            parentGroupItem = null;
-        }
-        if (homekitAccessoryType != null) {
+        this.parentGroupItem = null;
+        this.configuration = configuration;
+        this.homekitAccessoryType = homekitAccessoryType;
+        this.homekitCharacteristicType = HomekitCharacteristicType.EMPTY;
+        if (homekitAccessoryType != DUMMY) {
             this.id = calculateId(item);
         } else {
             this.id = 0;
         }
     }
 
-    public boolean isTagged() {
-        return (homekitAccessoryType != null && id != 0) || homekitCharacteristicType != null;
+    public HomekitTaggedItem(Item item, HomekitAccessoryType homekitAccessoryType,
+            @Nullable HomekitCharacteristicType homekitCharacteristicType,
+            @Nullable Map<String, Object> configuration) {
+        this(item, homekitAccessoryType, configuration);
+        this.homekitCharacteristicType = homekitCharacteristicType;
+    }
+
+    public HomekitTaggedItem(Item item, HomekitAccessoryType homekitAccessoryType,
+            @Nullable HomekitCharacteristicType homekitCharacteristicType, @Nullable GroupItem parentGroup,
+            @Nullable Map<String, Object> configuration) {
+        this(item, homekitAccessoryType, homekitCharacteristicType, configuration);
+        this.parentGroupItem = parentGroup;
     }
 
     public boolean isGroup() {
@@ -110,26 +82,30 @@ public class HomekitTaggedItem {
         return homekitAccessoryType;
     }
 
-    public HomekitCharacteristicType getCharacteristicType() {
+    public @Nullable HomekitCharacteristicType getCharacteristicType() {
         return homekitCharacteristicType;
     }
 
+    public @Nullable Map<String, Object> getConfiguration() {
+        return configuration;
+    }
+
     /**
-     * Returns whether or not this item refers to an item that fully specifies a Homekit accessory. Mutually
+     * Returns whether or not this item refers to an item that fully specifies a HomeKit accessory. Mutually
      * exclusive
      * to isCharacteristic(). Primary devices must belong to a root accessory group.
      */
     public boolean isAccessory() {
-        return homekitAccessoryType != null;
+        return homekitAccessoryType != DUMMY;
     }
 
     /**
-     * Returns whether or not this item is in a group that specifies a Homekit accessory. It is not possible to be a
+     * Returns whether or not this item is in a group that specifies a HomeKit accessory. It is not possible to be a
      * characteristic and an accessory. Further, all characteristics belong to a
      * root deviceGroup.
      */
     public boolean isCharacteristic() {
-        return homekitCharacteristicType != null;
+        return homekitCharacteristicType != null && homekitCharacteristicType != HomekitCharacteristicType.EMPTY;
     }
 
     public Item getItem() {
@@ -148,14 +124,14 @@ public class HomekitTaggedItem {
      * Returns the RootDevice GroupItem to which this item belongs.
      * Returns null if not in a group.
      */
-    public GroupItem getRootDeviceGroupItem() {
+    public @Nullable GroupItem getRootDeviceGroupItem() {
         return parentGroupItem;
     }
 
     /**
-     * Returns whether or not this item belongs to a Homekit accessory group.
+     * Returns whether or not this item belongs to a HomeKit accessory group.
      *
-     * Characteristic devices must belong to a Homekit accessory group.
+     * Characteristic devices must belong to a HomeKit accessory group.
      */
     public boolean isMemberOfAccessoryGroup() {
         return parentGroupItem != null;
@@ -172,7 +148,7 @@ public class HomekitTaggedItem {
         if (CREATED_ACCESSORY_IDS.containsKey(id)) {
             if (!CREATED_ACCESSORY_IDS.get(id).equals(item.getName())) {
                 logger.warn(
-                        "Could not create homekit accessory {} because its hash conflicts with {}. This is a 1:1,000,000 chance occurrence. Change one of the names and consider playing the lottery. See https://github.com/openhab/openhab-addons/issues/257#issuecomment-125886562",
+                        "Could not create HomeKit accessory {} because its hash conflicts with {}. This is a 1:1,000,000 chance occurrence. Change one of the names and consider playing the lottery. See https://github.com/openhab/openhab-addons/issues/257#issuecomment-125886562",
                         item.getName(), CREATED_ACCESSORY_IDS.get(id));
                 return 0;
             }
@@ -182,16 +158,8 @@ public class HomekitTaggedItem {
         return id;
     }
 
-    public static List<GroupItem> findMyAccessoryGroups(Item item, ItemRegistry itemRegistry) {
-        return item.getGroupNames().stream().flatMap(name -> {
-            Item groupItem = itemRegistry.get(name);
-            if ((groupItem != null) && (groupItem instanceof GroupItem)) {
-                return Stream.of((GroupItem) groupItem);
-            } else {
-                return Stream.empty();
-            }
-        }).filter(groupItem -> {
-            return groupItem.getTags().stream().filter(gt -> HomekitAccessoryType.valueOfTag(gt) != null).count() > 0;
-        }).collect(Collectors.toList());
+    public String toString() {
+        return "Item:" + item + "  HomeKit type:" + homekitAccessoryType + " HomeKit characteristic:"
+                + homekitCharacteristicType;
     }
 }

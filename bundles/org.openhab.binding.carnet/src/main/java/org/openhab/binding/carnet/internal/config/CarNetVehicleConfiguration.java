@@ -12,11 +12,14 @@
  */
 package org.openhab.binding.carnet.internal.config;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * The {@link CarNetVehicleConfiguration} class contains fields mapping thing configuration parameters.
  *
  * @author Markus Michels - Initial contribution
  */
+@NonNullByDefault
 public class CarNetVehicleConfiguration {
 
 }

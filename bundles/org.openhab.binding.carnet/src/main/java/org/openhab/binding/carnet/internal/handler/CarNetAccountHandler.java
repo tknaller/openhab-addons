@@ -1,3 +1,15 @@
+/**
+ * Copyright (c) 2010-2020 Contributors to the openHAB project
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 package org.openhab.binding.carnet.internal.handler;
 
 import java.util.ArrayList;
@@ -9,7 +21,6 @@ import java.util.TreeMap;
 import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -24,24 +35,30 @@ import org.openhab.binding.carnet.internal.CarNetDeviceListener;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
-import org.openhab.binding.carnet.internal.api.CarNetAccessToken;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
 import org.openhab.binding.carnet.internal.config.CarNetAccountConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The {@link CarNetAccountHandler} implements access to the myAudi account API. It is implemented as a brdige device
+ * and also dispatches events to the vehicle things.
+ *
+ * @author Markus Michels - Initial contribution
+ * @author Lorenzo Bernardi - Additional contribution
+ *
+ */
 @NonNullByDefault
 public class CarNetAccountHandler extends BaseBridgeHandler {
     private final Logger logger = LoggerFactory.getLogger(CarNetAccountHandler.class);
-    /**
-     * shared instance of HTTP client for asynchronous calls
-     */
-    private @Nullable final HttpClient httpClient;
-    private @Nullable final DynamicStateDescriptionProvider stateDescriptionProvider;
-    private @Nullable CarNetAccountConfiguration config;
-    private @Nullable CarNetApi api;
+    // private @Nullable final DynamicStateDescriptionProvider stateDescriptionProvider;
+    private CarNetAccountConfiguration config = new CarNetAccountConfiguration();
+    private final @Nullable CarNetApi api;
+    private CarNetApiToken apiToken = new CarNetApiToken();
+
     private @Nullable List<CarNetVehicleInformation> vehicleList;
     private List<CarNetDeviceListener> vehicleInformationListeners = Collections
             .synchronizedList(new ArrayList<CarNetDeviceListener>());
@@ -54,13 +71,12 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
     /**
      * Constructor
      *
-     * @param bridge Bridge object representing a CarNet account
+     * @param bridge Bridge object representing a FRITZ!Box
      */
-    public CarNetAccountHandler(Bridge bridge, @Nullable HttpClient httpClient, @Nullable CarNetTextResources resources,
-            @Nullable DynamicStateDescriptionProvider stateDescriptionProvider, CarNetApi api) {
+    public CarNetAccountHandler(Bridge bridge, @Nullable CarNetTextResources resources,
+            @Nullable DynamicStateDescriptionProvider stateDescriptionProvider, @Nullable CarNetApi api) {
         super(bridge);
-        this.httpClient = httpClient;
-        this.stateDescriptionProvider = stateDescriptionProvider;
+        // this.stateDescriptionProvider = stateDescriptionProvider;
         this.api = api;
         // applyTemplateChannelUID = new ChannelUID(bridge.getUID(), CHANNEL_APPLY_TEMPLATE);
     }
@@ -78,9 +94,8 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         scheduler.execute(() -> {
             try {
                 initializeThing();
-                updateStatus(ThingStatus.ONLINE);
             } catch (CarNetException e) {
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.toString());
+                stateChanged(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.toString());
             }
         });
 
@@ -94,10 +109,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         Validate.notNull(api, "API not initialized");
         api.setConfig(config);
         api.initialize();
-        CarNetAccessToken token = api.getToken();
-        if (token == null) {
-            throw new CarNetException("Unable to get access token!");
-        }
+        refreshToken();
         refreshProperties(properties);
 
         CarNetVehicleList vehices = api.getVehicles();
@@ -108,7 +120,21 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
             vehicleList.add(vehicle);
         }
         informVehicleInformationListeners(vehicleList);
+        stateChanged(ThingStatus.ONLINE, ThingStatusDetail.NONE, "");
         return true;
+    }
+
+    public CarNetApiToken refreshToken() throws CarNetException {
+        CarNetApiToken token = api.getToken();
+        if (token == null) {
+            throw new CarNetException("Unable to get access token!");
+        }
+        apiToken = token;
+        return getToken();
+    }
+
+    public CarNetApiToken getToken() {
+        return apiToken;
     }
 
     public void registerListener(CarNetDeviceListener listener) {
@@ -121,6 +147,11 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
 
     private void informVehicleInformationListeners(@Nullable List<CarNetVehicleInformation> vehicleInformationList) {
         this.vehicleInformationListeners.forEach(discovery -> discovery.informationUpdate(vehicleInformationList));
+    }
+
+    void stateChanged(ThingStatus status, ThingStatusDetail detail, String message) {
+        updateStatus(status, detail, message);
+        this.vehicleInformationListeners.forEach(discovery -> discovery.stateChanged(status, detail, message));
     }
 
     @Override

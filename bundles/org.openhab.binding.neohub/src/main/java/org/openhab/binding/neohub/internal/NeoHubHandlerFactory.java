@@ -43,7 +43,8 @@ import org.osgi.service.component.annotations.Component;
 public class NeoHubHandlerFactory extends BaseThingHandlerFactory {
 
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections
-            .unmodifiableSet(new HashSet<>(Arrays.asList(THING_TYPE_NEOHUB, THING_TYPE_NEOSTAT, THING_TYPE_NEOPLUG)));
+            .unmodifiableSet(new HashSet<>(Arrays.asList(THING_TYPE_NEOHUB, THING_TYPE_NEOSTAT, THING_TYPE_NEOPLUG,
+                    THING_TYPE_NEOCONTACT, THING_TYPE_NEOTEMPERATURESENSOR)));
 
     private final Map<ThingUID, ServiceRegistration<?>> discoServices = new HashMap<>();
 
@@ -62,11 +63,21 @@ public class NeoHubHandlerFactory extends BaseThingHandlerFactory {
             return handler;
         }
 
-        if (thingTypeUID.equals(THING_TYPE_NEOSTAT))
+        if (thingTypeUID.equals(THING_TYPE_NEOSTAT)) {
             return new NeoStatHandler(thing);
+        }
 
-        if (thingTypeUID.equals(THING_TYPE_NEOPLUG))
+        if (thingTypeUID.equals(THING_TYPE_NEOPLUG)) {
             return new NeoPlugHandler(thing);
+        }
+
+        if (thingTypeUID.equals(THING_TYPE_NEOCONTACT)) {
+            return new NeoContactHandler(thing);
+        }
+
+        if (thingTypeUID.equals(THING_TYPE_NEOTEMPERATURESENSOR)) {
+            return new NeoTemperatureSensorHandler(thing);
+        }
 
         return null;
     }
@@ -91,7 +102,7 @@ public class NeoHubHandlerFactory extends BaseThingHandlerFactory {
 
         // register the discovery service
         ServiceRegistration<?> serviceReg = bundleContext.registerService(DiscoveryService.class.getName(), ds,
-                new Hashtable<String, Object>());
+                new Hashtable<>());
 
         /*
          * store service registration in a list so we can destroy it when the respective
@@ -115,9 +126,9 @@ public class NeoHubHandlerFactory extends BaseThingHandlerFactory {
             serviceReg.unregister();
 
             // deactivate the service
-            if (disco != null)
+            if (disco != null) {
                 disco.deactivate();
+            }
         }
     }
-
 }

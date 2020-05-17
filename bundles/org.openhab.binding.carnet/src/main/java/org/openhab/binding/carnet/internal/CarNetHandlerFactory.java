@@ -75,8 +75,8 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
         }
         if (THING_TYPE_ACCOUNT.equals(thingTypeUID)) {
             api = new CarNetApi(httpClient);
-            CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, httpClient, resources,
-                    stateDescriptionProvider, api);
+            CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, resources, stateDescriptionProvider,
+                    api);
             registerDeviceDiscoveryService(handler);
             return handler;
         } else if (THING_TYPE_VEHICLE.equals(thingTypeUID)) {
@@ -95,7 +95,7 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
 
     private synchronized void registerDeviceDiscoveryService(CarNetAccountHandler bridgeHandler) {
         CarNetDiscoveryService discoveryService = new CarNetDiscoveryService(bridgeHandler, bundleContext.getBundle(),
-                i18nProvider, localeProvider);
+                new CarNetTextResources(this.getBundleContext().getBundle(), i18nProvider, localeProvider));
         discoveryService.activate();
         this.discoveryServiceRegistrations.put(bridgeHandler.getThing().getUID(), bundleContext
                 .registerService(DiscoveryService.class.getName(), discoveryService, new Hashtable<String, Object>()));

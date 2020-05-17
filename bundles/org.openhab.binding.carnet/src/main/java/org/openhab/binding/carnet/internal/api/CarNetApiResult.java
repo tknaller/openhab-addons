@@ -20,6 +20,11 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiErrorMe
 
 import com.google.gson.Gson;
 
+/**
+ * The {@link CarNetApiResult} stores API result information.
+ *
+ * @author Markus Michels - Initial contribution
+ */
 @NonNullByDefault
 public class CarNetApiResult {
     public String url = "";

@@ -49,7 +49,7 @@ public final class DailyJobSun extends AbstractJob {
     public void run() {
         handler.publishDailyInfo();
         String thingUID = getThingUID();
-        LOGGER.info("Scheduled Astro event-jobs for thing {}", thingUID);
+        LOGGER.debug("Scheduled Astro event-jobs for thing {}", thingUID);
 
         Planet planet = handler.getPlanet();
         if (planet == null) {
@@ -97,5 +97,4 @@ public final class DailyJobSun extends AbstractJob {
     public String toString() {
         return "Daily job sun " + getThingUID();
     }
-
 }
