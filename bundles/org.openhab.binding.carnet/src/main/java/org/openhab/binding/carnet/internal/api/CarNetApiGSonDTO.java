@@ -47,7 +47,7 @@ public class CarNetApiGSonDTO {
          */
 
         @SerializedName("access_token")
-        public String accesToken;
+        public String accessToken;
         @SerializedName("token_type")
         public String authType;
         @SerializedName("expires_in")

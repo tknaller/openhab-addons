@@ -13,6 +13,7 @@
 package org.openhab.binding.carnet.internal.api;
 
 import java.text.MessageFormat;
+import java.util.Date;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
@@ -28,14 +29,14 @@ public class CarNetAccessToken {
     protected String authType = "";
     protected Integer authVersion = 1;
     protected Integer validity = -1;
-    private Date creationTime;
+    private Date creationTime = new Date();
 
     public CarNetAccessToken() {
 
     }
 
     public CarNetAccessToken(CarNetApiToken token) {
-        accessToken = token.accesToken;
+        accessToken = token.accessToken;
         authType = token.authType;
         validity = token.validity;
         creationTime = new Date();
@@ -46,10 +47,6 @@ public class CarNetAccessToken {
     }
 
     public Boolean isExpired() {
-        if (creationTime == null) {
-            return true;
-        }
-
         Date currentTime = new Date();
 
         long diff = currentTime.getTime() - creationTime.getTime();

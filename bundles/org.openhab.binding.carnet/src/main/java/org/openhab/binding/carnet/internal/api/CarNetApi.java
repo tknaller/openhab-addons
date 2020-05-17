@@ -60,7 +60,7 @@ public class CarNetApi {
     private final Gson gson = new Gson();
     private CarNetAccountConfiguration config = new CarNetAccountConfiguration();
 
-    private @Nullable CarNetApiToken token = null;
+    private @Nullable CarNetAccessToken token = null;
 
     public CarNetApi(@Nullable HttpClient httpClient) {
         logger.debug("Initializing CarNet API");
@@ -90,7 +90,7 @@ public class CarNetApi {
         String json = httpPost(CNAPI_URI_GET_TOKEN, null, headers, data, "");
         // process token
         CarNetApiToken apitoken = gson.fromJson(json, CarNetApiToken.class);
-        if ((apitoken.accesToken == null) || apitoken.accesToken.isEmpty()) {
+        if ((apitoken.accessToken == null) || apitoken.accessToken.isEmpty()) {
             throw new CarNetException("Authentication failed: Unable to get access token!");
         }
         token = new CarNetAccessToken(apitoken);
