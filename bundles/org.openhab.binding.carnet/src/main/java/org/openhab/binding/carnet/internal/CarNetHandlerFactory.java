@@ -14,17 +14,32 @@ package org.openhab.binding.carnet.internal;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
-import java.util.Collections;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.smarthome.config.discovery.DiscoveryService;
+import org.eclipse.smarthome.core.i18n.LocaleProvider;
+import org.eclipse.smarthome.core.i18n.TranslationProvider;
+import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
+import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandlerFactory;
+import org.eclipse.smarthome.core.thing.type.DynamicStateDescriptionProvider;
+import org.eclipse.smarthome.io.net.http.HttpClientFactory;
+import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.discovery.CarNetDiscoveryService;
+import org.openhab.binding.carnet.internal.handler.CarNetAccountHandler;
+import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * The {@link CarNetHandlerFactory} is responsible for creating things and thing
@@ -35,8 +50,16 @@ import org.osgi.service.component.annotations.Component;
 @NonNullByDefault
 @Component(configurationPid = "binding.carnet", service = ThingHandlerFactory.class)
 public class CarNetHandlerFactory extends BaseThingHandlerFactory {
-
-    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.singleton(THING_TYPE_SAMPLE);
+    /**
+     * shared instance of HTTP client for asynchronous calls
+     */
+    private @Nullable HttpClient httpClient;
+    private @Nullable DynamicStateDescriptionProvider stateDescriptionProvider;
+    private @Nullable LocaleProvider localeProvider;
+    private @Nullable TranslationProvider i18nProvider;
+    private @Nullable CarNetTextResources resources;
+    private @Nullable CarNetApi api;
+    private final Map<ThingUID, @Nullable ServiceRegistration<?>> discoveryServiceRegistrations = new HashMap<>();
 
     @Override
     public boolean supportsThingType(ThingTypeUID thingTypeUID) {
@@ -47,10 +70,84 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
-        if (THING_TYPE_SAMPLE.equals(thingTypeUID)) {
-            return new CarNetHandler(thing);
+        if (resources == null) {
+            resources = new CarNetTextResources(this.getBundleContext().getBundle(), i18nProvider, localeProvider);
+        }
+        if (THING_TYPE_ACCOUNT.equals(thingTypeUID)) {
+            api = new CarNetApi(httpClient);
+            CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, resources, stateDescriptionProvider,
+                    api);
+            registerDeviceDiscoveryService(handler);
+            return handler;
+        } else if (THING_TYPE_VEHICLE.equals(thingTypeUID)) {
+            return new CarNetVehicleHandler(thing, api, resources);
         }
 
         return null;
+    }
+
+    @Override
+    protected void removeHandler(ThingHandler thingHandler) {
+        if (thingHandler instanceof CarNetAccountHandler) {
+            unregisterDeviceDiscoveryService((CarNetAccountHandler) thingHandler);
+        }
+    }
+
+    private synchronized void registerDeviceDiscoveryService(CarNetAccountHandler bridgeHandler) {
+        CarNetDiscoveryService discoveryService = new CarNetDiscoveryService(bridgeHandler, bundleContext.getBundle(),
+                new CarNetTextResources(this.getBundleContext().getBundle(), i18nProvider, localeProvider));
+        discoveryService.activate();
+        this.discoveryServiceRegistrations.put(bridgeHandler.getThing().getUID(), bundleContext
+                .registerService(DiscoveryService.class.getName(), discoveryService, new Hashtable<String, Object>()));
+    }
+
+    private synchronized void unregisterDeviceDiscoveryService(CarNetAccountHandler bridgeHandler) {
+        ServiceRegistration<?> serviceRegistration = this.discoveryServiceRegistrations
+                .get(bridgeHandler.getThing().getUID());
+        if (serviceRegistration != null) {
+            CarNetDiscoveryService discoveryService = (CarNetDiscoveryService) bundleContext
+                    .getService(serviceRegistration.getReference());
+            if (discoveryService != null) {
+                discoveryService.deactivate();
+            }
+            serviceRegistration.unregister();
+            discoveryServiceRegistrations.remove(bridgeHandler.getThing().getUID());
+        }
+    }
+
+    @Reference
+    protected void setLocaleProvider(LocaleProvider localeProvider) {
+        this.localeProvider = localeProvider;
+    }
+
+    protected void unsetLocaleProvider(LocaleProvider localeProvider) {
+        this.localeProvider = null;
+    }
+
+    @Reference
+    public void setTranslationProvider(TranslationProvider i18nProvider) {
+        this.i18nProvider = i18nProvider;
+    }
+
+    public void unsetTranslationProvider(TranslationProvider i18nProvider) {
+        this.i18nProvider = null;
+    }
+
+    @Reference
+    protected void setHttpClientFactory(HttpClientFactory httpClientFactory) {
+        this.httpClient = httpClientFactory.getCommonHttpClient();
+    }
+
+    protected void unsetHttpClientFactory(HttpClientFactory httpClientFactory) {
+        this.httpClient = null;
+    }
+
+    @Reference
+    protected void setDynamicStateDescriptionProvider(DynamicStateDescriptionProvider stateDescriptionProvider) {
+        this.stateDescriptionProvider = stateDescriptionProvider;
+    }
+
+    protected void unsetDynamicStateDescriptionProvider(DynamicStateDescriptionProvider stateDescriptionProvider) {
+        this.stateDescriptionProvider = null;
     }
 }

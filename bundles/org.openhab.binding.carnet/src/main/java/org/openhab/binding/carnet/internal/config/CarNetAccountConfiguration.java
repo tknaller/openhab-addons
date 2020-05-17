@@ -10,17 +10,23 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.carnet.internal;
+package org.openhab.binding.carnet.internal.config;
+
+import org.eclipse.jdt.annotation.NonNullByDefault;
 
 /**
- * The {@link CarNetConfiguration} class contains fields mapping thing configuration parameters.
+ * The {@link CarNetVehicleConfiguration} class contains fields mapping thing configuration parameters.
  *
  * @author Markus Michels - Initial contribution
  */
-public class CarNetConfiguration {
+@NonNullByDefault
+public class CarNetAccountConfiguration {
 
-    /**
-     * Sample configuration parameter. Replace with your own.
-     */
-    public String config1;
+    public String brand = "";
+    public String country = "DE";
+
+    public String user = "";
+    public String password = "";
+
+    public Integer pollingInterval = 15;
 }

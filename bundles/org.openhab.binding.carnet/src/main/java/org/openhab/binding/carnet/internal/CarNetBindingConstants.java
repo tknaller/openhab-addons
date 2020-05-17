@@ -12,6 +12,11 @@
  */
 package org.openhab.binding.carnet.internal;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 
@@ -24,11 +29,35 @@ import org.eclipse.smarthome.core.thing.ThingTypeUID;
 @NonNullByDefault
 public class CarNetBindingConstants {
 
-    private static final String BINDING_ID = "carnet";
+    public static final String BINDING_ID = "carnet";
 
     // List of all Thing Type UIDs
-    public static final ThingTypeUID THING_TYPE_SAMPLE = new ThingTypeUID(BINDING_ID, "sample");
+    public static final ThingTypeUID THING_TYPE_ACCOUNT = new ThingTypeUID(BINDING_ID, "account");
+    public static final ThingTypeUID THING_TYPE_VEHICLE = new ThingTypeUID(BINDING_ID, "vehicle");
+    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections
+            .unmodifiableSet(Stream.of(THING_TYPE_ACCOUNT, THING_TYPE_VEHICLE).collect(Collectors.toSet()));
 
     // List of all Channel ids
-    public static final String CHANNEL_1 = "channel1";
+    public static final String CHANNEL_GROUP_GENERAL = "general";
+    public static final String CHANNEL_GENERAL_VIN = "vin";
+
+    // List of all ChannelGroups
+    public static final String CHANNEL_GROUP_STATUS = "status";
+    public static final String CHANNEL_GROUP_GAS = "gas";
+    public static final String CHANNEL_GROUP_MAINT = "maintenance";
+    public static final String CHANNEL_GROUP_WINDOWS = "windows";
+    public static final String CHANNEL_GROUP_DOORS = "doors";
+    public static final String CHANNEL_GROUP_TIRES = "tires";
+
+    public static final String PROPERTY_VIN = "vin";
+    public static final String PROPERTY_BRAND = "brand";
+    public static final String PROPERTY_MODEL = "model";
+    public static final String PROPERTY_COLOR = "color";
+    public static final String PROPERTY_MMI = "mmi";
+    public static final String PROPERTY_ENGINE = "engine";
+    public static final String PROPERTY_TRANS = "transmission";
+
+    public static final String ITEMT_STRING = "String";
+    public static final String ITEMT_NUMBER = "Number";
+    public static final String ITEMT_SWITCH = "Switch";
 }

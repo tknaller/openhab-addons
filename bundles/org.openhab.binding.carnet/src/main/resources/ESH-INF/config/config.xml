@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config-description:config-descriptions
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:config-description="https://openhab.org/schemas/config-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/config-description/v1.0.0 https://openhab.org/schemas/config-description-1.0.0.xsd">
+
+	<config-description uri="bridge-type:carnet:account">
+		<parameter-group name="authentication">
+			<label>Authentication</label>
+			<description>Authentication settings.</description>
+		</parameter-group>
+
+		<parameter name="brand" type="text" required="true">
+			<label>Brand</label>
+			<description>CarNet Brand.</description>
+			<options>
+				<option value="Audi">Audi</option>
+				<option value="VW">Volkswagen</option>
+				<option value="Skoda">Skoda</option>
+			</options>
+		</parameter>
+		<parameter name="country" type="text" required="true">
+			<label>Country</label>
+			<description>Country in which the vehicle was bought.</description>
+			<options>
+				<option value="DE">Germany</option>
+				<option value="BE">Belgium</option>
+			</options>
+		</parameter>
+		<parameter name="user" type="text" required="true" groupName="authentication">
+			<label>Online User</label>
+			<description>User name for the CarNet Login.</description>
+		</parameter>
+		<parameter name="password" type="text" required="true" groupName="authentication">
+			<label>Password</label>
+			<context>password</context>
+			<description>Password to access the CarNet Account.</description>
+		</parameter>
+
+		<parameter name="pollingInterval" type="integer" required="false" min="15" unit="min">
+			<label>Polling Interval</label>
+			<description>Status update interval in minutes.</description>
+			<default>15</default>
+		</parameter>
+	</config-description>
+
+	<config-description uri="thing-type:carnet:vehicle">
+		<parameter-group name="advancedOptions">
+			<label>Advanced Options</label>
+		</parameter-group>
+
+		<parameter name="userId" type="text" required="false">
+			<label>User</label>
+			<description>User ID for HTTP API access.</description>
+		</parameter>
+
+	</config-description>
+
+</config-description:config-descriptions>
