@@ -28,6 +28,7 @@
 		<channels>
 			<channel id="vin" typeId="vin" />
             <channel id="update" typeId="update" />
+            <channel id="lock" typeId="lock" />
 		</channels>
 	</channel-group-type>
 	<channel-group-type id="status">
@@ -61,6 +62,11 @@
 		<description>The Vehicle Identification number - a unique ID to identify the vehicle</description>
 		<state readOnly="true" />
 	</channel-type>
+    <channel-type id="lock">
+        <item-type>Switch</item-type>
+        <label>Lock</label>
+        <description>Lock/unlock doors</description>
+    </channel-type>
     <channel-type id="update">
         <item-type>Switch</item-type>
         <label>Update Car Data</label>

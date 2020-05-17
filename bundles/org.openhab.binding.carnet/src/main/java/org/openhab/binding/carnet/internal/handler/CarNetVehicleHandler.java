@@ -198,7 +198,9 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     updateVehicleStatus();
                     updateState(channelUID.getId(), OnOffType.OFF);
                     break;
-
+                case CHANNEL_GENERAL_LOCK:
+                    api.lockDoor(vin, (OnOffType) command == OnOffType.ON);
+                    break;
                 default:
                     break;
             }
