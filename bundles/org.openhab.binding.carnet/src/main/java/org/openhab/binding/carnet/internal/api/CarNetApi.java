@@ -230,6 +230,9 @@ public class CarNetApi {
         } catch (ExecutionException | InterruptedException | TimeoutException | MalformedURLException e) {
             CarNetApiResult apiResult = new CarNetApiResult(request, e);
             throw new CarNetException("API call failed!", apiResult, e);
+        } catch (Exception e) {
+            CarNetApiResult apiResult = new CarNetApiResult(request, e);
+            throw new CarNetException("Unable to process API result!", apiResult, e);
         }
     }
 

@@ -194,11 +194,16 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
 
             switch (channelUID.getIdWithoutGroup()) {
+                case CHANNEL_GENERAL_UPDATE:
+                    updateVehicleStatus();
+                    updateState(channelUID.getId(), OnOffType.OFF);
+                    break;
+
                 default:
                     break;
             }
-        } catch (NullPointerException e) {
-        } finally {
+        } catch (Exception e) {
+            logger.debug("Unable to process command", e);
         }
     }
 

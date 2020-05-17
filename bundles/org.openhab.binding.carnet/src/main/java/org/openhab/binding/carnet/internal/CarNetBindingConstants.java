@@ -40,6 +40,7 @@ public class CarNetBindingConstants {
     // List of all Channel ids
     public static final String CHANNEL_GROUP_GENERAL = "general";
     public static final String CHANNEL_GENERAL_VIN = "vin";
+    public static final String CHANNEL_GENERAL_UPDATE = "update";
 
     // List of all ChannelGroups
     public static final String CHANNEL_GROUP_STATUS = "status";
