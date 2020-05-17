@@ -35,8 +35,8 @@ import org.openhab.binding.carnet.internal.CarNetDeviceListener;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
+import org.openhab.binding.carnet.internal.api.CarNetAccessToken;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
 import org.openhab.binding.carnet.internal.config.CarNetAccountConfiguration;
@@ -57,7 +57,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
     // private @Nullable final DynamicStateDescriptionProvider stateDescriptionProvider;
     private CarNetAccountConfiguration config = new CarNetAccountConfiguration();
     private final @Nullable CarNetApi api;
-    private CarNetApiToken apiToken = new CarNetApiToken();
+    private CarNetAccessToken apiToken = new CarNetAccessToken();
 
     private @Nullable List<CarNetVehicleInformation> vehicleList;
     private List<CarNetDeviceListener> vehicleInformationListeners = Collections
@@ -124,8 +124,8 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         return true;
     }
 
-    public CarNetApiToken refreshToken() throws CarNetException {
-        CarNetApiToken token = api.getToken();
+    public CarNetAccessToken refreshToken() throws CarNetException {
+        CarNetAccessToken token = api.getToken();
         if (token == null) {
             throw new CarNetException("Unable to get access token!");
         }
@@ -133,7 +133,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         return getToken();
     }
 
-    public CarNetApiToken getToken() {
+    public CarNetAccessToken getToken() {
         return apiToken;
     }
 
