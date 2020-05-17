@@ -19,6 +19,7 @@ import org.eclipse.jetty.client.api.Request;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiErrorMessage;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 
 /**
  * The {@link CarNetApiResult} stores API result information.
@@ -83,9 +84,13 @@ public class CarNetApiResult {
 
             if (response.contains("\"error\":")) {
                 Gson gson = new Gson();
-                apiError = gson.fromJson(response, CarNetApiErrorMessage.class);
+                try {
+                    apiError = gson.fromJson(response, CarNetApiErrorMessage.class);
+                } catch (JsonParseException e) {
+                    apiError.error = "Unable to parse '" + response + "'";
+                    apiError.description = e.getMessage();
+                }
             }
         }
     }
-
 }
