@@ -60,7 +60,7 @@ public class CarNetApi {
     private final Gson gson = new Gson();
     private CarNetAccountConfiguration config = new CarNetAccountConfiguration();
 
-    private @Nullable CarNetAccessToken token = null;
+    private @Nullable CarNetAccessToken apiToken = null;
 
     public CarNetApi(@Nullable HttpClient httpClient) {
         logger.debug("Initializing CarNet API");
@@ -78,23 +78,23 @@ public class CarNetApi {
         createToken();
     }
 
-    @SuppressWarnings("null")
-    protected @Nullable CarNetAccessToken createToken() throws CarNetException {
-        if (token != null && !token.isExpired()) {
-            return token;
+    public @Nullable CarNetAccessToken createToken() throws CarNetException {
+        if (apiToken != null && !apiToken.isExpired()) {
+            return apiToken;
         }
 
+        logger.debug("Requesting new access token");
         Map<String, String> headers = new TreeMap<String, String>();
         headers.put(HttpHeader.CONTENT_TYPE.toString(), CNAPI_CONTENTT_FORM_URLENC);
         String data = "grant_type=password&username=" + config.user + "&password=" + config.password;
         String json = httpPost(CNAPI_URI_GET_TOKEN, null, headers, data, "");
         // process token
-        CarNetApiToken apitoken = gson.fromJson(json, CarNetApiToken.class);
-        if ((apitoken.accessToken == null) || apitoken.accessToken.isEmpty()) {
+        CarNetApiToken token = gson.fromJson(json, CarNetApiToken.class);
+        if ((token.accessToken == null) || token.accessToken.isEmpty()) {
             throw new CarNetException("Authentication failed: Unable to get access token!");
         }
-        token = new CarNetAccessToken(apitoken);
-        return token;
+        apiToken = new CarNetAccessToken(token);
+        return apiToken;
     }
 
     public CarNetVehicleList getVehicles() throws CarNetException {
@@ -145,15 +145,80 @@ public class CarNetApi {
         return history;
     }
 
+    public void lockDoor(String vin, boolean lock) throws CarNetException {
+        Map<String, String> headers = fillAppHeaders();
+        String secToken = getSecurityToken(vin, "rlu_v1/operations/" + (lock ? "LOCK" : "UNLOCK"));
+        String json = httpGet(lock ? CNAPI_URI_DOOR_LOCK : CNAPI_URI_DOOR_UNLOCK, null, headers, vin);
+
+    }
+
+    private String getSecurityToken(String vin, String action) throws CarNetException {
+        Map<String, String> headers = fillAppHeaders();
+        String uri = vin + "/services/" + action + "/security-pin-auth-requested";
+        String json = httpGet(CNAPI_URI_GET_SEC_TOKEN, null, headers, uri);
+
+        /*
+         * body = await self._api.request(
+         * "GET",
+         * "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/vehicles/"
+         * + vin.upper()
+         * + "/services/"
+         * + action
+         * + "/security-pin-auth-requested",
+         * headers=headers,
+         * data=None,
+         * )
+         * secToken = body["securityPinAuthInfo"]["securityToken"]
+         * challenge = body["securityPinAuthInfo"]["securityPinTransmission"]["challenge"]
+         *
+         * # Response
+         * securityPinHash = self._generate_security_pin_hash(challenge)
+         * data = {
+         * "securityPinAuthentication": {
+         * "securityPin": {
+         * "challenge": challenge,
+         * "securityPinHash": securityPinHash,
+         * },
+         * "securityToken": secToken,
+         * }
+         * }
+         *
+         * headers = {
+         * "User-Agent": "okhttp/3.7.0",
+         * "Content-Type": "application/json",
+         * "X-App-Version": "3.14.0",
+         * "X-App-Name": "myAudi",
+         * "Accept": "application/json",
+         * "Authorization": "Bearer " + self.vwToken.get("access_token"),
+         * }
+         *
+         * body = await self._api.request(
+         * "POST",
+         * "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/security-pin-auth-completed",
+         * headers=headers,
+         * data=json.dumps(data),
+         * )
+         * return body["securityToken"]
+         */
+        return "";
+    }
+
     private Map<String, String> fillAppHeaders() throws CarNetException {
         Map<String, String> headers = new TreeMap<String, String>();
         createToken();
-        Validate.notNull(token, "Token must not be null!");
-        String auth = MessageFormat.format("{0} {1} {2}", token.authType, CNAPI_AUTH_AUDI_VERS, token.accessToken);
+        Validate.notNull(apiToken, "Token must not be null!");
+        String auth = MessageFormat.format("{0} {1} {2}", apiToken.authType, CNAPI_AUTH_AUDI_VERS,
+                apiToken.accessToken);
+        headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_VALUE);
         headers.put(CNAPI_HEADER_VERS, CNAPI_HEADER_VERS_VALUE);
-        headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
         headers.put(HttpHeader.AUTHORIZATION.toString(), auth);
+        return headers;
+    }
+
+    private Map<String, String> fillAppHeaders(String securityToken) throws CarNetException {
+        Map<String, String> headers = fillAppHeaders();
+        headers.put("x-mbbSecToken", securityToken);
         return headers;
     }
 
@@ -237,7 +302,7 @@ public class CarNetApi {
     }
 
     public @Nullable CarNetAccessToken getToken() {
-        return token;
+        return apiToken;
     }
 
     /**

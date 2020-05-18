@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.carnet.internal.api;
 
+import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_TOKEN_REFRESH_TRESHOLD_SEC;
+
 import java.text.MessageFormat;
 import java.util.Date;
 
@@ -38,7 +40,7 @@ public class CarNetAccessToken {
     public CarNetAccessToken(CarNetApiToken token) {
         accessToken = token.accessToken;
         authType = token.authType;
-        validity = token.validity;
+        validity = token.validity - API_TOKEN_REFRESH_TRESHOLD_SEC;
         creationTime = new Date();
     }
 
@@ -46,16 +48,21 @@ public class CarNetAccessToken {
         return MessageFormat.format("Authorization: {0} {1} {2}", authType, authVersion, accessToken);
     }
 
+    /**
+     * Check if access token is still valid
+     *
+     * @return false: token invalid or expired
+     */
     public Boolean isExpired() {
+        if (!isValid()) {
+            return false;
+        }
         Date currentTime = new Date();
-
         long diff = currentTime.getTime() - creationTime.getTime();
-
         return (diff / 1000) > validity;
     }
 
     public boolean isValid() {
-        // TO-DO: Check validity
-        return !accessToken.isEmpty();
+        return !accessToken.isEmpty() && (validity != -1);
     }
 }

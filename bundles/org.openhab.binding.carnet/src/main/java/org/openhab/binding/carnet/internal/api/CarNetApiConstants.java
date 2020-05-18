@@ -53,5 +53,10 @@ public class CarNetApiConstants {
     public static final String CNAPI_URI_DESTINATIONS = "destinationfeedservice/mydestinations/v1/{0}/{1}/vehicles/{2}/destinations";
     public static final String CNAPI_URI_HISTORY = "bs/dwap/v1/{0}/{1}/vehicles/{2}/history";
 
+    public static final String CNAPI_URI_GET_SEC_TOKEN = "api/rolesrights/authorization/v2/vehicles/{2}";
+
+    public static final String CNAPI_URI_DOOR_LOCK = "rlu_v1/operations/LOCK";
+    public static final String CNAPI_URI_DOOR_UNLOCK = "rlu_v1/operations/UNLOCK";
+
     public static final String CNAPI_URI_CMD_HONK = "bs/rhf/v1/{0}/{1}/vehicles/{2}/honkAndFlash";
 }

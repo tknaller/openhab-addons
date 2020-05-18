@@ -12,11 +12,15 @@
  */
 package org.openhab.binding.carnet.internal.handler;
 
+import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_TOKEN_REFRESH_INTERVAK_SEC;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -35,7 +39,6 @@ import org.openhab.binding.carnet.internal.CarNetDeviceListener;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
-import org.openhab.binding.carnet.internal.api.CarNetAccessToken;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
@@ -57,11 +60,11 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
     // private @Nullable final DynamicStateDescriptionProvider stateDescriptionProvider;
     private CarNetAccountConfiguration config = new CarNetAccountConfiguration();
     private final @Nullable CarNetApi api;
-    private CarNetAccessToken apiToken = new CarNetAccessToken();
 
     private @Nullable List<CarNetVehicleInformation> vehicleList;
     private List<CarNetDeviceListener> vehicleInformationListeners = Collections
             .synchronizedList(new ArrayList<CarNetDeviceListener>());
+    private @Nullable ScheduledFuture<?> refreshJob;
 
     /**
      * keeps track of the {@link ChannelUID} for the 'apply_tamplate' {@link Channel}
@@ -109,7 +112,6 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         Validate.notNull(api, "API not initialized");
         api.setConfig(config);
         api.initialize();
-        refreshToken();
         refreshProperties(properties);
 
         CarNetVehicleList vehices = api.getVehicles();
@@ -120,21 +122,19 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
             vehicleList.add(vehicle);
         }
         informVehicleInformationListeners(vehicleList);
+
+        setupRefreshJob(5);
         stateChanged(ThingStatus.ONLINE, ThingStatusDetail.NONE, "");
         return true;
     }
 
-    public CarNetAccessToken refreshToken() throws CarNetException {
-        CarNetAccessToken token = api.getToken();
-        if (token == null) {
-            throw new CarNetException("Unable to get access token!");
+    private void refreshToken() {
+        logger.debug("Validating access token");
+        try {
+            api.createToken();
+        } catch (CarNetException e) {
+            logger.debug("Unable to refresh token", e);
         }
-        apiToken = token;
-        return getToken();
-    }
-
-    public CarNetAccessToken getToken() {
-        return apiToken;
     }
 
     public void registerListener(CarNetDeviceListener listener) {
@@ -167,6 +167,28 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
             return;
         }
 
+    }
+
+    /**
+     * Sets up a polling job (using the scheduler) with the given interval.
+     *
+     * @param initialWaitTime The delay before the first refresh. Maybe 0 to immediately
+     *            initiate a refresh.
+     */
+    private void setupRefreshJob(int initialWaitTime) {
+        cancelRefreshJob();
+        logger.trace("Setting up token refresh job, checking every 5 minutes");
+        refreshJob = scheduler.scheduleWithFixedDelay(() -> refreshToken(), initialWaitTime,
+                API_TOKEN_REFRESH_INTERVAK_SEC, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Cancels the polling job (if one was setup).
+     */
+    private void cancelRefreshJob() {
+        if (refreshJob != null) {
+            refreshJob.cancel(false);
+        }
     }
 
     /**
@@ -210,5 +232,6 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
     @Override
     public void dispose() {
         logger.debug("Handler disposed.");
+        cancelRefreshJob();
     }
 }
