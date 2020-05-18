@@ -82,8 +82,13 @@ public class CarNetApi {
 
     public void refreshTokens() throws CarNetException {
         createAccessToken();
-        createIdToken();
-        createSecurityToken();
+        try {
+            createIdToken();
+            createSecurityToken();
+        } catch (CarNetException e) {
+            // Ignore problems with the idToken or securityToken if the accessToken was requested successful
+            logger.debug("Unable to create secondary token: {}", e.toString()); // "normal, no stack trace"
+        }
     }
 
     private CarNetAccessToken createAccessToken() throws CarNetException {

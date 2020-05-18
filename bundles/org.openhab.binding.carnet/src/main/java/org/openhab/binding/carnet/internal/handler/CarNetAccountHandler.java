@@ -133,7 +133,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         try {
             api.refreshTokens();
         } catch (CarNetException e) {
-            logger.debug("Unable to refresh token", e);
+            logger.debug("Unable to refresh tokens", e);
         }
     }
 
