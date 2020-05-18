@@ -93,9 +93,11 @@ public class CarNetApi {
 
         logger.debug("Requesting new access token");
         Map<String, String> headers = new TreeMap<String, String>();
-        headers.put(HttpHeader.CONTENT_TYPE.toString(), CNAPI_CONTENTT_FORM_URLENC);
-        String data = "grant_type=password&username=" + config.user + "&password=" + config.password;
-        String json = httpPost(CNAPI_URI_GET_TOKEN, headers, data, "");
+        Map<String, String> data = new TreeMap<>();
+        data.put("grant_type", "password");
+        data.put("username", config.user);
+        data.put("password", config.password);
+        String json = httpPost(CNAPI_URI_GET_TOKEN, headers, data, "", false);
         // process token
         CarNetApiToken token = gson.fromJson(json, CarNetApiToken.class);
         if ((token.accessToken == null) || token.accessToken.isEmpty()) {
@@ -120,9 +122,9 @@ public class CarNetApi {
         data.put("grant_type", "password");
         data.put("username", config.user);
         data.put("password", config.password);
-        String json = httpPost(CNAPI_URL_GET_AUDI_TOKEN, headers, data, "", true);
+        String json = httpPost(CNAPI_URL_GET_AUDI_TOKEN, headers, data, "", false);
         CarNetApiToken token = gson.fromJson(json, CarNetApiToken.class);
-        if ((token.accessToken == null) || token.accessToken.isEmpty()) {
+        if ((token.idToken == null) || token.idToken.isEmpty()) {
             throw new CarNetException("Authentication failed: Unable to get access token!");
         }
         idToken = new CarNetAccessToken(token);
@@ -133,26 +135,27 @@ public class CarNetApi {
         if (!securityToken.isExpired()) {
             return securityToken;
         }
-
-        Map<String, String> headers = new TreeMap<>();
-        Map<String, String> data = new TreeMap<>();
+        createIdToken();
 
         // "User-Agent": "okhttp/3.7.0",
         // "X-App-Version": "3.14.0",
         // "X-App-Name": "myAudi",
         // "X-Client-Id": "77869e21-e30a-4a92-b016-48ab7d3db1d8",
         // "Host": "mbboauth-1d.prd.ece.vwg-connect.com",
+        Map<String, String> headers = new TreeMap<>();
         headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
         headers.put(CNAPI_HEADER_VERS, "3.14.0");
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
         headers.put(CNAPI_HEADER_CLIENTID, "77869e21-e30a-4a92-b016-48ab7d3db1d8");
         headers.put(CNAPI_HEADER_HOST, "mbboauth-1d.prd.ece.vwg-connect.com");
-        data.put("grant_type", "grant_type");
-        data.put("token", idToken.accessToken);
+
+        Map<String, String> data = new TreeMap<>();
+        data.put("grant_type", "id_token");
+        data.put("token", idToken.idToken);
         data.put("scope", "sc2:fal");
-        String json = httpPost(CNAPI_URL_GET_SEC_TOKEN, headers, data, "", false);
 
         // process token
+        String json = httpPost(CNAPI_URL_GET_SEC_TOKEN, headers, data, "", true);
         CarNetApiToken token = gson.fromJson(json, CarNetApiToken.class);
         if ((token.accessToken == null) || token.accessToken.isEmpty()) {
             throw new CarNetException("Authentication failed: Unable to get access token!");
@@ -166,8 +169,7 @@ public class CarNetApi {
         for (Map.Entry<String, String> e : dataMap.entrySet()) {
             data = data + (data.isEmpty() ? "" : json ? ", " : "&");
             if (!json) {
-                String keyValue = e.getKey() + "=" + e.getValue();
-                data = data + (data.isEmpty() ? keyValue : "&" + keyValue);
+                data = data + e.getKey() + "=" + e.getValue();
             } else {
                 data = data + "\"" + e.getKey() + "\" : \"" + e.getValue() + "\"";
             }
@@ -306,6 +308,9 @@ public class CarNetApi {
                 }
             }
             if ((data != null) && !data.isEmpty()) {
+                boolean json = data.startsWith("{");
+                request.header(HttpHeader.CONTENT_TYPE.toString(),
+                        json ? CNAPI_ACCEPTT_JSON : CNAPI_CONTENTT_FORM_URLENC);
                 request.content(new StringContentProvider(data, StandardCharsets.UTF_8));
             }
 

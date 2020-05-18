@@ -28,6 +28,8 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
 @NonNullByDefault
 public class CarNetAccessToken {
     protected String accessToken = "";
+    protected String idToken = "";
+    protected String refreshToken = "";
     protected String authType = "";
     protected Integer authVersion = 1;
     protected Integer validity = -1;
@@ -38,7 +40,9 @@ public class CarNetAccessToken {
     }
 
     public CarNetAccessToken(CarNetApiToken token) {
-        accessToken = token.accessToken;
+        accessToken = token.accessToken != null ? token.accessToken : "";
+        idToken = token.idToken != null ? token.idToken : "";
+        refreshToken = token.refreshToken != null ? token.refreshToken : "";
         authType = token.authType;
         validity = token.validity - API_TOKEN_REFRESH_TRESHOLD_SEC;
         creationTime = new Date();
@@ -63,6 +67,6 @@ public class CarNetAccessToken {
     }
 
     public boolean isValid() {
-        return !accessToken.isEmpty() && (validity != -1);
+        return (!accessToken.isEmpty() || !idToken.isEmpty()) && (validity != -1);
     }
 }

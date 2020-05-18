@@ -46,12 +46,19 @@ public class CarNetApiGSonDTO {
          * }
          */
 
-        @SerializedName("access_token")
-        public String accessToken;
         @SerializedName("token_type")
         public String authType;
+        @SerializedName("access_token")
+        public String accessToken;
+        @SerializedName("id_token")
+        public String idToken;
+        @SerializedName("refresh_token")
+        public String refreshToken;
+
         @SerializedName("expires_in")
         public Integer validity;
+
+        public String scope;
     }
 
     public static class CarNetVehicleList {
