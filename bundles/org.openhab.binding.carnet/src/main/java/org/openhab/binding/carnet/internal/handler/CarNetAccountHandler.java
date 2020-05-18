@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.carnet.internal.handler;
 
-import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_TOKEN_REFRESH_INTERVAK_SEC;
+import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_TOKEN_REFRESH_INTERVAL_SEC;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -179,7 +179,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         cancelRefreshJob();
         logger.trace("Setting up token refresh job, checking every 5 minutes");
         refreshJob = scheduler.scheduleWithFixedDelay(() -> refreshToken(), initialWaitTime,
-                API_TOKEN_REFRESH_INTERVAK_SEC, TimeUnit.SECONDS);
+                API_TOKEN_REFRESH_INTERVAL_SEC, TimeUnit.SECONDS);
     }
 
     /**
