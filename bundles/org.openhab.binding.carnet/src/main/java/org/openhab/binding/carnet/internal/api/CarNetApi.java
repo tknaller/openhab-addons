@@ -80,6 +80,17 @@ public class CarNetApi {
         refreshTokens();
     }
 
+    /**
+     *
+     * Request/refreh the different tokens
+     * accessToken, which is required to access the API
+     * idToken, which is required to request the securityToken and
+     * securityToken, which is required to perform control functions
+     *
+     * The validity is checked and if token is not expired it will be reused.
+     *
+     * @throws CarNetException
+     */
     public void refreshTokens() throws CarNetException {
         createAccessToken();
         try {
