@@ -60,5 +60,3 @@ The binding wraps those to channels in different groups.
 .sitemap
 
 .rule
-
-
