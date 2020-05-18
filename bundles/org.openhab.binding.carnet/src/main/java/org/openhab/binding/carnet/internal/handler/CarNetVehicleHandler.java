@@ -407,8 +407,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             PointType location = new PointType(latitude, longitude);
             updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_LOCATION, location);
         } catch (CarNetException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.debug("Unable to update vehicle location", e);
         }
     }
 
