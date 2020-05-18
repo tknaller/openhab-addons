@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.PointType;
@@ -158,17 +159,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     }
                 }
             }
-
-            logger.debug("{}: Get Vehicle Position", vin);
-            CarNetVehiclePosition position = api.getVehiclePosition(vin);
-            CNIdMapEntry locationDefinition = new CNIdMapEntry();
-            locationDefinition.id = CHANNEL_GENERAL_LOCATION;
-            locationDefinition.symbolicName = CHANNEL_GENERAL_LOCATION;
-            locationDefinition.channelName = CHANNEL_GENERAL_LOCATION;
-            locationDefinition.itemType = ITEMT_LOCATION;
-            locationDefinition.groupName = CHANNEL_GROUP_GENERAL;
-
-            channels.put(locationDefinition.id, locationDefinition);
 
             Collection<CNIdMapEntry> channelsCol = channels.values();
             createChannels(new ArrayList<CNIdMapEntry>(channelsCol));
@@ -362,9 +352,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 }
             }
 
-            // logger.debug("{}: Get Vehicle Position", vin);
-            // CarNetVehiclePosition position = api.getVehiclePosition(vin);
-
             // CarNetDestinations destinations = api.getDestinations(vin);
 
             // CarNetHistory history = api.getHistory(vin); accountHandler.registerListener(this);
@@ -394,18 +381,20 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         CarNetVehiclePosition position;
         try {
             position = api.getVehiclePosition(vin);
-            CNIdMapEntry locationDefinition = new CNIdMapEntry();
-            locationDefinition.symbolicName = CHANNEL_GENERAL_LOCATION;
-            locationDefinition.channelName = CHANNEL_GENERAL_LOCATION;
-            locationDefinition.itemType = ITEMT_LOCATION;
-            locationDefinition.groupName = CHANNEL_GROUP_GENERAL;
-            DecimalType latitude = new DecimalType(
-                    new Float(position.findCarResponse.carPosition.carCoordinate.latitude) / 1000000);
-            DecimalType longitude = new DecimalType(
-                    new Float(position.findCarResponse.carPosition.carCoordinate.longitude) / 1000000);
+            /*
+             * DecimalType latitude = new DecimalType(
+             * new Float(position.findCarResponse.carPosition.carCoordinate.latitude) / 1000000);
+             * DecimalType longitude = new DecimalType(
+             * new Float(position.findCarResponse.carPosition.carCoordinate.longitude) / 1000000);
+             */
 
-            PointType location = new PointType(latitude, longitude);
-            updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_LOCATION, location);
+            PointType location = new PointType(new DecimalType(position.getLattitude()),
+                    new DecimalType(position.getLongitude()));
+            updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_GEO, location);
+            updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_TIME,
+                    new DateTimeType(position.getCarSentTime()));
+            updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_PARK,
+                    new DateTimeType(position.getParkingTime()));
         } catch (CarNetException e) {
             logger.debug("Unable to update vehicle location", e);
         }

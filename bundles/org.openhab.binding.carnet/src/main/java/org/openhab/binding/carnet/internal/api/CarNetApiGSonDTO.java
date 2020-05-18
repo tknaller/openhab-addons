@@ -175,7 +175,23 @@ public class CarNetApiGSonDTO {
             public String parkingTimeUTC;
         }
 
-        public CNFindCarResponse findCarResponse;
+        private CNFindCarResponse findCarResponse;
+
+        public double getLattitude() {
+            return findCarResponse.carPosition.carCoordinate.latitude / 1000000.0;
+        }
+
+        public double getLongitude() {
+            return findCarResponse.carPosition.carCoordinate.longitude / 1000000.0;
+        }
+
+        public String getCarSentTime() {
+            return findCarResponse.carPosition.timestampCarSent;
+        }
+
+        public String getParkingTime() {
+            return findCarResponse.parkingTimeUTC;
+        }
     }
 
     public static class CarNetDestinations {

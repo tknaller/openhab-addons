@@ -37,14 +37,18 @@ public class CarNetBindingConstants {
     public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections
             .unmodifiableSet(Stream.of(THING_TYPE_ACCOUNT, THING_TYPE_VEHICLE).collect(Collectors.toSet()));
 
-    // List of all Channel ids
+    // List of all ChannelGroups and Channels
     public static final String CHANNEL_GROUP_GENERAL = "general";
     public static final String CHANNEL_GENERAL_VIN = "vin";
     public static final String CHANNEL_GENERAL_LOCK = "lock";
     public static final String CHANNEL_GENERAL_UPDATE = "update";
-    public static final String CHANNEL_GENERAL_LOCATION = "location";
 
-    // List of all ChannelGroups
+    public static final String CHANNEL_GROUP_LOCATION = "locationData";
+    public static final String CHANNEL_LOCATTION_GEO = "position";
+    public static final String CHANNEL_LOCATTION_TIME = "timeCarSent";
+    public static final String CHANNEL_LOCATTION_PARK = "parkingTime";
+
+    // Other channels group in here
     public static final String CHANNEL_GROUP_STATUS = "status";
     public static final String CHANNEL_GROUP_GAS = "gas";
     public static final String CHANNEL_GROUP_MAINT = "maintenance";

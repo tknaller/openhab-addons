@@ -129,7 +129,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
     }
 
     private void refreshToken() {
-        logger.debug("Validating access token");
+        logger.debug("Validating/refreshing tokens");
         try {
             api.refreshTokens();
         } catch (CarNetException e) {
