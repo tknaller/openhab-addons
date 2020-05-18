@@ -55,7 +55,7 @@ public class CarNetAccessToken {
      */
     public Boolean isExpired() {
         if (!isValid()) {
-            return false;
+            return true;
         }
         Date currentTime = new Date();
         long diff = currentTime.getTime() - creationTime.getTime();

@@ -32,11 +32,14 @@ public class CarNetApiConstants {
     // HTTP header attributes
     public static final String CNAPI_HEADER_TYPE = "Accept: application/json";
     public static final String CNAPI_HEADER_APP = "X-App-Name";
-    public static final String CNAPI_HEADER_APP_VALUE = "eRemote";
+    public static final String CNAPI_HEADER_APP_EREMOTE = "eRemote";
+    public static final String CNAPI_HEADER_APP_MYAUDI = "myAudi";
     public static final String CNAPI_HEADER_VERS = "X-App-Version";
     public static final String CNAPI_HEADER_VERS_VALUE = "1.0.0";
     public static final String CNAPI_HEADER_USER_AGENT = "okhttp/2.3.0";
     public static final String CNAPI_AUTH_AUDI_VERS = "1";
+    public static final String CNAPI_HEADER_CLIENTID = "X-Client-Id";
+    public static final String CNAPI_HEADER_HOST = "Host";
 
     public static final String CNAPI_CONTENTT_FORM_URLENC = "application/x-www-form-urlencoded";
     public static final String CNAPI_ACCEPTT_JSON = "application/json";
@@ -53,7 +56,12 @@ public class CarNetApiConstants {
     public static final String CNAPI_URI_DESTINATIONS = "destinationfeedservice/mydestinations/v1/{0}/{1}/vehicles/{2}/destinations";
     public static final String CNAPI_URI_HISTORY = "bs/dwap/v1/{0}/{1}/vehicles/{2}/history";
 
-    public static final String CNAPI_URI_GET_SEC_TOKEN = "api/rolesrights/authorization/v2/vehicles/{2}";
+    public static final String CNAPI_URL_GET_AUDI_TOKEN = "https://id.audi.com/v1/token";
+
+    public static final String CNAPI_URL_GET_SEC_TOKEN = "https://mbboauth-1d.prd.ece.vwg-connect.com/mbbcoauth/mobile/oauth2/v1/token";
+    public static final String CNAPI_URL_GET_CHALLENGE = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/vehicles/";
+    public static final String CNAPI_URL_ACK_CHALLENGE = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/security-pin-auth-completed";
+    // public static final String CNAPI_URI_GET_SEC_TOKEN = "api/rolesrights/authorization/v2/vehicles/{2}";
 
     public static final String CNAPI_URI_DOOR_LOCK = "rlu_v1/operations/LOCK";
     public static final String CNAPI_URI_DOOR_UNLOCK = "rlu_v1/operations/UNLOCK";
