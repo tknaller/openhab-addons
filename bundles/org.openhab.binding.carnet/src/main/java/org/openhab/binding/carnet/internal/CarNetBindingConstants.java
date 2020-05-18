@@ -42,6 +42,7 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_GENERAL_VIN = "vin";
     public static final String CHANNEL_GENERAL_LOCK = "lock";
     public static final String CHANNEL_GENERAL_UPDATE = "update";
+    public static final String CHANNEL_GENERAL_LOCATION = "location";
 
     // List of all ChannelGroups
     public static final String CHANNEL_GROUP_STATUS = "status";
@@ -62,7 +63,8 @@ public class CarNetBindingConstants {
     public static final String ITEMT_STRING = "String";
     public static final String ITEMT_NUMBER = "Number";
     public static final String ITEMT_SWITCH = "Switch";
+    public static final String ITEMT_LOCATION = "Location";
 
-    public static final int API_TOKEN_REFRESH_INTERVAK_SEC = 5 * 60; // interval to check for valid token
+    public static final int API_TOKEN_REFRESH_INTERVAL_SEC = 5 * 60; // interval to check for valid token
     public static final int API_TOKEN_REFRESH_TRESHOLD_SEC = 10 * 60; // refresh token before it expires
 }

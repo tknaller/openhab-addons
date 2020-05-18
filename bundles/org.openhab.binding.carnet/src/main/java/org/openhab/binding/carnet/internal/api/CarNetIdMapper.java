@@ -24,10 +24,13 @@ import org.eclipse.jdt.annotation.Nullable;
  * The {@link CarNetIdMapper} maps status value IDs from the API to channel definitions.
  *
  * @author Markus Michels - Initial contribution
+ * @author Lorenzo Bernardi - Additional contribution
+ *
  */
 @NonNullByDefault
 public class CarNetIdMapper {
     public static class CNIdMapEntry {
+        public String id = "";
         public String symbolicName = "";
         public String channelName = "";
         public String itemType = "";
@@ -65,7 +68,7 @@ public class CarNetIdMapper {
 
         // Maintenance
         add("OIL_LEVEL_AMOUNT_IN_LITERS", "0x0204040001", "oilAmount", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
-        add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarning", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
+        add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
         add("OIL_LEVEL_DIPSTICK_PERCENTAGE", "0x0204040003", "oilPercantage", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
         add("WARNING_OIL_CHANGE", "0x0203010005", "oilWarning", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
         add("MAINTENANCE_INTERVAL_AD_BLUE_RANGE", "0x02040C0001", "distanceAdBlue", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
@@ -110,10 +113,10 @@ public class CarNetIdMapper {
         add("TIREPRESS_LEFT_FRONT_CURRENT", "0x0301060001", "tirePresFrontLeft", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
         add("TIREPRESS_LEFT_FRONT_DESIRED", "0x0301060002");
         add("TIREPRESS_LEFT_REAR_CURRENT", "0x0301060003", "tirePresRearLeft", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
-        add("TIREPRES_LEFT_REAR_DESIRED", "0x0301060004");
-        add("TIREPRES_RIGHT_FRONT_CURRENT", "0x0301060005", "tirePresFrontRight", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
-        add("TIREPRES_RIGHT_FRONT_DESIRED", "0x0301060006");
-        add("TIREPRES_RIGHT_REAR_CURRENT", "0x0301060007", "tirePresRearRight", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
+        add("TIREPRESS_LEFT_REAR_DESIRED", "0x0301060004");
+        add("TIREPRESS_RIGHT_FRONT_CURRENT", "0x0301060005", "tirePresFrontRight", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
+        add("TIREPRESS_RIGHT_FRONT_DESIRED", "0x0301060006");
+        add("TIREPRESS_RIGHT_REAR_CURRENT", "0x0301060007", "tirePresRearRight", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
         add("TIREPRESS_RIGHT_REAR_DESIRED", "0x0301060008");
         add("TIREPRESS_LEFT_FRONT_TIRE_DIFF", "0x030106000B");
         add("TIREPRESS_LEFT_REAR_TIRE_DIFF", "0x030106000C");
@@ -142,6 +145,7 @@ public class CarNetIdMapper {
 
     private void add(String name, String id, String channelName, String itemType, String groupName) {
         CNIdMapEntry entry = new CNIdMapEntry();
+        entry.id = id;
         entry.symbolicName = name;
         entry.channelName = channelName;
         entry.itemType = itemType;
