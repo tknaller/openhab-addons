@@ -232,6 +232,7 @@ public class CarNetApi {
         json = httpPost(
                 "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/security-pin-auth-completed",
                 headers, data, "");
+        logger.debug("serviceToken granted successful!");
 
         CarNetApiToken token = gson.fromJson(json, CarNetApiToken.class);
         if ((token.accessToken == null) || token.accessToken.isEmpty()) {
