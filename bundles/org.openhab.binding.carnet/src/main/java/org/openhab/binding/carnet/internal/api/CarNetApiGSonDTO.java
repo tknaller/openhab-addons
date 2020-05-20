@@ -23,7 +23,7 @@ import com.google.gson.annotations.SerializedName;
  */
 public class CarNetApiGSonDTO {
 
-    public static class CarNetApiErrorMessage {
+    public static class CarNetApiError {
         /*
          * {
          * "error":"invalid_request",
@@ -37,16 +37,16 @@ public class CarNetApiGSonDTO {
         public String description = "";
         public CNErrorMessage2Details details = new CNErrorMessage2Details();
 
-        public CarNetApiErrorMessage() {
+        public CarNetApiError() {
         }
 
-        public CarNetApiErrorMessage(CarNetApiErrorMessage1 format1) {
+        public CarNetApiError(CNApiError1 format1) {
             error = getString(format1.error);
             code = getString(format1.code);
             description = getString(format1.description);
         }
 
-        public CarNetApiErrorMessage(CarNetApiErrorMessage2 format2) {
+        public CarNetApiError(CNApiError2 format2) {
             error = getString(format2.error.error);
             code = getString(format2.error.code);
             description = getString(format2.error.description);
@@ -67,7 +67,7 @@ public class CarNetApiGSonDTO {
         }
     }
 
-    public static class CarNetApiErrorMessage1 {
+    public static class CNApiError1 {
         /*
          * {
          * "error":"invalid_request",
@@ -81,7 +81,7 @@ public class CarNetApiGSonDTO {
         public String description = "";
     }
 
-    public static class CarNetApiErrorMessage2 {
+    public static class CNApiError2 {
         /*
          * {"error":{"errorCode":"gw.error.validation","description":"Invalid Request"}}
          * "error": { "errorCode": "mbbc.rolesandrights.invalidSecurityPin", "description":

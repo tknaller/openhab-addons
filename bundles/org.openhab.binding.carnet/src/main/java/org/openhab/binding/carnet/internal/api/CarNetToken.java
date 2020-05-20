@@ -21,27 +21,29 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
 
 /**
- * The {@link CarNetAccessToken} store the API token information.
+ * The {@link CarNetToken} store the API token information.
  *
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class CarNetAccessToken {
+public class CarNetToken {
     protected String accessToken = "";
     protected String idToken = "";
+    protected String securityToken = "";
     protected String refreshToken = "";
     protected String authType = "";
     protected Integer authVersion = 1;
     protected Integer validity = -1;
     private Date creationTime = new Date();
 
-    public CarNetAccessToken() {
+    public CarNetToken() {
 
     }
 
-    public CarNetAccessToken(CarNetApiToken token) {
+    public CarNetToken(CarNetApiToken token) {
         accessToken = token.accessToken != null ? token.accessToken : "";
         idToken = token.idToken != null ? token.idToken : "";
+        securityToken = token.securityToken != null ? token.securityToken : "";
         refreshToken = token.refreshToken != null ? token.refreshToken : "";
         authType = token.authType;
         validity = token.validity - API_TOKEN_REFRESH_TRESHOLD_SEC;
