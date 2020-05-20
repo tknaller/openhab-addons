@@ -16,6 +16,7 @@ import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
 import java.math.BigInteger;
 import java.net.MalformedURLException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -198,7 +199,6 @@ public class CarNetApi {
          * }
          * }
          */
-
         createSecurityToken();
 
         // "User-Agent": "okhttp/3.7.0",
@@ -219,8 +219,11 @@ public class CarNetApi {
         // Build Hash: SHA512(SPIN+Challenge)
         String json = httpGet(url, headers, vin);
         CarNetSecurityPinAuthInfo authInfo = gson.fromJson(json, CarNetSecurityPinAuthInfo.class);
-        String spin = "7017";
-        String pinHash = sha512(spin + authInfo.securityPinAuthInfo.securityPinTransmission.challenge);
+        ByteBuffer input = ByteBuffer
+                .allocate(config.pin.length() + authInfo.securityPinAuthInfo.securityPinTransmission.challenge.length())
+                .put(config.pin.getBytes())
+                .put(authInfo.securityPinAuthInfo.securityPinTransmission.challenge.getBytes());
+        String pinHash = sha512(input.array());
         logger.debug("Authenticating SPIN, retires={}",
                 authInfo.securityPinAuthInfo.securityPinTransmission.remainingTries);
 
@@ -306,6 +309,10 @@ public class CarNetApi {
     }
 
     public void lockDoor(String vin, boolean lock) throws CarNetException {
+        if (config.pin.isEmpty()) {
+            throw new CarNetException("No SPIN is confirgured, can't perform authentication");
+        }
+
         Map<String, String> headers = fillAppHeaders();
         createServiceToken(vin, CNAPI_SERVICE_REMOTELOCK, lock ? CNAPI_RLU_LOCK : CNAPI_RLU_UNLOCK);
 
@@ -456,14 +463,14 @@ public class CarNetApi {
         throw new MalformedURLException("Unknown brand for base URL");
     }
 
-    public static String sha512(String input) throws CarNetException {
+    public static String sha512(byte[] input) throws CarNetException {
         try {
             // getInstance() method is called with algorithm SHA-512
             MessageDigest md = MessageDigest.getInstance("SHA-512");
 
             // digest() method is called
             // to calculate message digest of the input string returned as array of byte
-            byte[] messageDigest = md.digest(input.getBytes());
+            byte[] messageDigest = md.digest(input);
 
             // Convert byte array into signum representation
             BigInteger no = new BigInteger(1, messageDigest);

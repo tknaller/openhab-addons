@@ -27,6 +27,7 @@ public class CarNetAccountConfiguration {
 
     public String user = "";
     public String password = "";
+    public String pin = "";
 
     public Integer pollingInterval = 15;
 }

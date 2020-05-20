@@ -217,6 +217,10 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
         } catch (CarNetException e) {
             logger.info("Unable to process command: {}", e.toString());
+            CarNetApiErrorMessage res = e.getApiResult().getApiError();
+            if (!res.details.reason.isEmpty()) {
+                logger.debug("{}: {} (user={})", vin, res.details.reason, res.details.user);
+            }
         }
     }
 

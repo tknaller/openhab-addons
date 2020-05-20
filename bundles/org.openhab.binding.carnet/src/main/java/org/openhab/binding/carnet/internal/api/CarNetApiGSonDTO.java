@@ -35,15 +35,22 @@ public class CarNetApiGSonDTO {
         public String code = "";
         @SerializedName("error_description")
         public String description = "";
+        public CNErrorMessage2Details details = new CNErrorMessage2Details();
 
         public CarNetApiErrorMessage() {
+        }
+
+        public CarNetApiErrorMessage(CarNetApiErrorMessage1 format1) {
+            error = getString(format1.error);
+            code = getString(format1.code);
+            description = getString(format1.description);
         }
 
         public CarNetApiErrorMessage(CarNetApiErrorMessage2 format2) {
             error = getString(format2.error.error);
             code = getString(format2.error.code);
             description = getString(format2.error.description);
-
+            details = format2.error.details;
         }
 
         public boolean isError() {
@@ -60,9 +67,26 @@ public class CarNetApiGSonDTO {
         }
     }
 
+    public static class CarNetApiErrorMessage1 {
+        /*
+         * {
+         * "error":"invalid_request",
+         * "error_description": "Missing Username"
+         * }
+         */
+        public String error = "";
+        @SerializedName("error_code")
+        public String code = "";
+        @SerializedName("error_description")
+        public String description = "";
+    }
+
     public static class CarNetApiErrorMessage2 {
         /*
          * {"error":{"errorCode":"gw.error.validation","description":"Invalid Request"}}
+         * "error": { "errorCode": "mbbc.rolesandrights.invalidSecurityPin", "description":
+         * "The Security PIN is invalid.", "details": { "challenge": "", "user": "dYeJ7CoMzqV0obHyRZJSyzkb9d11",
+         * "reason": "SECURITY_PIN_INVALID", "delay": "0" } }}
          */
         public class CNErrorMessage2 {
             public String error = "";
@@ -70,9 +94,17 @@ public class CarNetApiGSonDTO {
             public String code = "";
             @SerializedName("description")
             public String description = "";
+            public CNErrorMessage2Details details = new CNErrorMessage2Details();
         }
 
-        CNErrorMessage2 error;
+        public CNErrorMessage2 error;
+    }
+
+    public static class CNErrorMessage2Details {
+        public String challenge = "";
+        public String user = "";
+        public String reason = "";
+        public String delay = "";
     }
 
     public static class CarNetApiToken {
