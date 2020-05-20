@@ -30,11 +30,49 @@ public class CarNetApiGSonDTO {
          * "error_description": "Missing Username"
          * }
          */
-        String error = "";
+        public String error = "";
         @SerializedName("error_code")
-        String code = "";
+        public String code = "";
         @SerializedName("error_description")
-        String description = "";
+        public String description = "";
+
+        public CarNetApiErrorMessage() {
+        }
+
+        public CarNetApiErrorMessage(CarNetApiErrorMessage2 format2) {
+            error = getString(format2.error.error);
+            code = getString(format2.error.code);
+            description = getString(format2.error.description);
+
+        }
+
+        public boolean isError() {
+            return !error.isEmpty() | !code.isEmpty();
+        }
+
+        @Override
+        public String toString() {
+            return description + "(" + code + " " + error + ")";
+        }
+
+        private String getString(String s) {
+            return s != null ? s : "";
+        }
+    }
+
+    public static class CarNetApiErrorMessage2 {
+        /*
+         * {"error":{"errorCode":"gw.error.validation","description":"Invalid Request"}}
+         */
+        public class CNErrorMessage2 {
+            public String error = "";
+            @SerializedName("errorCode")
+            public String code = "";
+            @SerializedName("description")
+            public String description = "";
+        }
+
+        CNErrorMessage2 error;
     }
 
     public static class CarNetApiToken {
@@ -54,11 +92,62 @@ public class CarNetApiGSonDTO {
         public String idToken;
         @SerializedName("refresh_token")
         public String refreshToken;
+        @SerializedName("securityToken")
+        public String securityToken;
 
         @SerializedName("expires_in")
         public Integer validity;
 
         public String scope;
+    }
+
+    public static class CarNetSecurityPinAuthInfo {
+        /*
+         * {
+         * "securityPinAuthInfo":{
+         * "securityToken":
+         * "CP8RgXJMs+ctnhROMFWmaplkknKFgMChqTuwiFd0bgqS9XySPwt22a8qP0S1HZbH8Qd3bjq/LkmSxZqz+XVUZzqbmsMv/BiMA07UwXPKtGbF9XiZPS0GKAsNdTHIRzfy2F+rC5w75Fc1X1/DCVBmyEb3iAhHLSZIKJOpFzoSLLJIiYzk4EHJ/2o1Kq8l4vea2b9Nx3pkgk0YGrPDRWlUdUflhXdQhubM28pfkc2tcddDZC1tbjA8Pe/GkSC7rHyyRs1v7o1QzporTl1L8xJPbAoBQDv1jBr06d9a1qf6UPu2Lj+OODWE+qAXfvqueWSFyW8cpyZxIQ+2zCBJCGRDCJ6oK7xOQGtV18lMCRrcl4B2tGvvvkT7jQ899FIr/2blu71KFvXWIgFIOW0sa47PV1P0apHl4wcJr87iwcPNNvAr8SJaxIEl55hvKhcfHQ6ouUJriDN2kqodwgAg79qGwHJoabpkeKJuA6Tq1Gyw82UM7DDD3qalahpR6DTL8bY9YcsHkAywqWqISIBcXepiEaaaOXtTFyID7fiAaruQv1oJwFSwPyUIae5G/UNzkAeaghBWpPis73ZKUxiEOXXHpA==",
+         * "securityPinTransmission":{
+         * "hashProcedureVersion":2,
+         * "challenge":"FF5CB5D49FC09393743FB10B33EFBCF0152BEE11774922E7656819498BA1C07C"},
+         * "remainingTries":3}
+         * }
+         */
+        public static class CNSecurityPinAuthInfo {
+            public class CNSecurityPinTransmission {
+                public Integer hashProcedureVersion;
+                public String challenge;
+                public Integer remainingTries;
+            }
+
+            public String securityToken;
+            public CNSecurityPinTransmission securityPinTransmission;
+        }
+
+        public CNSecurityPinAuthInfo securityPinAuthInfo;
+    }
+
+    public static class CarNetSecurityPinAuthentication {
+        /*
+         * "securityPinAuthentication": {
+         * "securityPin": {
+         * "challenge": challenge,
+         * "securityPinHash": securityPinHash,
+         * },
+         * "securityToken": secToken,
+         * }
+         */
+        public static class CNSecuritxPinAuth {
+            public class CNSecurityPin {
+                public String challenge;
+                public String securityPinHash;
+            }
+
+            public CNSecurityPin securityPin = new CNSecurityPin();
+            public String securityToken = "";
+        }
+
+        public CNSecuritxPinAuth securityPinAuthentication = new CNSecuritxPinAuth();
     }
 
     public static class CarNetVehicleList {

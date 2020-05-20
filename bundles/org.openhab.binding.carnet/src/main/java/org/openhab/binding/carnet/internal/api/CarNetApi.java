@@ -14,9 +14,13 @@ package org.openhab.binding.carnet.internal.api;
 
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
@@ -34,10 +38,11 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.openhab.binding.carnet.internal.CarNetException;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiErrorMessage;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetDestinations;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetHistory;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthInfo;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthentication;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
@@ -58,15 +63,17 @@ public class CarNetApi {
     private final Logger logger = LoggerFactory.getLogger(CarNetApi.class);
     private final HttpClient httpClient;
     private final Gson gson = new Gson();
-    private CarNetAccountConfiguration config = new CarNetAccountConfiguration();
+    private CarNetAccountConfiguration config;
 
     private CarNetAccessToken apiToken = new CarNetAccessToken();
     private CarNetAccessToken idToken = new CarNetAccessToken();
     private CarNetAccessToken securityToken = new CarNetAccessToken();
+    private Map<String, CarNetAccessToken> serviceTokens = new HashMap<>();
 
     public CarNetApi(@Nullable HttpClient httpClient) {
         logger.debug("Initializing CarNet API");
         Validate.notNull(httpClient);
+        this.config = new CarNetAccountConfiguration();
         this.httpClient = httpClient;
     }
 
@@ -151,6 +158,7 @@ public class CarNetApi {
         if (!securityToken.isExpired()) {
             return securityToken;
         }
+
         createIdToken();
 
         // "User-Agent": "okhttp/3.7.0",
@@ -171,13 +179,68 @@ public class CarNetApi {
         data.put("scope", "sc2:fal");
 
         // process token
-        String json = httpPost(CNAPI_URL_GET_SEC_TOKEN, headers, data, "", true);
+        String json = httpPost(CNAPI_URL_GET_SEC_TOKEN, headers, data, "", false);
         CarNetApiToken token = gson.fromJson(json, CarNetApiToken.class);
         if ((token.accessToken == null) || token.accessToken.isEmpty()) {
             throw new CarNetException("Authentication failed: Unable to get access token!");
         }
         securityToken = new CarNetAccessToken(token);
         return securityToken;
+    }
+
+    private void createServiceToken(String vin, String service, String action) throws CarNetException {
+        /*
+         * String serviceId = getServiceId(vin, service);
+         * if (serviceTokens.containsKey(serviceId)) {
+         * CarNetAccessToken serviceToken = serviceTokens.get(serviceId);
+         * if (!serviceToken.isExpired()) {
+         * return serviceToken;
+         * }
+         * }
+         */
+
+        createSecurityToken();
+
+        // "User-Agent": "okhttp/3.7.0",
+        // "X-App-Version": "3.14.0",
+        // "X-App-Name": "myAudi",
+        // "Accept": "application/json",
+        // "Authorization": "Bearer " + self.vwToken.get("access_token"),
+        Map<String, String> headers = new TreeMap<>();
+        headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
+        headers.put(CNAPI_HEADER_VERS, "3.14.0");
+        headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
+        headers.put(CNAPI_HEADER_AUTHORIZATION, "Bearer " + securityToken.accessToken);
+        headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
+
+        String url = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/vehicles/"
+                + vin.toUpperCase() + "/services/" + service + "/operations/" + action + "/security-pin-auth-requested";
+
+        // Build Hash: SHA512(SPIN+Challenge)
+        String json = httpGet(url, headers, vin);
+        CarNetSecurityPinAuthInfo authInfo = gson.fromJson(json, CarNetSecurityPinAuthInfo.class);
+        String spin = "7017";
+        String pinHash = sha512(spin + authInfo.securityPinAuthInfo.securityPinTransmission.challenge);
+        logger.debug("Authenticating SPIN, retires={}",
+                authInfo.securityPinAuthInfo.securityPinTransmission.remainingTries);
+
+        CarNetSecurityPinAuthentication pinAuth = new CarNetSecurityPinAuthentication();
+        pinAuth.securityPinAuthentication.securityToken = authInfo.securityPinAuthInfo.securityToken;
+        pinAuth.securityPinAuthentication.securityPin.challenge = authInfo.securityPinAuthInfo.securityPinTransmission.challenge;
+        pinAuth.securityPinAuthentication.securityPin.securityPinHash = pinHash;
+        String data = gson.toJson(pinAuth);
+        json = httpPost(
+                "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/security-pin-auth-completed",
+                headers, data, "");
+
+        CarNetApiToken token = gson.fromJson(json, CarNetApiToken.class);
+        if ((token.accessToken == null) || token.accessToken.isEmpty()) {
+            throw new CarNetException("Authentication failed: Unable to get access token!");
+        }
+    }
+
+    private String getServiceId(String vin, String service) {
+        return vin + "." + service;
     }
 
     private String buildPostData(Map<String, String> dataMap, boolean json) {
@@ -243,9 +306,7 @@ public class CarNetApi {
 
     public void lockDoor(String vin, boolean lock) throws CarNetException {
         Map<String, String> headers = fillAppHeaders();
-        createSecurityToken();
-        // String secToken = getSecurityToken(vin, "rlu_v1/operations/" + (lock ? "LOCK" : "UNLOCK"));
-        // String json = httpGet(lock ? CNAPI_URI_DOOR_LOCK : CNAPI_URI_DOOR_UNLOCK, null, headers, vin);
+        createServiceToken(vin, CNAPI_SERVICE_REMOTELOCK, lock ? CNAPI_RLU_LOCK : CNAPI_RLU_UNLOCK);
 
     }
 
@@ -335,14 +396,11 @@ public class CarNetApi {
             ContentResponse contentResponse = request.send();
             apiResult = new CarNetApiResult(contentResponse);
             String response = contentResponse.getContentAsString().replaceAll("\t", "").replaceAll("\r\n", "").trim();
-            Validate.notNull(response);
 
             // validate response, API errors are reported as Json
             logger.trace("HTTP Response: {}", response);
             if (response.contains("\"error\":")) {
-                CarNetApiErrorMessage error = gson.fromJson(response, CarNetApiErrorMessage.class);
-                throw new CarNetException(
-                        "Authentication failed (" + error.code + ", " + error.error + "): " + error.description);
+                throw new CarNetException("Authentication failed", apiResult);
             }
             if (contentResponse.getStatus() != HttpStatus.OK_200) {
                 throw new CarNetException("API Call failed", apiResult);
@@ -354,9 +412,6 @@ public class CarNetApi {
         } catch (ExecutionException | InterruptedException | TimeoutException | MalformedURLException e) {
             CarNetApiResult apiResult = new CarNetApiResult(request, e);
             throw new CarNetException("API call failed!", apiResult, e);
-        } catch (Exception e) {
-            CarNetApiResult apiResult = new CarNetApiResult(request, e);
-            throw new CarNetException("Unable to process API result!", apiResult, e);
         }
     }
 
@@ -398,5 +453,35 @@ public class CarNetApi {
         // return CNAPI_BASE_URL_SKODA;
         // }
         throw new MalformedURLException("Unknown brand for base URL");
+    }
+
+    public static String sha512(String input) throws CarNetException {
+        try {
+            // getInstance() method is called with algorithm SHA-512
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
+
+            // digest() method is called
+            // to calculate message digest of the input string returned as array of byte
+            byte[] messageDigest = md.digest(input.getBytes());
+
+            // Convert byte array into signum representation
+            BigInteger no = new BigInteger(1, messageDigest);
+
+            // Convert message digest into hex value
+            String hashtext = no.toString(16);
+
+            // Add preceding 0s to make it 32 bit
+            while (hashtext.length() < 32) {
+                hashtext = "0" + hashtext;
+            }
+
+            // return the HashText
+            return hashtext.toUpperCase();
+        }
+
+        // For specifying wrong message digest algorithms
+        catch (NoSuchAlgorithmException e) {
+            throw new CarNetException("SHA512 failed!", e);
+        }
     }
 }

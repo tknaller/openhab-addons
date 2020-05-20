@@ -48,6 +48,7 @@ import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiErrorMessage;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData;
@@ -167,9 +168,12 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
             // CarNetHistory history = api.getHistory(vin);
         } catch (CarNetException e) {
-            if (e.getMessage().toLowerCase().contains("disabled ")) {
+            CarNetApiErrorMessage res = e.getApiResult().getApiError();
+            if (res.description.contains("disabled ")) {
                 // Status service in the vehicle is disabled
-                logger.debug("{}: Status service is disabled, check Data Privacy settings in MMI", vin);
+                String message = "Status service is disabled, check data privacy settings in MMI: " + res;
+                logger.debug("{}: {}", vin, message);
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING, message);
             } else {
                 successful = false;
             }
@@ -211,8 +215,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 default:
                     break;
             }
-        } catch (Exception e) {
-            logger.debug("Unable to process command", e);
+        } catch (CarNetException e) {
+            logger.info("Unable to process command: {}", e.toString());
         }
     }
 

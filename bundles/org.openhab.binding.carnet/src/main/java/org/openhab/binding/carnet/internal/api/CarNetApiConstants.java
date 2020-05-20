@@ -38,6 +38,7 @@ public class CarNetApiConstants {
     public static final String CNAPI_HEADER_VERS_VALUE = "1.0.0";
     public static final String CNAPI_HEADER_USER_AGENT = "okhttp/2.3.0";
     public static final String CNAPI_AUTH_AUDI_VERS = "1";
+    public static final String CNAPI_HEADER_AUTHORIZATION = "Authorization";
     public static final String CNAPI_HEADER_CLIENTID = "X-Client-Id";
     public static final String CNAPI_HEADER_HOST = "Host";
 
@@ -63,8 +64,10 @@ public class CarNetApiConstants {
     public static final String CNAPI_URL_ACK_CHALLENGE = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/security-pin-auth-completed";
     // public static final String CNAPI_URI_GET_SEC_TOKEN = "api/rolesrights/authorization/v2/vehicles/{2}";
 
-    public static final String CNAPI_URI_DOOR_LOCK = "rlu_v1/operations/LOCK";
-    public static final String CNAPI_URI_DOOR_UNLOCK = "rlu_v1/operations/UNLOCK";
+    public static final String CNAPI_SERVICE_REMOTELOCK = "rlu_v1";
+    public static final String CNAPI_RLU_LOCK = "LOCK";
+    public static final String CNAPI_RLU_UNLOCK = "UNLOCK";
 
     public static final String CNAPI_URI_CMD_HONK = "bs/rhf/v1/{0}/{1}/vehicles/{2}/honkAndFlash";
+
 }

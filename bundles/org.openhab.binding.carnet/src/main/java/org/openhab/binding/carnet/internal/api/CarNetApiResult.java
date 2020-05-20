@@ -17,6 +17,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiErrorMessage;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiErrorMessage2;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
@@ -33,8 +34,7 @@ public class CarNetApiResult {
     public String response = "";
     public Integer httpCode = 0;
     public String httpReason = "";
-    @Nullable
-    CarNetApiErrorMessage apiError = null;
+    CarNetApiErrorMessage apiError = new CarNetApiErrorMessage();
 
     public CarNetApiResult() {
     }
@@ -69,6 +69,10 @@ public class CarNetApiResult {
         }
     }
 
+    public CarNetApiErrorMessage getApiError() {
+        return apiError;
+    }
+
     private void fillFromResponse(@Nullable ContentResponse contentResponse) {
         if (contentResponse != null) {
             String r = contentResponse.getContentAsString();
@@ -85,7 +89,11 @@ public class CarNetApiResult {
             if (response.contains("\"error\":")) {
                 Gson gson = new Gson();
                 try {
-                    apiError = gson.fromJson(response, CarNetApiErrorMessage.class);
+                    if (response.contains("\"error_code\": ")) {
+                        apiError = gson.fromJson(response, CarNetApiErrorMessage.class);
+                    } else {
+                        apiError = new CarNetApiErrorMessage(gson.fromJson(response, CarNetApiErrorMessage2.class));
+                    }
                 } catch (JsonParseException e) {
                     apiError.error = "Unable to parse '" + response + "'";
                     apiError.description = e.getMessage();
@@ -93,4 +101,5 @@ public class CarNetApiResult {
             }
         }
     }
+
 }

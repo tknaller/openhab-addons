@@ -74,7 +74,7 @@
 	</channel-type>
 	<channel-type id="lock">
 		<item-type>Switch</item-type>
-		<label>Lock</label>
+		<label>Door Locks</label>
 		<description>Lock/unlock doors</description>
 	</channel-type>
 	<channel-type id="update">

@@ -14,6 +14,7 @@ package org.openhab.binding.carnet.internal;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.Map;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.i18n.LocaleProvider;
 import org.eclipse.smarthome.core.i18n.TranslationProvider;
@@ -40,6 +42,8 @@ import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link CarNetHandlerFactory} is responsible for creating things and thing
@@ -50,6 +54,8 @@ import org.osgi.service.component.annotations.Reference;
 @NonNullByDefault
 @Component(configurationPid = "binding.carnet", service = ThingHandlerFactory.class)
 public class CarNetHandlerFactory extends BaseThingHandlerFactory {
+    private final Logger logger = LoggerFactory.getLogger(CarNetHandlerFactory.class);
+
     /**
      * shared instance of HTTP client for asynchronous calls
      */
@@ -135,7 +141,19 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
 
     @Reference
     protected void setHttpClientFactory(HttpClientFactory httpClientFactory) {
-        this.httpClient = httpClientFactory.getCommonHttpClient();
+        try {
+            // this.httpClient = httpClientFactory.getCommonHttpClient();
+            SslContextFactory ssl = new SslContextFactory();
+            // ssl.setIncludeCipherSuites("^TLS_RSA_.*$");
+            String[] excludedCiphersWithoutTlsRsaExclusion = Arrays.stream(ssl.getExcludeCipherSuites())
+                    .filter(cipher -> !cipher.equals("^TLS_RSA_.*$")).toArray(String[]::new);
+            ssl.setExcludeCipherSuites(excludedCiphersWithoutTlsRsaExclusion);
+            this.httpClient = new HttpClient(ssl);
+            logger.debug("{}", httpClient.dump());
+            this.httpClient.start();
+        } catch (Exception e) {
+            logger.warn("Unable to start HttpClient!");
+        }
     }
 
     protected void unsetHttpClientFactory(HttpClientFactory httpClientFactory) {
