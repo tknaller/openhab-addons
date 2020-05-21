@@ -108,7 +108,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
     @Override
     public void stateChanged(ThingStatus status, ThingStatusDetail detail, String message) {
-        if (status == ThingStatus.ONLINE) {
+        if (status != ThingStatus.ONLINE) {
             initializeThing();
         }
         updateStatus(status, detail, message);
@@ -199,12 +199,13 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        try {
-            if (command instanceof RefreshType) {
-                return;
-            }
+        if (command instanceof RefreshType) {
+            return;
+        }
 
-            switch (channelUID.getIdWithoutGroup()) {
+        String channelId = channelUID.getIdWithoutGroup();
+        try {
+            switch (channelId) {
                 case CHANNEL_GENERAL_UPDATE:
                     updateVehicleStatus();
                     updateState(channelUID.getId(), OnOffType.OFF);
@@ -216,11 +217,12 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     break;
             }
         } catch (CarNetException e) {
-            logger.info("Unable to process command: {}", e.toString());
             CarNetApiError res = e.getApiResult().getApiError();
+            logger.info("{}: Unable to process command {} for channel {}: {}", vin, command, channelId, res);
             if (!res.details.reason.isEmpty()) {
                 logger.debug("{}: {} (user={})", vin, res.details.reason, res.details.user);
             }
+            logger.trace("{}: {}", vin, e.toString(), e);
         }
     }
 

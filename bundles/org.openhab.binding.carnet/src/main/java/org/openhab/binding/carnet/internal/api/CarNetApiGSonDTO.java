@@ -31,9 +31,7 @@ public class CarNetApiGSonDTO {
          * }
          */
         public String error = "";
-        @SerializedName("error_code")
         public String code = "";
-        @SerializedName("error_description")
         public String description = "";
         public CNErrorMessage2Details details = new CNErrorMessage2Details();
 
@@ -50,7 +48,9 @@ public class CarNetApiGSonDTO {
             error = getString(format2.error.error);
             code = getString(format2.error.code);
             description = getString(format2.error.description);
-            details = format2.error.details;
+            if (format2.error.details != null) {
+                details = format2.error.details;
+            }
         }
 
         public boolean isError() {
@@ -74,11 +74,11 @@ public class CarNetApiGSonDTO {
          * "error_description": "Missing Username"
          * }
          */
-        public String error = "";
+        public String error;
         @SerializedName("error_code")
-        public String code = "";
+        public String code;
         @SerializedName("error_description")
-        public String description = "";
+        public String description;
     }
 
     public static class CNApiError2 {
@@ -89,12 +89,12 @@ public class CarNetApiGSonDTO {
          * "reason": "SECURITY_PIN_INVALID", "delay": "0" } }}
          */
         public class CNErrorMessage2 {
-            public String error = "";
+            public String error;
             @SerializedName("errorCode")
-            public String code = "";
+            public String code;
             @SerializedName("description")
-            public String description = "";
-            public CNErrorMessage2Details details = new CNErrorMessage2Details();
+            public String description;
+            public CNErrorMessage2Details details;
         }
 
         public CNErrorMessage2 error;
