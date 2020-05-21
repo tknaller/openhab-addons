@@ -322,4 +322,14 @@ public class CarNetApiGSonDTO {
     public static class CarNetHistory {
         public String destinations;
     }
+
+    public static class CarNetRlUResponse {
+        public class CNRluActionResponse {
+            // {"rluActionResponse":{"requestId":29543257,"vin":"11111111111"}}
+            String requestId;
+            String vin;
+        }
+
+        CNRluActionResponse rluActionResponse;
+    }
 }

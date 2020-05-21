@@ -46,7 +46,9 @@ public class CarNetToken {
         securityToken = token.securityToken != null ? token.securityToken : "";
         refreshToken = token.refreshToken != null ? token.refreshToken : "";
         authType = token.authType;
-        validity = token.validity - API_TOKEN_REFRESH_TRESHOLD_SEC;
+        if (token.validity != null) {
+            validity = token.validity - API_TOKEN_REFRESH_TRESHOLD_SEC;
+        }
         creationTime = new Date();
     }
 

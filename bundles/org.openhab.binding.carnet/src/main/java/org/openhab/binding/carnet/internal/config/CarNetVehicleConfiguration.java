@@ -23,5 +23,6 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 public class CarNetVehicleConfiguration {
     public String pin = "";
 
+    public String vin = "";
     public int refreshInterval = 10 * 60;
 }

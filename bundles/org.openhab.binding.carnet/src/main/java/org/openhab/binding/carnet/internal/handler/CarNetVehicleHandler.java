@@ -76,7 +76,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private final Map<String, Object> channelData = new HashMap<>();
     private final @Nullable CarNetApi api;
     private final @Nullable CarNetTextResources resources;
-    private String vin = "";
     private @Nullable CarNetAccountHandler accountHandler;
     private @Nullable ScheduledFuture<?> pollingJob;
 
@@ -106,9 +105,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         }
         accountHandler = handler;
         accountHandler.registerListener(this);
-
-        initializeThing();
-        setupPollingJob(5);
     }
 
     /**
@@ -131,19 +127,23 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     boolean initializeThing() {
         channelData.clear(); // clear any cached channels
         config = getConfigAs(CarNetVehicleConfiguration.class);
-        api.setConfig(config);
+        Map<String, String> properties = getThing().getProperties();
+        String vin = properties.get(PROPERTY_VIN);
+        if ((vin == null) || vin.isEmpty()) {
+            logger.info("VIN not set (Thing properties)");
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "VIN not set (Thing properties)");
+            return false;
+        }
+        config.vin = vin.toUpperCase();
+
         boolean successful = true;
         String error = "";
-
-        Map<String, String> properties = getThing().getProperties();
-        vin = properties.get(PROPERTY_VIN) != null ? properties.get(PROPERTY_VIN).toUpperCase() : "";
-        Validate.notNull(vin, "Unable to get VIN from thing properties!");
-        Validate.notEmpty(vin, "Unable to get VIN from thing properties!");
-
-        // Try to query status information from vehicle
         try {
             updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_VIN, new StringType(vin));
+            api.setConfig(config);
+            setupPollingJob(5);
 
+            // Try to query status information from vehicle
             Map<String, CNIdMapEntry> channels = new HashMap<String, CNIdMapEntry>();
 
             logger.debug("{}: Get Vehicle Status", vin);
@@ -218,18 +218,18 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     updateState(channelUID.getId(), OnOffType.OFF);
                     break;
                 case CHANNEL_GENERAL_LOCK:
-                    api.lockDoor(vin, (OnOffType) command == OnOffType.ON);
+                    api.lockDoor(config.vin, (OnOffType) command == OnOffType.ON);
                     break;
                 default:
                     break;
             }
         } catch (CarNetException e) {
             CarNetApiError res = e.getApiResult().getApiError();
-            logger.info("{}: Unable to process command {} for channel {}: {}", vin, command, channelId, res);
+            logger.info("{}: Unable to process command {} for channel {}: {}", config.vin, command, channelId, res);
             if (!res.details.reason.isEmpty()) {
-                logger.debug("{}: {} (user={})", vin, res.details.reason, res.details.user);
+                logger.debug("{}: {} (user={})", config.vin, res.details.reason, res.details.user);
             }
-            logger.trace("{}: {}", vin, e.toString(), e);
+            logger.trace("{}: {}", config.vin, e.toString(), e);
         }
     }
 
@@ -315,26 +315,19 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     }
 
     private void updateVehicleStatus() {
-
-        config = getConfigAs(CarNetVehicleConfiguration.class);
-        Validate.notNull(api, "API not yet initialized");
+        // Try to query status information from vehicle
         boolean successful = true;
         String error = "";
-
         Map<String, String> properties = getThing().getProperties();
-        vin = gs(properties.get(PROPERTY_VIN)).toUpperCase();
-        Validate.notEmpty(vin, "Unable to get VIN from thing properties!");
-
-        // Try to query status information from vehicle
         try {
-            logger.debug("{}: Get Vehicle Status", vin);
-            CarNetVehicleStatus status = api.getVehicleStatus(vin);
+            logger.debug("{}: Get Vehicle Status", config.vin);
+            CarNetVehicleStatus status = api.getVehicleStatus(config.vin);
             for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
                 for (CNStatusField field : data.fields) {
                     CNIdMapEntry map = idMap.find(field.id);
                     if (map != null) {
-                        logger.info("Updating {}: {}={}{} (channel {}#{})", vin, map.symbolicName, gs(field.value),
-                                gs(field.unit), gs(map.groupName), gs(map.channelName));
+                        logger.info("Updating {}: {}={}{} (channel {}#{})", config.vin, map.symbolicName,
+                                gs(field.value), gs(field.unit), gs(map.groupName), gs(map.channelName));
                         if (!map.channelName.isEmpty()) {
                             Channel channel = getThing().getChannel(map.groupName + "#" + map.channelName);
                             if (channel != null) {
@@ -362,8 +355,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                             }
                         }
                     } else {
-                        logger.debug("{}: Unknown data field  {}.{}, value={} {}", vin, data.id, field.id, field.value,
-                                field.unit);
+                        logger.debug("{}: Unknown data field  {}.{}, value={} {}", config.vin, data.id, field.id,
+                                field.value, field.unit);
                     }
                 }
             }
@@ -375,7 +368,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         } catch (CarNetException e) {
             if (e.getMessage().toLowerCase().contains("disabled ")) {
                 // Status service in the vehicle is disabled
-                logger.debug("{}: Status service is disabled, check Data Privacy settings in MMI", vin);
+                logger.debug("{}: Status service is disabled, check Data Privacy settings in MMI", config.vin);
             } else {
                 successful = false;
             }
@@ -393,10 +386,10 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     }
 
     private void updateVehicleLocation() {
-        logger.debug("{}: Get Vehicle Position", vin);
+        logger.debug("{}: Get Vehicle Position", config.vin);
         CarNetVehiclePosition position;
         try {
-            position = api.getVehiclePosition(vin);
+            position = api.getVehiclePosition(config.vin);
             /*
              * DecimalType latitude = new DecimalType(
              * new Float(position.findCarResponse.carPosition.carCoordinate.latitude) / 1000000);
