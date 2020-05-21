@@ -349,7 +349,7 @@ public class CarNetApi {
         String json = httpPost("https://msg.volkswagen.de/fs-car/bs/rlu/v1/{0}/{1}/vehicles/{2}/actions", headers, data,
                 "");
         CarNetRlUResponse rsp = gson.fromJson(json, CarNetRlUResponse.class);
-        logger.debug("{}: RLU request accepted, requestId={}", rsp.rluActionResponse.requestId, vin,
+        logger.debug("{}: RLU request {} accepted, requestId={}", rsp.rluActionResponse.requestId, vin, action,
                 rsp.rluActionResponse.vin);
         pendingRequest.put(rsp.rluActionResponse.requestId, new CarNetPendingRequest(rsp, action));
     }
