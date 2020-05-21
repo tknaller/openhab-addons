@@ -80,7 +80,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private @Nullable CarNetAccountHandler accountHandler;
     private @Nullable ScheduledFuture<?> pollingJob;
 
-    private @Nullable CarNetVehicleConfiguration config;
+    private CarNetVehicleConfiguration config = new CarNetVehicleConfiguration();
 
     public CarNetVehicleHandler(Thing thing, @Nullable CarNetApi api, @Nullable CarNetTextResources resources) {
         super(thing);
@@ -99,16 +99,24 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         if (bridge != null) {
             handler = (CarNetAccountHandler) bridge.getHandler();
         }
-        Validate.notNull(handler);
+        if ((handler == null) || (api == null)) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_UNINITIALIZED,
+                    "Account Thing is not initialized!");
+            return;
+        }
         accountHandler = handler;
         accountHandler.registerListener(this);
+
         initializeThing();
         setupPollingJob(5);
     }
 
+    /**
+     * Brigde status changed
+     */
     @Override
     public void stateChanged(ThingStatus status, ThingStatusDetail detail, String message) {
-        if (status != ThingStatus.ONLINE) {
+        if (status == ThingStatus.ONLINE) {
             initializeThing();
         }
         updateStatus(status, detail, message);
@@ -121,10 +129,9 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
      */
     @SuppressWarnings("null")
     boolean initializeThing() {
-
         channelData.clear(); // clear any cached channels
         config = getConfigAs(CarNetVehicleConfiguration.class);
-        Validate.notNull(api, "API not yet initialized");
+        api.setConfig(config);
         boolean successful = true;
         String error = "";
 
@@ -229,7 +236,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     @Override
     public void dispose() {
         cancelPollingJob();
-
         super.dispose();
     }
 
@@ -420,9 +426,11 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         cancelPollingJob();
         logger.trace("Setting up polling job with fixed delay {} minutes, starting in {} seconds", 10, initialWaitTime);
         pollingJob = scheduler.scheduleWithFixedDelay(() -> {
-            updateVehicleStatus();
-            updateVehicleLocation();
-        }, initialWaitTime, 10 * 60, TimeUnit.SECONDS);
+            if (accountHandler.getThing().getStatus() == ThingStatus.ONLINE) {
+                updateVehicleStatus();
+                updateVehicleLocation();
+            }
+        }, initialWaitTime, config.refreshInterval, TimeUnit.SECONDS);
     }
 
     /**

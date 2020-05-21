@@ -36,11 +36,6 @@
 			<context>password</context>
 			<description>Password to access the CarNet Account.</description>
 		</parameter>
-        <parameter name="pin" type="text" required="false" groupName="authentication">
-            <label>PIN</label>
-            <context>password</context>
-            <description>Security PIN to access control functions.</description>
-        </parameter>
 
 		<parameter name="pollingInterval" type="integer" required="false" min="15" unit="min">
 			<label>Polling Interval</label>
@@ -50,15 +45,15 @@
 	</config-description>
 
 	<config-description uri="thing-type:carnet:vehicle">
-		<parameter-group name="advancedOptions">
-			<label>Advanced Options</label>
-		</parameter-group>
+        <parameter-group name="advancedOptions">
+            <label>Advanced Options</label>
+        </parameter-group>
 
-		<parameter name="userId" type="text" required="false">
-			<label>User</label>
-			<description>User ID for HTTP API access.</description>
-		</parameter>
-
+        <parameter name="pin" type="text" required="false" groupName="authentication">
+            <label>PIN</label>
+            <context>password</context>
+            <description>Security PIN to access control functions.</description>
+        </parameter>
 	</config-description>
 
 </config-description:config-descriptions>

@@ -14,8 +14,6 @@ package org.openhab.binding.carnet.internal.api;
 
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -27,6 +25,8 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import javax.xml.bind.DatatypeConverter;
 
 import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -49,6 +49,7 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleLis
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus;
 import org.openhab.binding.carnet.internal.config.CarNetAccountConfiguration;
+import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,10 +62,15 @@ import com.google.gson.Gson;
  */
 @NonNullByDefault
 public class CarNetApi {
+    private class CombinedConfig {
+        CarNetAccountConfiguration account = new CarNetAccountConfiguration();
+        CarNetVehicleConfiguration vehicle = new CarNetVehicleConfiguration();
+    }
+
     private final Logger logger = LoggerFactory.getLogger(CarNetApi.class);
     private final HttpClient httpClient;
     private final Gson gson = new Gson();
-    private CarNetAccountConfiguration config;
+    private CombinedConfig config = new CombinedConfig();
 
     private CarNetToken apiToken = new CarNetToken();
     private CarNetToken idToken = new CarNetToken();
@@ -74,17 +80,19 @@ public class CarNetApi {
     public CarNetApi(@Nullable HttpClient httpClient) {
         logger.debug("Initializing CarNet API");
         Validate.notNull(httpClient);
-        this.config = new CarNetAccountConfiguration();
         this.httpClient = httpClient;
     }
 
     public void setConfig(CarNetAccountConfiguration config) {
         logger.debug("Setting up CarNet API for brand {} ({}), user {}", config.brand, config.country, config.user);
-        this.config = config;
+        this.config.account = config;
+    }
+
+    public void setConfig(CarNetVehicleConfiguration config) {
+        this.config.vehicle = config;
     }
 
     public void initialize() throws CarNetException {
-        Validate.notNull(config, "API initialize: Configuration not available");
         refreshTokens();
     }
 
@@ -119,8 +127,8 @@ public class CarNetApi {
         Map<String, String> headers = new TreeMap<String, String>();
         Map<String, String> data = new TreeMap<>();
         data.put("grant_type", "password");
-        data.put("username", config.user);
-        data.put("password", config.password);
+        data.put("username", config.account.user);
+        data.put("password", config.account.password);
         String json = httpPost(CNAPI_URI_GET_TOKEN, headers, data, "", false);
         // process token
         CarNetApiToken token = gson.fromJson(json, CarNetApiToken.class);
@@ -144,8 +152,8 @@ public class CarNetApi {
                 "openid profile email mbb offline_access mbbuserid myaudi selfservice:read selfservice:write");
         data.put("response_type", "token id_token");
         data.put("grant_type", "password");
-        data.put("username", config.user);
-        data.put("password", config.password);
+        data.put("username", config.account.user);
+        data.put("password", config.account.password);
         String json = httpPost(CNAPI_URL_GET_AUDI_TOKEN, headers, data, "", false);
         CarNetApiToken token = gson.fromJson(json, CarNetApiToken.class);
         if ((token.idToken == null) || token.idToken.isEmpty()) {
@@ -218,7 +226,7 @@ public class CarNetApi {
         // Build Hash: SHA512(SPIN+Challenge)
         String json = httpGet(url, headers, vin);
         CarNetSecurityPinAuthInfo authInfo = gson.fromJson(json, CarNetSecurityPinAuthInfo.class);
-        String pinHash = sha512(config.pin + authInfo.securityPinAuthInfo.securityPinTransmission.challenge);
+        String pinHash = sha512(config.vehicle.pin, authInfo.securityPinAuthInfo.securityPinTransmission.challenge);
         logger.debug("Authenticating SPIN, retires={}",
                 authInfo.securityPinAuthInfo.securityPinTransmission.remainingTries);
 
@@ -304,7 +312,7 @@ public class CarNetApi {
     }
 
     public void lockDoor(String vin, boolean lock) throws CarNetException {
-        if (config.pin.isEmpty()) {
+        if (config.vehicle.pin.isEmpty()) {
             throw new CarNetException("No SPIN is confirgured, can't perform authentication");
         }
 
@@ -439,7 +447,7 @@ public class CarNetApi {
      *
      */
     private String getBrandUrl(String uriTemplate, String args, String vin) throws MalformedURLException {
-        String path = MessageFormat.format(uriTemplate, config.brand, config.country, vin);
+        String path = MessageFormat.format(uriTemplate, config.account.brand, config.account.country, vin);
         if (!uriTemplate.contains("://")) { // no a full URL
             return getUrl(path.isEmpty() ? path : path + (!args.isEmpty() ? "?" + args : ""));
         } else {
@@ -458,10 +466,10 @@ public class CarNetApi {
     }
 
     private String getBaseUrl() throws MalformedURLException {
-        if (config.brand.equalsIgnoreCase(CNAPI_BRAND_AUDI)) {
+        if (config.account.brand.equalsIgnoreCase(CNAPI_BRAND_AUDI)) {
             return CNAPI_BASE_URL_AUDI;
         }
-        if (config.brand.equalsIgnoreCase(CNAPI_BRAND_VW)) {
+        if (config.account.brand.equalsIgnoreCase(CNAPI_BRAND_VW)) {
             return CNAPI_BASE_URL_VW;
         }
         // if (config.brand.equalsIgnoreCase(CNAPI_BRAND_SKODA)) {
@@ -470,17 +478,23 @@ public class CarNetApi {
         throw new MalformedURLException("Unknown brand for base URL");
     }
 
-    public static String sha512(String input) throws CarNetException {
+    public static String sha512(String pin, String challenge) throws CarNetException {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-512");
-            digest.reset();
-            digest.update(input.getBytes("utf8"));
-            return String.format("%0128x", new BigInteger(1, digest.digest())).toUpperCase();
-        }
+            MessageDigest hash = MessageDigest.getInstance("SHA-512");
+            byte[] challengeBytes = DatatypeConverter.parseHexBinary(challenge);
+            byte[] pinBytes = pin.getBytes();
+            byte[] allBytes = new byte[pinBytes.length + challengeBytes.length];
+            System.arraycopy(pinBytes, 0, allBytes, 0, pinBytes.length);
+            System.arraycopy(challengeBytes, 0, allBytes, pinBytes.length, challengeBytes.length);
+            byte[] digest = hash.digest(allBytes);
 
-        // For specifying wrong message digest algorithms
-        catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-            throw new CarNetException("SHA512 failed!", e);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < digest.length; ++i) {
+                sb.append(Integer.toHexString((digest[i] & 0xFF) | 0x100).substring(1, 3));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new CarNetException("sha512() failed", e);
         }
     }
 }
