@@ -63,6 +63,7 @@ public class CarNetApiConstants {
     // public static final String CNAPI_VWURL_CLIMATE_STATUS = VWPRE +
     // "bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater";
     public static final String CNAPI_VWURL_CLIMATE_STATUS = "bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater";
+    public static final String CNAPI_VWURL_CHARGER_STATUS = VWPRE + "bs/batterycharge/v1/{0}/{1}/vehicles/{2}/charger";
     public static final String CNAPI_VWURL_STORED_POS = VWPRE + "bs/cf/v1/{0}/{1}/vehicles/{2}/position";
     public static final String CNAPI_VWURL_TIMER = VWPRE + "bs/departuretimer/v1/{0}/{1}/vehicles/{2}/timer";
     public static final String CNAPI_VWURL_OPERATIONS = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/operationlist/v3/vehicles/{2}";

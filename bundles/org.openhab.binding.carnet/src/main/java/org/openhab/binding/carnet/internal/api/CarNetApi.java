@@ -357,16 +357,17 @@ public class CarNetApi {
     }
 
     public boolean getTimer() throws CarNetException {
-        String json = httpGet(CNAPI_VWURL_TIMER);
+        String json = httpGet(CNAPI_URI_CLIMATER_TIMER);
+        return true;
+    }
+
+    public boolean getChargerStatus() throws CarNetException {
+        String json = httpGet(CNAPI_URI_CHARGER_STATUS);
         return true;
     }
 
     public void lockDoor(boolean lock) throws CarNetException {
         final String action = lock ? CNAPI_RLU_LOCK : CNAPI_RLU_UNLOCK;
-        if (config.vehicle.pin.isEmpty()) {
-            throw new CarNetException("No SPIN is confirgured, can't perform authentication");
-        }
-
         Map<String, String> headers = fillActionHeaders("application/vnd.vwg.mbb.RemoteLockUnlock_v1_0_0+xml",
                 createsecurityToken(CNAPI_SERVICE_REMOTELOCK, action));
         String data = "<?xml version=\"1.0\" encoding= \"UTF-8\" ?><rluAction xmlns=\"http://audi.de/connect/rlu\">"
@@ -374,6 +375,19 @@ public class CarNetApi {
         String json = httpPost("https://msg.volkswagen.de/fs-car/bs/rlu/v1/{0}/{1}/vehicles/{2}/actions", headers, data,
                 "");
         queuePendingAction(json, CNAPI_SERVICE_REMOTELOCK, action);
+    }
+
+    public void controlPreHeating(boolean start) throws CarNetException {
+        final String action = start ? "startPreHeating" : "stopPreHeating";
+        Map<String, String> headers = fillActionHeaders("application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml",
+                createsecurityToken(CNAPI_SERVICE_PREHEATING, CNAPI_RHEATING_ACTION));
+        String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+                + "<performAction xmlns=\"http://audi.de/connect/rs\"><quickstart><active>" + action
+                + "</active></quickstart></performAction>";
+        String json = httpPost(
+                "https://msg.volkswagen.de/fs-car/bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", headers,
+                data, "");
+        queuePendingAction(json, CNAPI_SERVICE_CLIMATISATION, action);
     }
 
     public void climaControl(boolean start) throws CarNetException {
@@ -399,19 +413,6 @@ public class CarNetApi {
         String json = httpPost(
                 "https://msg.volkswagen.de/fs-car/bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", headers,
                 data, "");
-        queuePendingAction(json, CNAPI_SERVICE_CLIMATISATION, action);
-    }
-
-    public void controlPreHeating(boolean start) throws CarNetException {
-        String action = start ? "startPreHeating" : "stopPreHeating";
-        Map<String, String> headers = fillActionHeaders("application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml",
-                createsecurityToken(CNAPI_SERVICE_PREHEATING, CNAPI_RHEATING_ACTION));
-        String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
-                + "<performAction xmlns=\"http://audi.de/connect/rs\"><quickstart><active>" + action
-                + "</active></quickstart></performAction>";
-        String json = httpPost(
-                "https://msg.volkswagen.de/fs-car/bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", headers,
-                data, vwToken.accessToken);
         queuePendingAction(json, CNAPI_SERVICE_CLIMATISATION, action);
     }
 
