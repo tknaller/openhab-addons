@@ -64,7 +64,7 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     private @Nullable LocaleProvider localeProvider;
     private @Nullable TranslationProvider i18nProvider;
     private @Nullable CarNetTextResources resources;
-    private @Nullable CarNetApi api;
+    private CarNetApi api = new CarNetApi();
     private final Map<ThingUID, @Nullable ServiceRegistration<?>> discoveryServiceRegistrations = new HashMap<>();
 
     @Override

@@ -53,8 +53,12 @@ public class CarNetApiGSonDTO {
             }
         }
 
+        public boolean isValid() {
+            return !code.isEmpty() || !error.isEmpty() || !description.isEmpty();
+        }
+
         public boolean isError() {
-            return !error.isEmpty() | !code.isEmpty();
+            return !code.isEmpty() || !error.isEmpty();
         }
 
         @Override
@@ -323,12 +327,14 @@ public class CarNetApiGSonDTO {
         public String destinations;
     }
 
-    public static class CarNetRlUResponse {
+    public static class CarNetActionResponse {
         public class CNRluActionResponse {
             // {"rluActionResponse":{"requestId":29543257,"vin":"11111111111"}}
             String requestId;
             String vin;
         }
+
+        CNRluActionResponse response;
 
         CNRluActionResponse rluActionResponse;
     }

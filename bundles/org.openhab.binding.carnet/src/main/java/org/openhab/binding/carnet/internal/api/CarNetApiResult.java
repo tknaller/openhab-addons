@@ -16,6 +16,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.http.HttpStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNApiError2;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiError;
 
@@ -71,6 +72,10 @@ public class CarNetApiResult {
 
     public CarNetApiError getApiError() {
         return apiError;
+    }
+
+    public boolean isHttpOk() {
+        return httpCode == HttpStatus.OK_200 || httpCode == HttpStatus.ACCEPTED_202;
     }
 
     private void fillFromResponse(@Nullable ContentResponse contentResponse) {

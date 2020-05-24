@@ -41,6 +41,10 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_GROUP_GENERAL = "general";
     public static final String CHANNEL_GENERAL_VIN = "vin";
     public static final String CHANNEL_GENERAL_LOCK = "lock";
+    public static final String CHANNEL_GENERAL_CLIMA = "clima";
+    public static final String CHANNEL_GENERAL_WINHEAT = "windowsHeat";
+    public static final String CHANNEL_GENERAL_PREHEAT = "preHeater";
+    public static final String CHANNEL_GENERAL_CHARGER = "charger";
     public static final String CHANNEL_GENERAL_UPDATE = "update";
 
     public static final String CHANNEL_GROUP_LOCATION = "locationData";

@@ -41,10 +41,10 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.openhab.binding.carnet.internal.CarNetException;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetActionResponse;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetDestinations;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetHistory;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetRlUResponse;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthentication;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
@@ -77,24 +77,32 @@ public class CarNetApi {
         public String requestId = "";
         public Date creationTime = new Date();
 
-        public CarNetPendingRequest(CarNetRlUResponse rsp, String action) {
-            vin = rsp.rluActionResponse.vin;
-            service = "rluActionResponse";
+        public CarNetPendingRequest(String service, String action, CarNetActionResponse rsp) {
+            // normalize the resonse type
+            if (rsp.rluActionResponse != null) {
+                rsp.response = rsp.rluActionResponse;
+            }
+            vin = rsp.response.vin;
+            this.service = service;
             this.action = action;
-            requestId = rsp.rluActionResponse.requestId;
+            requestId = rsp.response.requestId;
         }
     }
 
     private final Logger logger = LoggerFactory.getLogger(CarNetApi.class);
-    private final HttpClient httpClient;
+    private boolean initialzed = false;
     private final Gson gson = new Gson();
+    private HttpClient httpClient = new HttpClient();
     private CombinedConfig config = new CombinedConfig();
 
-    private CarNetToken apiToken = new CarNetToken();
+    private CarNetToken brandToken = new CarNetToken();
     private CarNetToken idToken = new CarNetToken();
     private CarNetToken vwToken = new CarNetToken();
-    private Map<String, CarNetToken> serviceTokens = new HashMap<>();
+    private Map<String, CarNetToken> securityTokens = new HashMap<>();
     private Map<String, CarNetPendingRequest> pendingRequest = new HashMap<>();
+
+    public CarNetApi() {
+    }
 
     public CarNetApi(@Nullable HttpClient httpClient) {
         logger.debug("Initializing CarNet API");
@@ -102,9 +110,14 @@ public class CarNetApi {
         this.httpClient = httpClient;
     }
 
+    public boolean isInitialized() {
+        return initialzed;
+    }
+
     public void setConfig(CarNetAccountConfiguration config) {
         logger.debug("Setting up CarNet API for brand {} ({}), user {}", config.brand, config.country, config.user);
         this.config.account = config;
+        initialzed = true;
     }
 
     public void setConfig(CarNetVehicleConfiguration config) {
@@ -112,6 +125,7 @@ public class CarNetApi {
     }
 
     public void initialize() throws CarNetException {
+        initialzed = true;
         refreshTokens();
     }
 
@@ -137,11 +151,14 @@ public class CarNetApi {
         }
     }
 
-    private CarNetToken createAccessToken() throws CarNetException {
-        if (!apiToken.isExpired()) {
-            return apiToken;
+    private String createAccessToken() throws CarNetException {
+        if (!brandToken.isExpired()) {
+            return brandToken.accessToken;
         }
 
+        if (!isInitialized()) {
+            throw new CarNetException("API not completely initialized");
+        }
         logger.debug("Requesting new access token");
         Map<String, String> headers = new TreeMap<String, String>();
         Map<String, String> data = new TreeMap<>();
@@ -154,13 +171,13 @@ public class CarNetApi {
         if ((token.accessToken == null) || token.accessToken.isEmpty()) {
             throw new CarNetException("Authentication failed: Unable to get access token!");
         }
-        apiToken = new CarNetToken(token);
-        return apiToken;
+        brandToken = new CarNetToken(token);
+        return brandToken.accessToken;
     }
 
-    private CarNetToken createIdToken() throws CarNetException {
+    private String createIdToken() throws CarNetException {
         if (!idToken.isExpired()) {
-            return idToken;
+            return idToken.idToken;
         }
 
         // Get Audi idToken
@@ -179,14 +196,10 @@ public class CarNetApi {
             throw new CarNetException("Authentication failed: Unable to get access token!");
         }
         idToken = new CarNetToken(token);
-        return idToken;
+        return idToken.idToken;
     }
 
-    private CarNetToken createVwToken() throws CarNetException {
-        if (!vwToken.isExpired()) {
-            return vwToken;
-        }
-
+    private String createVwToken() throws CarNetException {
         createIdToken();
 
         // "User-Agent": "okhttp/3.7.0",
@@ -200,7 +213,7 @@ public class CarNetApi {
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
         headers.put(CNAPI_HEADER_CLIENTID, "77869e21-e30a-4a92-b016-48ab7d3db1d8");
         headers.put(CNAPI_HEADER_HOST, "mbboauth-1d.prd.ece.vwg-connect.com");
-        headers.put("Accept", "*/*");
+        headers.put(HttpHeader.ACCEPT.toString(), "*/*");
         Map<String, String> data = new TreeMap<>();
         data.put("grant_type", "id_token");
         data.put("token", idToken.idToken);
@@ -212,15 +225,19 @@ public class CarNetApi {
             throw new CarNetException("Authentication failed: Unable to get access token!");
         }
         vwToken = new CarNetToken(token);
-        return vwToken;
+        return vwToken.accessToken;
     }
 
-    private CarNetToken createServiceToken(String vin, String service, String action) throws CarNetException {
-        String serviceId = getServiceId(vin, service);
-        if (serviceTokens.containsKey(serviceId)) {
-            CarNetToken serviceToken = serviceTokens.get(serviceId);
-            if (!serviceToken.isExpired()) {
-                return serviceToken;
+    private String createsecurityToken(String service, String action) throws CarNetException {
+        if (config.vehicle.pin.isEmpty()) {
+            throw new CarNetException("No SPIN is confirgured, can't perform authentication");
+        }
+
+        String serviceId = getServiceId(config.vehicle.vin, service);
+        if (securityTokens.containsKey(serviceId)) {
+            CarNetToken securityToken = securityTokens.get(serviceId);
+            if (!securityToken.isExpired()) {
+                return securityToken.securityToken;
             }
         }
 
@@ -235,14 +252,13 @@ public class CarNetApi {
         headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
         headers.put(CNAPI_HEADER_VERS, "3.14.0");
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
-        headers.put(CNAPI_HEADER_AUTHORIZATION, "Bearer " + vwToken.accessToken);
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
 
-        String url = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/vehicles/"
-                + vin.toUpperCase() + "/services/" + service + "/operations/" + action + "/security-pin-auth-requested";
-
         // Build Hash: SHA512(SPIN+Challenge)
-        String json = httpGet(url, headers, vin);
+        String url = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/vehicles/"
+                + config.vehicle.vin.toUpperCase() + "/services/" + service + "/operations/" + action
+                + "/security-pin-auth-requested";
+        String json = httpGet(url, headers, vwToken.accessToken);
         CarNetSecurityPinAuthInfo authInfo = gson.fromJson(json, CarNetSecurityPinAuthInfo.class);
         String pinHash = sha512(config.vehicle.pin, authInfo.securityPinAuthInfo.securityPinTransmission.challenge)
                 .toUpperCase();
@@ -256,18 +272,18 @@ public class CarNetApi {
         String data = gson.toJson(pinAuth);
         json = httpPost(
                 "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/security-pin-auth-completed",
-                headers, data, "");
-        CarNetToken serviceToken = new CarNetToken(gson.fromJson(json, CarNetApiToken.class));
-        if ((serviceToken.securityToken == null) || serviceToken.securityToken.isEmpty()) {
+                headers, data);
+        CarNetToken securityToken = new CarNetToken(gson.fromJson(json, CarNetApiToken.class));
+        if (securityToken.securityToken.isEmpty()) {
             throw new CarNetException("Authentication failed: Unable to get access token!");
         }
-        logger.debug("serviceToken granted successful!");
-        if (!serviceTokens.containsKey(serviceId)) {
-            serviceTokens.put(serviceId, serviceToken);
+        logger.debug("securityToken granted successful!");
+        if (!securityTokens.containsKey(serviceId)) {
+            securityTokens.put(serviceId, securityToken);
         } else {
-            serviceTokens.replace(serviceId, serviceToken);
+            securityTokens.replace(serviceId, securityToken);
         }
-        return serviceToken;
+        return securityToken.securityToken;
     }
 
     private String getServiceId(String vin, String service) {
@@ -288,70 +304,115 @@ public class CarNetApi {
     }
 
     public CarNetVehicleList getVehicles() throws CarNetException {
-        Map<String, String> headers = fillAppHeaders();
-        String json = httpGet(CNAPI_URI_VEHICLE_LIST, headers, "");
+        String json = httpGet(CNAPI_URI_VEHICLE_LIST);
         CarNetVehicleList vehiceList = gson.fromJson(json, CarNetVehicleList.class);
         Validate.notNull(vehiceList, "Unable to get vehicle list!");
         return vehiceList;
     }
 
     public CarNetVehicleDetails getVehicleDetails(String vin) throws CarNetException {
-        Map<String, String> headers = fillAppHeaders();
-        String json = httpGet(CNAPI_URI_VEHICLE_DETAILS, headers, vin);
+        String json = httpGet(CNAPI_URI_VEHICLE_DETAILS, vin);
         CarNetVehicleDetails details = gson.fromJson(json, CarNetVehicleDetails.class);
         Validate.notNull(details, "Unable to get vehicle details!");
         return details;
     }
 
-    public CarNetVehicleStatus getVehicleStatus(String vin) throws CarNetException {
-        Map<String, String> headers = fillAppHeaders();
-        String json = httpGet(CNAPI_URI_VEHICLE_STATUS, headers, vin);
+    public CarNetVehicleStatus getVehicleStatus() throws CarNetException {
+        String json = httpGet(CNAPI_URI_VEHICLE_STATUS);
         CarNetVehicleStatus status = gson.fromJson(json, CarNetVehicleStatus.class);
         Validate.notNull(status, "Unable to get vehicle details!");
         return status;
     }
 
-    public CarNetVehiclePosition getVehiclePosition(String vin) throws CarNetException {
-        Map<String, String> headers = fillAppHeaders();
-        String json = httpGet(CNAPI_URI_VEHICLE_POSITION, headers, vin);
+    public CarNetVehiclePosition getVehiclePosition() throws CarNetException {
+        String json = httpGet(CNAPI_URI_VEHICLE_POSITION);
         CarNetVehiclePosition position = gson.fromJson(json, CarNetVehiclePosition.class);
         Validate.notNull(position, "Unable to get vehicle position!");
         return position;
     }
 
-    public CarNetDestinations getDestinations(String vin) throws CarNetException {
-        Map<String, String> headers = fillAppHeaders();
-        String json = httpGet(CNAPI_URI_DESTINATIONS, headers, vin);
+    public CarNetDestinations getDestinations() throws CarNetException {
+        String json = httpGet(CNAPI_URI_DESTINATIONS);
         CarNetDestinations destinations = gson.fromJson(json, CarNetDestinations.class);
         Validate.notNull(destinations, "Unable to get vehicle destinations!");
         return destinations;
     }
 
-    public CarNetHistory getHistory(String vin) throws CarNetException {
-        Map<String, String> headers = fillAppHeaders();
-        String json = httpGet(CNAPI_URI_HISTORY, headers, vin);
+    public CarNetHistory getHistory() throws CarNetException {
+        String json = httpGet(CNAPI_URI_HISTORY);
         CarNetHistory history = gson.fromJson(json, CarNetHistory.class);
         Validate.notNull(history, "Unable to get vehicle history!");
         return history;
     }
 
-    public void lockDoor(String vin, boolean lock) throws CarNetException {
+    public boolean getClimaStatus() throws CarNetException {
+        // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS, fillMmiHeaders());
+        String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
+        return true;
+    }
+
+    public boolean getStoredPosition() throws CarNetException {
+        String json = httpGet(CNAPI_VWURL_STORED_POS);
+        return true;
+    }
+
+    public boolean getTimer() throws CarNetException {
+        String json = httpGet(CNAPI_VWURL_TIMER);
+        return true;
+    }
+
+    public void lockDoor(boolean lock) throws CarNetException {
+        final String action = lock ? CNAPI_RLU_LOCK : CNAPI_RLU_UNLOCK;
         if (config.vehicle.pin.isEmpty()) {
             throw new CarNetException("No SPIN is confirgured, can't perform authentication");
         }
 
-        String action = lock ? CNAPI_RLU_LOCK : CNAPI_RLU_UNLOCK;
-        CarNetToken serviceToken = createServiceToken(vin, CNAPI_SERVICE_REMOTELOCK, action);
-        Map<String, String> headers = fillAppHeaders("application/vnd.vwg.mbb.RemoteLockUnlock_v1_0_0+xml",
-                serviceToken.securityToken);
+        Map<String, String> headers = fillActionHeaders("application/vnd.vwg.mbb.RemoteLockUnlock_v1_0_0+xml",
+                createsecurityToken(CNAPI_SERVICE_REMOTELOCK, action));
         String data = "<?xml version=\"1.0\" encoding= \"UTF-8\" ?><rluAction xmlns=\"http://audi.de/connect/rlu\">"
                 + "<action>" + (lock ? "lock" : "unlock") + "</action></rluAction>";
         String json = httpPost("https://msg.volkswagen.de/fs-car/bs/rlu/v1/{0}/{1}/vehicles/{2}/actions", headers, data,
                 "");
-        CarNetRlUResponse rsp = gson.fromJson(json, CarNetRlUResponse.class);
-        logger.debug("{}: RLU request {} accepted, requestId={}", rsp.rluActionResponse.requestId, vin, action,
-                rsp.rluActionResponse.vin);
-        pendingRequest.put(rsp.rluActionResponse.requestId, new CarNetPendingRequest(rsp, action));
+        queuePendingAction(json, CNAPI_SERVICE_REMOTELOCK, action);
+    }
+
+    public void climaControl(boolean start) throws CarNetException {
+        final String action = start ? "start" : "stop";
+
+        String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>";
+        Map<String, String> headers = fillActionHeaders(
+                "application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml;charset=utf-8", "");
+        data = data + (start
+                ? "<action><type>startClimatisation</type><settings><heaterSource>electric</heaterSource></settings></action>"
+                : "<action><type>stopClimatisation</type></action>");
+        String json = httpPost(
+                "https://msg.volkswagen.de/fs-car/bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", headers,
+                data);
+        queuePendingAction(json, CNAPI_SERVICE_CLIMATISATION, action);
+    }
+
+    public void controlWindowHeating(boolean start) throws CarNetException {
+        final String action = start ? "startWindowHeating" : "stopWindowHeating";
+
+        Map<String, String> headers = fillActionHeaders("application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml", "");
+        String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><action><type>" + action + "</type></action>";
+        String json = httpPost(
+                "https://msg.volkswagen.de/fs-car/bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", headers,
+                data, "");
+        queuePendingAction(json, CNAPI_SERVICE_CLIMATISATION, action);
+    }
+
+    public void controlPreHeating(boolean start) throws CarNetException {
+        String action = start ? "startPreHeating" : "stopPreHeating";
+        Map<String, String> headers = fillActionHeaders("application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml",
+                createsecurityToken(CNAPI_SERVICE_PREHEATING, CNAPI_RHEATING_ACTION));
+        String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+                + "<performAction xmlns=\"http://audi.de/connect/rs\"><quickstart><active>" + action
+                + "</active></quickstart></performAction>";
+        String json = httpPost(
+                "https://msg.volkswagen.de/fs-car/bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", headers,
+                data, vwToken.accessToken);
+        queuePendingAction(json, CNAPI_SERVICE_CLIMATISATION, action);
     }
 
     public boolean checkRluSuccessful(String vin, String requestId) {
@@ -373,13 +434,18 @@ public class CarNetApi {
         return true;
     }
 
-    private Map<String, String> fillAppHeaders() throws CarNetException {
-        createAccessToken();
-        Validate.notNull(apiToken, "Token must not be null!");
+    private void queuePendingAction(String responseJson, String service, String action) {
+        CarNetActionResponse in = gson.fromJson(responseJson, CarNetActionResponse.class);
+        CarNetPendingRequest rsp = new CarNetPendingRequest(service, action, in);
+        logger.debug("{}: Request for {}.{} accepted, requestId={}", rsp.vin, service, action, rsp.requestId);
+        pendingRequest.put(rsp.requestId, rsp);
 
+    }
+
+    private Map<String, String> fillBrandHeaders() throws CarNetException {
         Map<String, String> headers = new TreeMap<String, String>();
-        String auth = MessageFormat.format("{0} {1} {2}", apiToken.authType, CNAPI_AUTH_AUDI_VERS,
-                apiToken.accessToken);
+        String auth = MessageFormat.format("{0} {1} {2}", brandToken.authType, CNAPI_AUTH_AUDI_VERS,
+                createAccessToken());
         headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_EREMOTE);
         headers.put(CNAPI_HEADER_VERS, CNAPI_HEADER_VERS_VALUE);
@@ -388,23 +454,84 @@ public class CarNetApi {
         return headers;
     }
 
-    private Map<String, String> fillAppHeaders(String contentType, String securityToken) throws CarNetException {
-        createAccessToken();
-        Validate.notNull(apiToken, "Token must not be null!");
+    private Map<String, String> fillMmiHeaders() throws CarNetException {
+        /*
+         * 'Accept': 'application/json',
+         * 'X-App-ID': 'de.audi.mmiapp',
+         * 'X-App-Name': 'MMIconnect',
+         * 'X-App-Version': '2.8.3',
+         * 'X-Brand': 'audi',
+         * 'X-Country-Id': 'DE',
+         * 'X-Language-Id': 'de',
+         * 'X-Platform': 'google',
+         * 'User-Agent': 'okhttp/2.7.4',
+         * 'ADRUM_1': 'isModule:true',
+         * 'ADRUM': 'isAray:true'
+         */
+        Map<String, String> headers = new TreeMap<String, String>();
+        headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/2.7.4");
+        headers.put(CNAPI_HEADER_APP, "MMIconnect");
+        headers.put("X-App-ID", "de.audi.mmiapp");
+        headers.put(CNAPI_HEADER_VERS, "2.8.3");
+        headers.put("X-Brand", config.account.brand.toLowerCase());
+        headers.put("X-Country-Id", config.account.country);
+        headers.put("X-Language-Id", config.account.country.toLowerCase());
+        headers.put("X-Platform", "google");
+        headers.put("ADRUM_1", "isModule:true");
+        headers.put("ADRUM", "isAray:true");
+        headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
+
+        // String bearer = brandToken.authType + " " + brandToken.authVersion + " " + createAccessToken();
+        String bearer = createAccessToken();
+        headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + bearer);
+
+        return headers;
+    }
+
+    private Map<String, String> fillActionHeaders() throws CarNetException {
+        /*
+         * "User-Agent": "okhttp/3.7.0",
+         * "X-App-Version": "3.14.0",
+         * "X-App-Name": "myAudi",
+         * "X-Market": "de_DE",
+         * "Accept": "application/json"
+         */
+        String token = createVwToken();
+        Map<String, String> headers = new TreeMap<String, String>();
+        headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
+        headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
+        headers.put(CNAPI_HEADER_VERS, "3.14.0");
+        headers.put("X-Market", "de_DE");
+        headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
+        headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + token);
+        return headers;
+    }
+
+    private Map<String, String> fillActionHeaders(String contentType, String securityToken) throws CarNetException {
+        // "User-Agent": "okhttp/3.7.0",
+        // "Host": "msg.volkswagen.de",
+        // "X-App-Version": "3.14.0",
+        // "X-App-Name": "myAudi",
+        // "Authorization": "Bearer " + self.vwToken.get("access_token"),
+        // "Accept-charset": "UTF-8",
+        // "Content-Type": content_type,
+        // "Accept": "application/json,
+        // application/vnd.vwg.mbb.ChargerAction_v1_0_0+xml,application/vnd.volkswagenag.com-error-v1+xml,application/vnd.vwg.mbb.genericError_v1_0_2+xml,
+        // application/vnd.vwg.mbb.RemoteStandheizung_v2_0_0+xml,
+        // application/vnd.vwg.mbb.genericError_v1_0_2+xml,application/vnd.vwg.mbb.RemoteLockUnlock_v1_0_0+xml,*/*","
+        String token = createVwToken();
 
         Map<String, String> headers = new TreeMap<String, String>();
-        String auth = MessageFormat.format("{0} {1} {2}", apiToken.authType, CNAPI_AUTH_AUDI_VERS,
-                apiToken.accessToken);
-        headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
-        headers.put("Host", "msg.volkswagen.de");
+        headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0)");
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
-        headers.put(CNAPI_HEADER_VERS, CNAPI_HEADER_VERS_VALUE);
+        headers.put(CNAPI_HEADER_VERS, "3.14.0");
         headers.put(HttpHeader.CONTENT_TYPE.toString(), contentType);
         headers.put(HttpHeader.ACCEPT.toString(),
                 "application/json, application/vnd.vwg.mbb.ChargerAction_v1_0_0+xml,application/vnd.volkswagenag.com-error-v1+xml,application/vnd.vwg.mbb.genericError_v1_0_2+xml, application/vnd.vwg.mbb.RemoteStandheizung_v2_0_0+xml, application/vnd.vwg.mbb.genericError_v1_0_2+xml,application/vnd.vwg.mbb.RemoteLockUnlock_v1_0_0+xml,*/*");
-        headers.put("Accept-charset", "UTF-8");
+        headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
 
-        headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + vwToken.accessToken);
+        headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + token);
+        headers.put(HttpHeader.HOST.toString(), "msg.volkswagen.de");
         if (!securityToken.isEmpty()) {
             headers.put("x-mbbSecToken", securityToken);
         }
@@ -417,9 +544,22 @@ public class CarNetApi {
      * @param path Path of the requested resource
      * @return response
      */
-    @Nullable
-    public String httpGet(String uri, Map<String, String> headers, String vin) throws CarNetException {
-        return request(HttpMethod.GET, uri, "", headers, "", vin);
+    public String httpGet(String uri, Map<String, String> headers, String token) throws CarNetException {
+        headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + token);
+        return request(HttpMethod.GET, uri, "", headers, "", config.vehicle.vin, token);
+    }
+
+    public String httpGet(String uri, Map<String, String> headers) throws CarNetException {
+        return request(HttpMethod.GET, uri, "", headers, "", config.vehicle.vin, "");
+    }
+
+    public String httpGet(String uri, String vin) throws CarNetException {
+        Map<String, String> headers = !uri.contains(".volkswagen.") ? fillBrandHeaders() : fillActionHeaders();
+        return request(HttpMethod.GET, uri, "", headers, "", vin, "");
+    }
+
+    public String httpGet(String uri) throws CarNetException {
+        return httpGet(uri, "");
     }
 
     /**
@@ -428,27 +568,26 @@ public class CarNetApi {
      * @param path Path of the requested resource
      * @return response
      */
-    @Nullable
     public String httpPost(String uri, String parms, Map<String, String> headers, String data, String vin)
             throws CarNetException {
-        return request(HttpMethod.POST, uri, parms, headers, data, vin);
+        return request(HttpMethod.POST, uri, parms, headers, data, vin, "");
     }
 
-    @Nullable
-    public String httpPost(String uri, Map<String, String> headers, String data, String vin) throws CarNetException {
-        return request(HttpMethod.POST, uri, "", headers, data, vin);
+    public String httpPost(String uri, Map<String, String> headers, String data) throws CarNetException {
+        return request(HttpMethod.POST, uri, "", headers, data, "", "");
     }
 
-    @Nullable
+    public String httpPost(String uri, Map<String, String> headers, String data, String token) throws CarNetException {
+        return request(HttpMethod.POST, uri, "", headers, data, "", token);
+    }
+
     public String httpPost(String uri, Map<String, String> headers, Map<String, String> data, String vin, boolean json)
             throws CarNetException {
-        return request(HttpMethod.POST, uri, "", headers, buildPostData(data, json), vin);
+        return request(HttpMethod.POST, uri, "", headers, buildPostData(data, json), vin, "");
     }
 
-    @SuppressWarnings("null")
-    @Nullable
-    private String request(HttpMethod method, String uri, String parms, Map<String, String> headers,
-            @Nullable String data, String pvin) throws CarNetException {
+    private String request(HttpMethod method, String uri, String parms, Map<String, String> headers, String data,
+            String pvin, String token) throws CarNetException {
         Request request = null;
         String url = "";
         try {
@@ -456,38 +595,12 @@ public class CarNetApi {
             url = getBrandUrl(uri, parms, vin);
             CarNetApiResult apiResult = new CarNetApiResult(method.toString(), url);
             request = httpClient.newRequest(url).method(method).timeout(CNAPI_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-            if (headers != null) {
-                for (Map.Entry<String, String> h : headers.entrySet()) {
-                    String key = h.getKey();
-                    Validate.notNull(key);
-                    String value = h.getValue();
-                    if (key.equals(HttpHeader.USER_AGENT.toString())) {
-                        request.header(key, value);
-                        request.agent(value);
-                    } else if (key.equals(HttpHeader.USER_AGENT.toString())) {
-                        request.accept(value);
-                    } else {
-                        if ((value != null) && !value.isEmpty()) {
-                            request.header(key, value);
-                        }
-                    }
-                }
-            }
-            if ((data != null) && !data.isEmpty()) {
-                StringContentProvider postData;
-                if (request.getHeaders().contains(HttpHeader.CONTENT_TYPE)) {
-                    postData = new StringContentProvider(data, StandardCharsets.UTF_8);
-                } else {
-                    boolean json = data.startsWith("{");
-                    postData = new StringContentProvider(json ? CNAPI_ACCEPTT_JSON : CNAPI_CONTENTT_FORM_URLENC, data,
-                            StandardCharsets.UTF_8);
-                }
-                request.content(postData);
-                request.header("Content-Length", Long.toString(postData.getLength()));
-            }
+            fillHttpHeaders(request, headers, token);
+            fillPostData(request, data);
 
             // Do request and get response
-            logger.debug("HTTP {} {}, data='{}', headers={}", method, url, data, request.getHeaders());
+            logger.debug("HTTP {} {}, data='{}', headers={}", request.getMethod(), request.getURI(), data,
+                    request.getHeaders());
             ContentResponse contentResponse = request.send();
             apiResult = new CarNetApiResult(contentResponse);
             String response = contentResponse.getContentAsString().replaceAll("\t", "").replaceAll("\r\n", "").trim();
@@ -511,10 +624,6 @@ public class CarNetApi {
         }
     }
 
-    public @Nullable CarNetToken getToken() {
-        return apiToken;
-    }
-
     /**
      * Constructs an URL from the stored information, a specified path and a specified argument string
      *
@@ -525,6 +634,40 @@ public class CarNetApi {
             return getUrl(path.isEmpty() ? path : path + (!args.isEmpty() ? "?" + args : ""));
         } else {
             return path + (!args.isEmpty() ? "?" + args : "");
+        }
+    }
+
+    private void fillHttpHeaders(Request request, Map<String, String> headers, String token) {
+        if (!headers.isEmpty()) {
+            for (Map.Entry<String, String> h : headers.entrySet()) {
+                String key = h.getKey();
+                String value = h.getValue();
+                if (key.equals(HttpHeader.USER_AGENT.toString())) {
+                    request.agent(value);
+                } else if (key.equals(HttpHeader.ACCEPT.toString())) {
+                    request.accept(value);
+                } else {
+                    if (!value.isEmpty()) {
+                        request.header(key, value);
+                    }
+                }
+            }
+        }
+    }
+
+    private void fillPostData(Request request, String data) {
+        if (!data.isEmpty()) {
+            StringContentProvider postData;
+            if (request.getHeaders().contains(HttpHeader.CONTENT_TYPE)) {
+                String contentType = request.getHeaders().get(HttpHeader.CONTENT_TYPE);
+                postData = new StringContentProvider(contentType, data, StandardCharsets.UTF_8);
+            } else {
+                boolean json = data.startsWith("{");
+                postData = new StringContentProvider(json ? CNAPI_ACCEPTT_JSON : CNAPI_CONTENTT_FORM_URLENC, data,
+                        StandardCharsets.UTF_8);
+            }
+            request.content(postData);
+            request.header(HttpHeader.CONTENT_LENGTH, Long.toString(postData.getLength()));
         }
     }
 

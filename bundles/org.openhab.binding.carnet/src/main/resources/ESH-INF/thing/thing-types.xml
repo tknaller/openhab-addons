@@ -29,6 +29,10 @@
 		<channels>
 			<channel id="vin" typeId="vin" />
 			<channel id="lock" typeId="lock" />
+            <channel id="clima" typeId="clima" />
+            <channel id="windowsHeat" typeId="windowsHeat" />
+            <channel id="preHeater" typeId="preHeater" />
+            <channel id="charger" typeId="charger" />
 			<channel id="update" typeId="update" />
 		</channels>
 	</channel-group-type>
@@ -75,8 +79,28 @@
 	<channel-type id="lock">
 		<item-type>Switch</item-type>
 		<label>Door Locks</label>
-		<description>Lock/unlock doors</description>
+		<description>Lock/unlock doors, requires SPIN</description>
 	</channel-type>
+    <channel-type id="clima">
+        <item-type>Switch</item-type>
+        <label>A/C</label>
+        <description>Start/Stop A/C</description>
+    </channel-type>
+    <channel-type id="windowsHeat">
+        <item-type>Switch</item-type>
+        <label>Window Heat</label>
+        <description>Start/Stop window heating</description>
+    </channel-type>
+    <channel-type id="preHeater">
+        <item-type>Switch</item-type>
+        <label>Pre Heater</label>
+        <description>Start/Stop pre-heater</description>
+    </channel-type>
+    <channel-type id="charger">
+        <item-type>Switch</item-type>
+        <label>Charger</label>
+        <description>Set battery charger</description>
+    </channel-type>
 	<channel-type id="update">
 		<item-type>Switch</item-type>
 		<label>Update Car Data</label>
