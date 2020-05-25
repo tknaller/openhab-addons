@@ -13,7 +13,7 @@
 			<channel-group id="general" typeId="general" />
 			<channel-group id="status" typeId="status" />
 			<channel-group id="localtionData" typeId="localtionData" />
-			<channel-group id="gas" typeId="gas" />
+			<channel-group id="range" typeId="range" />
 			<channel-group id="windows" typeId="windows" />
 			<channel-group id="doors" typeId="doors" />
 			<channel-group id="tires" typeId="tires" />
@@ -29,10 +29,10 @@
 		<channels>
 			<channel id="vin" typeId="vin" />
 			<channel id="lock" typeId="lock" />
-            <channel id="clima" typeId="clima" />
-            <channel id="windowsHeat" typeId="windowsHeat" />
-            <channel id="preHeater" typeId="preHeater" />
-            <channel id="charger" typeId="charger" />
+			<channel id="clima" typeId="clima" />
+			<channel id="windowsHeat" typeId="windowsHeat" />
+			<channel id="preHeater" typeId="preHeater" />
+			<channel id="charger" typeId="charger" />
 			<channel id="update" typeId="update" />
 		</channels>
 	</channel-group-type>
@@ -49,9 +49,9 @@
 			<channel id="parkingTime" typeId="parkingTime" />
 		</channels>
 	</channel-group-type>
-	<channel-group-type id="gas">
-		<label>Gas / Electrical</label>
-		<description>Status values around gas or electrical</description>
+	<channel-group-type id="range">
+		<label>Range</label>
+		<description>Status values around gas or electrical ranges</description>
 	</channel-group-type>
 	<channel-group-type id="maintenance">
 		<label>Maintenance</label>
@@ -81,26 +81,26 @@
 		<label>Door Locks</label>
 		<description>Lock/unlock doors, requires SPIN</description>
 	</channel-type>
-    <channel-type id="clima">
-        <item-type>Switch</item-type>
-        <label>A/C</label>
-        <description>Start/Stop A/C</description>
-    </channel-type>
-    <channel-type id="windowsHeat">
-        <item-type>Switch</item-type>
-        <label>Window Heat</label>
-        <description>Start/Stop window heating</description>
-    </channel-type>
-    <channel-type id="preHeater">
-        <item-type>Switch</item-type>
-        <label>Pre Heater</label>
-        <description>Start/Stop pre-heater</description>
-    </channel-type>
-    <channel-type id="charger">
-        <item-type>Switch</item-type>
-        <label>Charger</label>
-        <description>Set battery charger</description>
-    </channel-type>
+	<channel-type id="clima">
+		<item-type>Switch</item-type>
+		<label>A/C</label>
+		<description>Start/Stop A/C</description>
+	</channel-type>
+	<channel-type id="windowsHeat">
+		<item-type>Switch</item-type>
+		<label>Window Heat</label>
+		<description>Start/Stop window heating</description>
+	</channel-type>
+	<channel-type id="preHeater">
+		<item-type>Switch</item-type>
+		<label>Pre Heater</label>
+		<description>Start/Stop pre-heater</description>
+	</channel-type>
+	<channel-type id="charger">
+		<item-type>Switch</item-type>
+		<label>Charger</label>
+		<description>Set battery charger</description>
+	</channel-type>
 	<channel-type id="update">
 		<item-type>Switch</item-type>
 		<label>Update Car Data</label>

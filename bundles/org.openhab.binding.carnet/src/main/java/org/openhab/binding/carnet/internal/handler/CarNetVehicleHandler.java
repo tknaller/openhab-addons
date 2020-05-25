@@ -235,17 +235,9 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
         }
 
-        try {
-            api.getClimaStatus();
-            api.getTimer();
-        } catch (CarNetException e) {
-
-        }
-
         if (successful) {
             updateStatus(ThingStatus.ONLINE);
         } else {
-
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
         }
         return successful;
@@ -346,11 +338,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     }
                 }
             }
-
-            // CarNetDestinations destinations = api.getDestinations(vin);
-
-            // CarNetHistory history = api.getHistory(vin); accountHandler.registerListener(this);
-
         } catch (CarNetException e) {
             if (e.getMessage().toLowerCase().contains("disabled ")) {
                 // Status service in the vehicle is disabled
@@ -362,11 +349,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
         if (successful) {
             updateStatus(ThingStatus.ONLINE);
-            // try {
-            // } catch (CarNetException e) {
-            // }
-        }
-        if (!successful) {
+        } else {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
         }
     }
@@ -376,13 +359,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         CarNetVehiclePosition position;
         try {
             position = api.getVehiclePosition();
-            /*
-             * DecimalType latitude = new DecimalType(
-             * new Float(position.findCarResponse.carPosition.carCoordinate.latitude) / 1000000);
-             * DecimalType longitude = new DecimalType(
-             * new Float(position.findCarResponse.carPosition.carCoordinate.longitude) / 1000000);
-             */
-
             PointType location = new PointType(new DecimalType(position.getLattitude()),
                     new DecimalType(position.getLongitude()));
             updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_GEO, location);

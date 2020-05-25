@@ -418,7 +418,7 @@ public class CarNetApi {
     }
 
     public boolean checkRluSuccessful(String vin, String requestId) {
-        logger.debug("{}: Checking for RLU status, requestId=", vin, requestId);
+        logger.debug("{}: Checking for RLU status, requestId={}", vin, requestId);
         return checkRequestSuccessful(
                 "https://msg.volkswagen.de/fs-car/bs/rlu/v1/{0}/{1}/vehicles/{2}/requests/" + requestId + "/status");
     }
