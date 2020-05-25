@@ -241,7 +241,7 @@ public class CarNetApi {
             }
         }
 
-        createVwToken();
+        String accessToken = createVwToken();
 
         // "User-Agent": "okhttp/3.7.0",
         // "X-App-Version": "3.14.0",
@@ -258,7 +258,7 @@ public class CarNetApi {
         String url = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/vehicles/"
                 + config.vehicle.vin.toUpperCase() + "/services/" + service + "/operations/" + action
                 + "/security-pin-auth-requested";
-        String json = httpGet(url, headers, vwToken.accessToken);
+        String json = httpGet(url, headers, accessToken);
         CarNetSecurityPinAuthInfo authInfo = gson.fromJson(json, CarNetSecurityPinAuthInfo.class);
         String pinHash = sha512(config.vehicle.pin, authInfo.securityPinAuthInfo.securityPinTransmission.challenge)
                 .toUpperCase();
@@ -346,8 +346,9 @@ public class CarNetApi {
     }
 
     public boolean getClimaStatus() throws CarNetException {
-        // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS, fillMmiHeaders());
-        String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
+        String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS, fillMmiHeaders());
+        // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
+        // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
         return true;
     }
 
@@ -482,8 +483,7 @@ public class CarNetApi {
         headers.put("ADRUM", "isAray:true");
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
 
-        // String bearer = brandToken.authType + " " + brandToken.authVersion + " " + createAccessToken();
-        String bearer = createAccessToken();
+        String bearer = brandToken.authType + " " + brandToken.authVersion + " " + createAccessToken();
         headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + bearer);
 
         return headers;
@@ -505,6 +505,7 @@ public class CarNetApi {
         headers.put("X-Market", "de_DE");
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
         headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + token);
+        headers.put(HttpHeader.CONTENT_TYPE.toString(), CNAPI_CONTENTT_FORM_URLENC);
         return headers;
     }
 

@@ -236,6 +236,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         }
 
         try {
+            api.getClimaStatus();
             api.getTimer();
         } catch (CarNetException e) {
 
