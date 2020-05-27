@@ -49,7 +49,7 @@ public class CarNetBindingConstants {
 
     public static final String CHANNEL_GROUP_LOCATION = "locationData";
     public static final String CHANNEL_LOCATTION_GEO = "position";
-    public static final String CHANNEL_LOCATTION_TIME = "timeCarSent";
+    public static final String CHANNEL_LOCATTION_TIME = "lastUpdate";
     public static final String CHANNEL_LOCATTION_PARK = "parkingTime";
 
     // Other channels group in here
@@ -74,5 +74,5 @@ public class CarNetBindingConstants {
     public static final String ITEMT_LOCATION = "Location";
 
     public static final int API_TOKEN_REFRESH_INTERVAL_SEC = 5 * 60; // interval to check for valid token
-    public static final int API_TOKEN_REFRESH_TRESHOLD_SEC = 10 * 60; // refresh token before it expires
+    public static final int API_REQUEST_TIMEOUT = 60;
 }

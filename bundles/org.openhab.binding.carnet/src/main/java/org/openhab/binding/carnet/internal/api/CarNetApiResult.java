@@ -17,8 +17,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.http.HttpStatus;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNApiError2;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiError;
+import org.openhab.binding.carnet.internal.api.CarNetApiError.CNApiError2;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
@@ -52,7 +51,6 @@ public class CarNetApiResult {
         this.response = response;
     }
 
-    @SuppressWarnings("null")
     public CarNetApiResult(@Nullable ContentResponse contentResponse) {
         fillFromResponse(contentResponse);
     }
@@ -106,5 +104,4 @@ public class CarNetApiResult {
             }
         }
     }
-
 }

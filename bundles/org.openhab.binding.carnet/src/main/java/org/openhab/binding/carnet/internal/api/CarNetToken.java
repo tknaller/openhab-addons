@@ -12,13 +12,11 @@
  */
 package org.openhab.binding.carnet.internal.api;
 
-import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_TOKEN_REFRESH_TRESHOLD_SEC;
-
 import java.text.MessageFormat;
 import java.util.Date;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiToken;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNApiToken;
 
 /**
  * The {@link CarNetToken} store the API token information.
@@ -32,24 +30,34 @@ public class CarNetToken {
     protected String securityToken = "";
     protected String refreshToken = "";
     protected String authType = "";
-    protected Integer authVersion = 1;
-    protected Integer validity = -1;
+    protected int authVersion = 1;
+    protected int validity = -1;
+    protected String service = "";
     private Date creationTime = new Date();
 
     public CarNetToken() {
 
     }
 
-    public CarNetToken(CarNetApiToken token) {
+    public CarNetToken(CNApiToken token) {
         accessToken = token.accessToken != null ? token.accessToken : "";
         idToken = token.idToken != null ? token.idToken : "";
         securityToken = token.securityToken != null ? token.securityToken : "";
         refreshToken = token.refreshToken != null ? token.refreshToken : "";
         authType = token.authType;
         if (token.validity != null) {
-            validity = token.validity - API_TOKEN_REFRESH_TRESHOLD_SEC;
+            int treshhold = token.validity - new Double(token.validity * 0.9).intValue();
+            validity = token.validity - treshhold;
+            validity = 30;
         }
         creationTime = new Date();
+        if (!isValid()) {
+            invalidate();
+        }
+    }
+
+    public void setService(String service) {
+        this.service = service;
     }
 
     public String getHttpHeader() {
@@ -71,6 +79,17 @@ public class CarNetToken {
     }
 
     public boolean isValid() {
-        return (!accessToken.isEmpty() || !idToken.isEmpty()) && (validity != -1);
+        return (!accessToken.isEmpty() || !idToken.isEmpty() || !securityToken.isEmpty()) && (validity != -1);
+    }
+
+    public void invalidate() {
+        validity = -1;
+    }
+
+    @Override
+    public String toString() {
+        String token = !securityToken.isEmpty() ? securityToken
+                : !idToken.isEmpty() ? idToken : !accessToken.isEmpty() ? accessToken : "NULL";
+        return token + creationTime + ", V=" + validity;
     }
 }

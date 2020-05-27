@@ -27,7 +27,8 @@ public class CarNetApiConstants {
 
     public static final String CNAPI_BRAND_AUDI = "Audi";
     public static final String CNAPI_BRAND_VW = "VW";
-    public static final String CNAPI_BRAND_SKODE = "Skoda";
+    public static final String CNAPI_BRAND_SKODA = "Skoda";
+    public static final String CNAPI_BRAND_GO = "Go"; // WE Connect Go
 
     // HTTP header attributes
     public static final String CNAPI_HEADER_TYPE = "Accept: application/json";
@@ -74,7 +75,10 @@ public class CarNetApiConstants {
     public static final String CNAPI_VWURL_OPERATIONS = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/operationlist/v3/vehicles/{2}";
 
     public static final String CNAPI_AUDIURL_OPERATIONS = "https://msg.audi.de/myaudi/vehicle-management/v1/vehicles";
-    public static final String CNAPI_URL_GET_AUDI_TOKEN = "https://id.audi.com/v1/token";
+
+    public static final String CNAPI_URL_AUDI_GET_TOKEN = "https://id.audi.com/v1/token";
+    public static final String CNAPI_URL_GO_GET_TOKEN = "https://id.audi.com/v1/token";
+    public static final String CNAPI_URL_DEF_GET_TOKEN = "https://tokenrefreshservice.apps.emea.vwapps.io/refreshTokens";
 
     public static final String CNAPI_SERVICE_REMOTELOCK = "rlu_v1";
     public static final String CNAPI_RLU_LOCK = "LOCK";

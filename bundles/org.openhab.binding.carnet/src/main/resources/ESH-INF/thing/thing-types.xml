@@ -11,13 +11,13 @@
 
 		<channel-groups>
 			<channel-group id="general" typeId="general" />
+			<channel-group id="locationData" typeId="locationData" />
 			<channel-group id="status" typeId="status" />
-			<channel-group id="localtionData" typeId="localtionData" />
 			<channel-group id="range" typeId="range" />
-			<channel-group id="windows" typeId="windows" />
-			<channel-group id="doors" typeId="doors" />
-			<channel-group id="tires" typeId="tires" />
 			<channel-group id="maintenance" typeId="maintenance" />
+			<channel-group id="doors" typeId="doors" />
+			<channel-group id="windows" typeId="windows" />
+			<channel-group id="tires" typeId="tires" />
 		</channel-groups>
 
 		<config-description-ref uri="thing-type:carnet:vehicle" />
@@ -29,10 +29,10 @@
 		<channels>
 			<channel id="vin" typeId="vin" />
 			<channel id="lock" typeId="lock" />
-			<channel id="clima" typeId="clima" />
-			<channel id="windowsHeat" typeId="windowsHeat" />
-			<channel id="preHeater" typeId="preHeater" />
-			<channel id="charger" typeId="charger" />
+			<!-- channel id="clima" typeId="clima" / -->
+			<!-- channel id="windowsHeat" typeId="windowsHeat" / -->
+			<!-- channel id="preHeater" typeId="preHeater" / -->
+			<!-- channel id="charger" typeId="charger" / -->
 			<channel id="update" typeId="update" />
 		</channels>
 	</channel-group-type>
@@ -40,12 +40,12 @@
 		<label>Status</label>
 		<description>Vehicle Status</description>
 	</channel-group-type>
-	<channel-group-type id="localtionData">
+	<channel-group-type id="locationData">
 		<label>Location</label>
 		<description>Vehicle location</description>
 		<channels>
 			<channel id="position" typeId="position" />
-			<channel id="timeCarSent" typeId="timeCarSent" />
+			<channel id="lastUpdate" typeId="lastUpdate" />
 			<channel id="parkingTime" typeId="parkingTime" />
 		</channels>
 	</channel-group-type>
@@ -112,9 +112,9 @@
 		<label>Vehicle Location</label>
 		<description>Last known Geo location of the vehicle</description>
 	</channel-type>
-	<channel-type id="timeCarSent">
+	<channel-type id="lastUpdate">
 		<item-type>DateTime</item-type>
-		<label>Location sent</label>
+		<label>Location updated</label>
 		<description>The time when the vehicle sent the location last time</description>
 	</channel-type>
 	<channel-type id="parkingTime">

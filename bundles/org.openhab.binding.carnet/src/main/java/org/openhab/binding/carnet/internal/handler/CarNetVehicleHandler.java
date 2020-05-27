@@ -48,7 +48,7 @@ import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetApiError;
+import org.openhab.binding.carnet.internal.api.CarNetApiError;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData;
@@ -106,6 +106,11 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         }
         accountHandler = handler;
         accountHandler.registerListener(this);
+
+        scheduler.schedule(() -> {
+            initializeThing();
+            setupPollingJob(5);
+        }, 2, TimeUnit.SECONDS);
     }
 
     @Override
@@ -139,8 +144,9 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         } catch (CarNetException e) {
             CarNetApiResult http = e.getApiResult();
             CarNetApiError error = e.getApiResult().getApiError();
-            logger.info("{}: Unable to process command {} for channel {}", config.vin, command, channelId);
             if (!error.isError()) {
+                logger.info("{}: Unable to process command {} for channel {}", config.vin, command, channelId);
+            } else {
                 logger.info("{}: Unable to process command {} for channel {}: {}", config.vin, command, channelId,
                         error);
                 if (!error.details.reason.isEmpty()) {
@@ -159,10 +165,13 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
      */
     @Override
     public void stateChanged(ThingStatus status, ThingStatusDetail detail, String message) {
-        if (status == ThingStatus.ONLINE) {
+        ThingStatus thingStatus = getThing().getStatus();
+        if ((status == ThingStatus.ONLINE) && (thingStatus != ThingStatus.ONLINE)) {
             initializeThing();
         }
-        updateStatus(status, detail, message);
+        if (thingStatus != status) {
+            updateStatus(status, detail, message);
+        }
     }
 
     /**
@@ -190,7 +199,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         try {
             updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_VIN, new StringType(vin));
             api.setConfig(config);
-            setupPollingJob(5);
 
             // Try to query status information from vehicle
             Map<String, CNIdMapEntry> channels = new HashMap<String, CNIdMapEntry>();
@@ -362,8 +370,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             PointType location = new PointType(new DecimalType(position.getLattitude()),
                     new DecimalType(position.getLongitude()));
             updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_GEO, location);
-            updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_TIME,
-                    new DateTimeType(position.getCarSentTime()));
+            String time = position.getCarSentTime();
+            updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_TIME, new DateTimeType(time));
             updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_PARK,
                     new DateTimeType(position.getParkingTime()));
         } catch (CarNetException e) {
