@@ -16,8 +16,10 @@ import static org.openhab.binding.rachio.internal.RachioBindingConstants.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
@@ -25,16 +27,15 @@ import org.eclipse.smarthome.config.discovery.DiscoveryResult;
 import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.library.types.OnOffType;
-import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingUID;
-import org.openhab.binding.rachio.internal.RachioConfiguration;
+import org.eclipse.smarthome.core.thing.binding.ThingHandler;
+import org.eclipse.smarthome.core.thing.binding.ThingHandlerService;
 import org.openhab.binding.rachio.internal.api.RachioApi;
-import org.openhab.binding.rachio.internal.api.RachioApiException;
 import org.openhab.binding.rachio.internal.api.RachioDevice;
 import org.openhab.binding.rachio.internal.api.RachioZone;
 import org.openhab.binding.rachio.internal.handler.RachioBridgeHandler;
 import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,15 +45,22 @@ import org.slf4j.LoggerFactory;
  *
  * @author Markus Michels - Initial contribution
  */
-@Component(service = DiscoveryService.class, immediate = true, configurationPid = "binding.rachio")
 @NonNullByDefault
-public class RachioDiscoveryService extends AbstractDiscoveryService {
+public class RachioDiscoveryService extends AbstractDiscoveryService
+        implements DiscoveryService, ThingHandlerService {
+
+    private static final int DISCOVERY_REFRESH_SEC = 900;
+            
     private final Logger logger = LoggerFactory.getLogger(RachioDiscoveryService.class);
-    private RachioConfiguration bindingConfig = new RachioConfiguration();
-    private boolean scanning = false;
 
     @Nullable
     private RachioApi rachioApi;
+    
+    @Nullable
+    private Future<?> scanTask;
+
+    @Nullable
+    private ScheduledFuture<?> discoveryJob;
 
     @Nullable
     private RachioBridgeHandler cloudHandler;
@@ -65,9 +73,14 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
      */
     @Override
     @Activate
-    protected void activate(@Nullable Map<String, @Nullable Object> configProperties) {
-        logger.debug("Activate HandlerFactory, configurarion:");
-        bindingConfig.updateConfig(configProperties);
+    public void activate() {
+        super.activate(null);
+    }
+
+    @Override
+    @Deactivate
+    public void deactivate() {
+        super.deactivate();
     }
 
     public RachioDiscoveryService() {
@@ -76,53 +89,53 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
         logger.debug("Thing types: {} registered.", uids);
     }
 
-    public void setCloudHandler(final RachioBridgeHandler cloudHandler) {
-        Validate.notNull(cloudHandler, "Invalid RachioCloudHandler");
-        this.cloudHandler = cloudHandler;
+    @Override
+    public void setThingHandler(@Nullable ThingHandler handler) {
+        if (handler instanceof RachioBridgeHandler) {
+            this.cloudHandler = (RachioBridgeHandler) handler;
+        }
+    }
+
+    @Override
+    public @Nullable ThingHandler getThingHandler() {
+        return this.cloudHandler;
     }
 
     @Override
     protected void startBackgroundDiscovery() {
         logger.debug("Starting background discovery for new Rachio controllers");
-        startScan();
+
+        ScheduledFuture<?> discoveryJob = this.discoveryJob;
+        if (discoveryJob == null || discoveryJob.isCancelled()) {
+            discoveryJob = scheduler.scheduleWithFixedDelay(this::discover, 10, DISCOVERY_REFRESH_SEC,
+                    TimeUnit.SECONDS);
+        }
+    }
+
+    @Override
+    protected synchronized void startScan() {
+        Future<?> scanTask = this.scanTask;
+        if (scanTask == null || scanTask.isDone()) {
+            logger.debug("Starting Rachio discovery scan");
+            scanTask = scheduler.submit(this::discover);
+        }
     }
 
     @SuppressWarnings("null")
-    @Override
-    protected synchronized void startScan() {
+    protected synchronized void discover() {
         try {
-            synchronized (this) {
-                if (scanning) {
-                    logger.debug("Already discoverring");
-                    return;
-                }
-                scanning = true;
-            }
 
-            logger.debug("Starting scan for new Rachio controllers");
             HashMap<String, RachioDevice> deviceList = null;
             ThingUID bridgeUID;
+    
             if (cloudHandler == null) {
-                String apikey = bindingConfig.apikey;
-                if (apikey.isEmpty()) {
-                    logger.debug("Discovery: API not yet initialized");
-                    return;
-                }
-                bridgeUID = new ThingUID(BINDING_ID, "cloud", apikey);
-                rachioApi = new RachioApi("");
-                rachioApi.initialize(apikey, bridgeUID);
-                deviceList = rachioApi.getDevices();
-                if (deviceList != null) {
-                    @SuppressWarnings({ "unchecked", "rawtypes" })
-                    Map<String, Object> bridgeProp = (Map) fillProperties(apikey);
-                    DiscoveryResult bridgeResult = DiscoveryResultBuilder.create(bridgeUID).withProperties(bridgeProp)
-                            .withBridge(bridgeUID).withLabel("Rachio Cloud").build();
-                    thingDiscovered(bridgeResult);
-                }
-            } else {
-                deviceList = cloudHandler.getDevices();
-                bridgeUID = cloudHandler.getThing().getUID();
+                logger.debug("RachioDiscovery: Rachio Cloud access not set!");
+                return;
             }
+
+            deviceList = cloudHandler.getDevices();
+            bridgeUID = cloudHandler.getThing().getUID();
+
             if (deviceList == null) {
                 logger.debug("Discovery: Rachio Cloud access not initialized yet!");
                 return;
@@ -177,8 +190,6 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
             logger.info("{}  Rachio device initialized.", deviceList.size());
 
             stopScan();
-        } catch (RachioApiException e) {
-            logger.warn("Unexpected error while discovering Rachio devices/zones: {}", e.toString());
         } catch (RuntimeException e) {
             logger.warn("Unexpected error while discovering Rachio devices/zones: {}", e.getMessage());
         }
@@ -187,17 +198,5 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
     @Override
     protected synchronized void stopScan() {
         super.stopScan();
-        scanning = false;
-        logger.debug("Discovery done.");
     }
-
-    private Map<String, String> fillProperties(String id) {
-        Map<String, String> properties = new HashMap<>();
-        properties.put(Thing.PROPERTY_VENDOR, BINDING_VENDOR);
-        properties.put(PROPERTY_APIKEY, id);
-        properties.put(PROPERTY_EXT_ID, id);
-        properties.put(PROPERTY_NAME, "Rachio Cloud Connector");
-        return properties;
-    }
-
 }

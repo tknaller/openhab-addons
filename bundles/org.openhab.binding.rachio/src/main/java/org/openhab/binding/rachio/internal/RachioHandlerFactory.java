@@ -15,13 +15,11 @@ package org.openhab.binding.rachio.internal;
 import static org.openhab.binding.rachio.internal.RachioBindingConstants.*;
 
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
 
 import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
@@ -29,14 +27,10 @@ import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandlerFactory;
-import org.openhab.binding.rachio.internal.api.RachioApiException;
-import org.openhab.binding.rachio.internal.api.RachioNetwork;
 import org.openhab.binding.rachio.internal.api.json.RachioEventGsonDTO;
-import org.openhab.binding.rachio.internal.discovery.RachioDiscoveryService;
 import org.openhab.binding.rachio.internal.handler.RachioBridgeHandler;
 import org.openhab.binding.rachio.internal.handler.RachioDeviceHandler;
 import org.openhab.binding.rachio.internal.handler.RachioZoneHandler;
-import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -62,10 +56,8 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
     }
 
     private final Logger logger = LoggerFactory.getLogger(RachioHandlerFactory.class);
-    private final Map<ThingUID, ServiceRegistration<?>> discoveryServiceReg = new HashMap<>();
     private final HashMap<String, RachioBridge> bridgeList;
     private final RachioConfiguration bindingConfig = new RachioConfiguration();
-    private final RachioNetwork rachioNetwork = new RachioNetwork();
 
     /**
      * OSGi activation callback.
@@ -80,12 +72,6 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
 
         logger.debug("RachioBridge: Activate, configurarion:");
         bindingConfig.updateConfig(configProperties);
-        try {
-            // Load list of AWS IP address ranges
-            rachioNetwork.initializeAwsList();
-        } catch (RachioApiException | RuntimeException e) {
-            logger.warn("Unable to activate Rachio Service: {}", e.getMessage());
-        }
     }
 
     @Override
@@ -118,7 +104,6 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
         logger.debug("Removing Rachio Cloud handler");
         if (thingHandler instanceof RachioBridgeHandler) {
             RachioBridgeHandler bridgeHandler = (RachioBridgeHandler) thingHandler;
-            unregisterDiscoveryService(bridgeHandler);
             bridgeHandler.shutdown();
         }
         if (thingHandler instanceof RachioDeviceHandler) {
@@ -140,10 +125,6 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
     public boolean webHookEvent(String ipAddress, RachioEventGsonDTO event) {
         try {
             logger.debug("Rachio Cloud Event for device '{}' received", event.deviceId);
-            if (!RachioNetwork.isIpInSubnet(ipAddress, getIpFilter()) && !rachioNetwork.isIpInAwsList(ipAddress)) {
-                logger.warn("RachioBridge: Request from unknown IP address range, might be abuse! Request rejected");
-                return false;
-            }
 
             // process event parameters
             for (HashMap.Entry<String, RachioBridge> be : bridgeList.entrySet()) {
@@ -168,26 +149,6 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
         return false;
     }
 
-    /**
-     * Get ipFilter as a list from all bridge things configurations
-     *
-     * @return ipFilter list - single ip, single subnet or list of ips/subnets
-     */
-    @SuppressWarnings("null")
-    public String getIpFilter() {
-        String ipList = "";
-        for (HashMap.@Nullable Entry<String, RachioBridge> be : bridgeList.entrySet()) {
-            RachioBridge bridge = be.getValue();
-            Validate.notNull(bridge);
-            Validate.notNull(bridge.cloudHandler);
-            String ipFilter = bridge.cloudHandler.getIpFilter();
-            if ((ipFilter != null) && !ipFilter.isEmpty()) {
-                ipList = ipList + ";" + ipFilter;
-            }
-        }
-        return ipList;
-    }
-
     @Nullable
     @SuppressWarnings("null")
     private RachioBridgeHandler createBridge(Bridge bridgeThing) {
@@ -199,43 +160,10 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
             bridgeList.put(bridge.uid.toString(), bridge);
 
             Validate.notNull(bridge.cloudHandler);
-            registerDiscoveryService(bridge.cloudHandler);
             return bridge.cloudHandler;
         } catch (RuntimeException e) {
             logger.warn("RachioFactory: Unable to create bridge thing: {}: ", e.getMessage());
         }
         return null;
-    }
-
-    /**
-     * Register the given cloud handler to participate in discovery of new beds.
-     *
-     * @param cloudHandler the cloud handler to register (must not be <code>null</code>)
-     */
-    private synchronized void registerDiscoveryService(@Nullable final RachioBridgeHandler cloudHandler) {
-        Validate.notNull(cloudHandler);
-        logger.debug("RachioHandlerFactory: Registering Rachio discovery service");
-        RachioDiscoveryService discoveryService = new RachioDiscoveryService();
-        discoveryService.setCloudHandler(cloudHandler);
-        discoveryServiceReg.put(cloudHandler.getThing().getUID(), bundleContext
-                .registerService(DiscoveryService.class.getName(), discoveryService, new Hashtable<String, Object>()));
-    }
-
-    /**
-     * Unregister the given cloud handler from participating in discovery of new beds.
-     *
-     * @param cloudHandler the cloud handler to unregister (must not be <code>null</code>)
-     */
-    @SuppressWarnings({ "null", "unused" })
-    private synchronized void unregisterDiscoveryService(final RachioBridgeHandler cloudHandler) {
-        ThingUID thingUID = cloudHandler.getThing().getUID();
-        ServiceRegistration<?> serviceReg = discoveryServiceReg.get(thingUID);
-        if (serviceReg == null) {
-            return;
-        }
-
-        logger.debug("RachioHandlerFactory: Unregistering Rachio discovery service");
-        serviceReg.unregister();
-        discoveryServiceReg.remove(thingUID);
     }
 }
