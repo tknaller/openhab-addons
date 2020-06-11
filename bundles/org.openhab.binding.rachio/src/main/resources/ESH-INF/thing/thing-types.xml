@@ -32,7 +32,7 @@
 			</parameter>
 			<parameter name="callbackUrl" type="text">
 				<label>Callback URL</label>
-				<description>https://host.domain:port/rachio/webhook; make sure the selected port is forwarded to your openHAB node.</description>
+				<description>https://username:password@home.myopenhab.org/rachio/webhook using the username and password for your myopenhab.org account.</description>
 				<required>false</required>
 			</parameter>
 			<parameter name="clearAllCallbacks" type="boolean">
@@ -40,11 +40,6 @@
 				<description>If true all callbacks will be cleared on registrations.</description>
 				<required>false</required>
 				<default>false</default>
-			</parameter>
-			<parameter name="ipFilter" type="text">
-				<label>IP Filter Address or List</label>
-				<description>Only accept events from the given IP address or subnet list, e.g. '192.168.1.1' or "192.168.1.0/24;192.168.2.0/24"</description>
-				<required>false</required>
 			</parameter>
 		</config-description>
 	</bridge-type>

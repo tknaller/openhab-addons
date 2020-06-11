@@ -36,7 +36,6 @@ public class RachioConfiguration {
     public String apikey = "";
     public int pollingInterval = DEFAULT_POLLING_INTERVAL_SEC;
     public int defaultRuntime = DEFAULT_ZONE_RUNTIME_SEC;
-    public String ipFilter = DEFAULT_IP_FILTER_LIST;
     public String callbackUrl = "";
     public Boolean clearAllCallbacks = false;
 
@@ -68,8 +67,6 @@ public class RachioConfiguration {
                 this.defaultRuntime = Integer.parseInt(value);
             } else if (key.equalsIgnoreCase(PARAM_CALLBACK_URL)) {
                 this.callbackUrl = value;
-            } else if (key.equalsIgnoreCase(PARAM_IPFILTER)) {
-                this.ipFilter = value;
             } else if (key.equalsIgnoreCase(PARAM_CLEAR_CALLBACK)) {
                 String str = value;
                 this.clearAllCallbacks = str.toLowerCase().equals("true");

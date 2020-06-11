@@ -52,7 +52,6 @@ public class RachioBindingConstants {
     public static final String PARAM_DEF_RUNTIME = "defaultRuntime";
     public static final String PARAM_CALLBACK_URL = "callbackUrl";
     public static final String PARAM_CLEAR_CALLBACK = "clearAllCallbacks";
-    public static final String PARAM_IPFILTER = "ipFilter";
 
     // List of non-standard Properties
     public static final String PROPERTY_IP_ADDRESS = "ipAddress";
