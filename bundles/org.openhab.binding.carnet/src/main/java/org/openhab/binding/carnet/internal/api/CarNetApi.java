@@ -225,7 +225,7 @@ public class CarNetApi {
                 String json = httpPost(url, headers, data, "", false);
                 return true;
             } catch (CarNetException e) {
-                logger.debug("{}: Unable to refresh token {} - ", config.vehicle.vin, token, e.getApiResult());
+                logger.debug("{}: Unable to refresh token {} - {}", config.vehicle.vin, token, e.getApiResult());
             }
         }
 

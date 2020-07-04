@@ -27,7 +27,7 @@
 		<label>Vehicle</label>
 		<description>General information on the vehicle</description>
 		<channels>
-            <channel id="test" typeId="test" />
+			<channel id="test" typeId="test" />
 			<channel id="vin" typeId="vin" />
 			<channel id="lock" typeId="lock" />
 			<!-- channel id="clima" typeId="clima" / -->
@@ -124,10 +124,10 @@
 		<description>The time when the was parked</description>
 	</channel-type>
 
-    <channel-type id="test" advanced="true">
-        <item-type>Number</item-type>
-        <label>Test</label>
-        <state min="1" readOnly="true" pattern="%f %unit%"/>
-    </channel-type>
+	<channel-type id="test" advanced="true">
+		<item-type>Number</item-type>
+		<label>Test</label>
+		<state min="1" readOnly="true" pattern="%f %unit%" />
+	</channel-type>
 
 </thing:thing-descriptions>

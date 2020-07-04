@@ -12,6 +12,10 @@
  */
 package org.openhab.binding.carnet.internal.api;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO.CNApiError2.CNErrorMessage2;
+
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -19,7 +23,8 @@ import com.google.gson.annotations.SerializedName;
  *
  * @author Markus Michels - Initial contribution
  */
-public class CarNetApiError {
+@NonNullByDefault
+public class CarNetApiErrorDTO {
     /*
      * {
      * "error":"invalid_request",
@@ -31,21 +36,22 @@ public class CarNetApiError {
     public String description = "";
     public CNErrorMessage2Details details = new CNErrorMessage2Details();
 
-    public CarNetApiError() {
+    public CarNetApiErrorDTO() {
     }
 
-    public CarNetApiError(CNApiError1 format1) {
+    public CarNetApiErrorDTO(CNApiError1 format1) {
         error = getString(format1.error);
         code = getString(format1.code);
         description = getString(format1.description);
     }
 
-    public CarNetApiError(CNApiError2 format2) {
-        error = getString(format2.error.error);
-        code = getString(format2.error.code);
-        description = getString(format2.error.description);
-        if (format2.error.details != null) {
-            details = format2.error.details;
+    public CarNetApiErrorDTO(CNApiError2 format2) {
+        if (format2.error != null) {
+            CNErrorMessage2 error2 = format2.error;
+            error = getString(error2.error);
+            code = getString(error2.code);
+            description = getString(error2.description);
+            details = error2.details;
         }
     }
 
@@ -62,7 +68,7 @@ public class CarNetApiError {
         return description + "(" + code + " " + error + ")";
     }
 
-    private String getString(String s) {
+    private String getString(@Nullable String s) {
         return s != null ? s : "";
     }
 
@@ -73,11 +79,11 @@ public class CarNetApiError {
          * "error_description": "Missing Username"
          * }
          */
-        public String error;
+        public @Nullable String error;
         @SerializedName("error_code")
-        public String code;
+        public @Nullable String code;
         @SerializedName("error_description")
-        public String description;
+        public @Nullable String description;
     }
 
     public static class CNApiError2 {
@@ -88,15 +94,15 @@ public class CarNetApiError {
          * "reason": "SECURITY_PIN_INVALID", "delay": "0" } }}
          */
         public class CNErrorMessage2 {
-            public String error;
+            public String error = "";
             @SerializedName("errorCode")
-            public String code;
+            public String code = "";
             @SerializedName("description")
-            public String description;
-            public CNErrorMessage2Details details;
+            public String description = "";
+            public CNErrorMessage2Details details = new CNErrorMessage2Details();;
         }
 
-        public CNErrorMessage2 error;
+        public @Nullable CNErrorMessage2 error;
     }
 
     public static class CNErrorMessage2Details {

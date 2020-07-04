@@ -15,6 +15,7 @@ package org.openhab.binding.carnet.internal;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 
 /**
@@ -23,6 +24,7 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDet
  * @author Markus Michels - Initial Contribution
  *
  */
+@NonNullByDefault
 public class CarNetVehicleInformation {
     public String vin = "";
     public String model = "";

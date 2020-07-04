@@ -143,11 +143,6 @@
     </dependency>
     <dependency>
       <groupId>org.openhab.addons.bundles</groupId>
-      <artifactId>org.openhab.binding.carnet</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.openhab.addons.bundles</groupId>
       <artifactId>org.openhab.binding.chromecast</artifactId>
       <version>${project.version}</version>
     </dependency>

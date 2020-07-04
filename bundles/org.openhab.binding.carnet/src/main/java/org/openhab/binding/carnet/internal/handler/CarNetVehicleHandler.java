@@ -52,7 +52,7 @@ import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
-import org.openhab.binding.carnet.internal.api.CarNetApiError;
+import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData;
@@ -147,7 +147,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
         } catch (CarNetException e) {
             CarNetApiResult http = e.getApiResult();
-            CarNetApiError error = e.getApiResult().getApiError();
+            CarNetApiErrorDTO error = e.getApiResult().getApiError();
             if (!error.isError()) {
                 logger.info("{}: Unable to process command {} for channel {}", config.vin, command, channelId);
             } else {
@@ -237,7 +237,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
             // CarNetHistory history = api.getHistory(vin);
         } catch (CarNetException e) {
-            CarNetApiError res = e.getApiResult().getApiError();
+            CarNetApiErrorDTO res = e.getApiResult().getApiError();
             if (res.description.contains("disabled ")) {
                 // Status service in the vehicle is disabled
                 String message = "Status service is disabled, check data privacy settings in MMI: " + res;
