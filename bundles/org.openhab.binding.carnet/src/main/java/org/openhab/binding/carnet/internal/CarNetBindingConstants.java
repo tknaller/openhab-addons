@@ -47,14 +47,14 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_GENERAL_CHARGER = "charger";
     public static final String CHANNEL_GENERAL_UPDATE = "update";
 
-    public static final String CHANNEL_GROUP_LOCATION = "locationData";
+    public static final String CHANNEL_GROUP_LOCATION = "location";
     public static final String CHANNEL_LOCATTION_GEO = "position";
     public static final String CHANNEL_LOCATTION_TIME = "lastUpdate";
     public static final String CHANNEL_LOCATTION_PARK = "parkingTime";
 
     // Other channels group in here
     public static final String CHANNEL_GROUP_STATUS = "status";
-    public static final String CHANNEL_GROUP_GAS = "gas";
+    public static final String CHANNEL_GROUP_RANGE = "range";
     public static final String CHANNEL_GROUP_MAINT = "maintenance";
     public static final String CHANNEL_GROUP_WINDOWS = "windows";
     public static final String CHANNEL_GROUP_DOORS = "doors";
@@ -72,6 +72,10 @@ public class CarNetBindingConstants {
     public static final String ITEMT_NUMBER = "Number";
     public static final String ITEMT_SWITCH = "Switch";
     public static final String ITEMT_LOCATION = "Location";
+    public static final String ITEMT_TEMP = "Number:Temperature";
+    public static final String ITEMT_DISTANCE = "Number:Length";
+    public static final String ITEMT_VOLUME = "Number:Volume";
+    public static final String ITEMT_PERCENT = "Number:Dimensionless";
 
     public static final int API_TOKEN_REFRESH_INTERVAL_SEC = 5 * 60; // interval to check for valid token
     public static final int API_REQUEST_TIMEOUT = 60;

@@ -25,10 +25,12 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.PointType;
+import org.eclipse.smarthome.core.library.types.QuantityType;
 import org.eclipse.smarthome.core.library.types.StringType;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Channel;
@@ -43,6 +45,8 @@ import org.eclipse.smarthome.core.thing.type.ChannelKind;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
+import org.eclipse.smarthome.core.types.State;
+import org.eclipse.smarthome.core.types.UnDefType;
 import org.openhab.binding.carnet.internal.CarNetDeviceListener;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
@@ -72,7 +76,7 @@ import org.slf4j.LoggerFactory;
 public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDeviceListener {
     private final Logger logger = LoggerFactory.getLogger(CarNetVehicleHandler.class);
     private static final CarNetIdMapper idMap = new CarNetIdMapper();
-    private String thingName = "";
+    private String thingId = "";
 
     private final Map<String, Object> channelData = new HashMap<>();
     private CarNetApi api;
@@ -180,6 +184,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
      * @return true=successful
      */
     boolean initializeThing() {
+        thingId = getThing().getUID().getId();
         channelData.clear(); // clear any cached channels
         config = getConfigAs(CarNetVehicleConfiguration.class);
         Map<String, String> properties = getThing().getProperties();
@@ -256,7 +261,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
      */
     @Override
     public void handleConfigurationUpdate(Map<String, Object> configurationParameters) {
-        logger.debug("{}: Thing config updated.", thingName);
+        logger.debug("{}: Thing config updated.", thingId);
         super.handleConfigurationUpdate(configurationParameters);
         initializeThing();
     }
@@ -266,6 +271,13 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         Validate.notNull(resources);
 
         ThingBuilder updatedThing = editThing();
+
+        Channel c = getThing().getChannel("general" + "#" + "test");
+        if (c != null) {
+            Configuration conf = c.getConfiguration();
+            Map<String, String> p = c.getProperties();
+            logger.debug("conf={}, prop={}", conf, p);
+        }
 
         for (CNIdMapEntry channelDef : channels) {
             String channelId = channelDef.channelName;
@@ -284,14 +296,12 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 // throw new CarNetException(resources.getText("exception.channeldef-not-found", channelId));
                 label = channelDef.symbolicName;
             }
-            logger.trace("Checking if channel {}#{} exists", groupId, channelId);
             if (getThing().getChannel(groupId + "#" + channelId) == null) {
                 // the channel does not exist yet, so let's add it
-                logger.debug("Auto-creating channel '{}' ({})", channelId, getThing().getUID());
-
+                String itemType = channelDef.itemType.isEmpty() ? ITEMT_NUMBER : channelDef.itemType;
+                logger.debug("{}: Auto-creating channel {}, type {}", thingId, channelId, itemType);
                 Channel channel = ChannelBuilder
-                        .create(new ChannelUID(getThing().getUID(), groupId + "#" + channelId),
-                                channelDef.itemType.isEmpty() ? ITEMT_NUMBER : channelDef.itemType)
+                        .create(new ChannelUID(getThing().getUID(), groupId + "#" + channelId), itemType)
                         .withType(channelTypeUID).withLabel(label).withDescription(description)
                         .withKind(ChannelKind.STATE).build();
                 updatedThing.withChannel(channel);
@@ -312,29 +322,22 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 for (CNStatusField field : data.fields) {
                     CNIdMapEntry map = idMap.find(field.id);
                     if (map != null) {
-                        logger.info("Updating {}: {}={}{} (channel {}#{})", config.vin, map.symbolicName,
-                                gs(field.value), gs(field.unit), gs(map.groupName), gs(map.channelName));
+                        logger.debug("{}: {}={}{} (channel {}#{})", thingId, map.symbolicName, gs(field.value),
+                                gs(field.unit), gs(map.groupName), gs(map.channelName));
                         if (!map.channelName.isEmpty()) {
                             Channel channel = getThing().getChannel(map.groupName + "#" + map.channelName);
                             if (channel != null) {
-                                logger.debug("Trying to update channel {} with value {}", channel.getUID(),
-                                        gs(field.value));
+                                logger.debug("Updading channel {} with value {}", channel.getUID(), gs(field.value));
                                 switch (map.itemType) {
-                                    case ITEMT_NUMBER:
-                                        String val = "0";
-                                        if (!gs(field.value).isEmpty()) {
-                                            val = gs(field.value);
-                                        }
-                                        updateState(channel.getUID(), new DecimalType(val));
-                                        break;
                                     case ITEMT_SWITCH:
                                         updateState(channel.getUID(), OnOffType.from(gs(field.value)));
                                         break;
                                     case ITEMT_STRING:
                                         updateState(channel.getUID(), new StringType(gs(field.value)));
-                                        // break;
+                                        break;
+                                    case ITEMT_NUMBER:
                                     default:
-                                        logger.warn("Unknown type {}", map.itemType);
+                                        updateNumberChannel(channel, map, field);
                                 }
                             } else {
                                 logger.debug("Channel {}#{} not found", map.groupName, map.channelName);
@@ -360,6 +363,20 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         } else {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
         }
+    }
+
+    private void updateNumberChannel(Channel channel, CNIdMapEntry map, CNStatusField field) {
+        State state = UnDefType.UNDEF;
+        String val = gs(field.value);
+        if (!val.isEmpty()) {
+            if (map.unit.isPresent()) {
+                state = new QuantityType<>(Double.parseDouble(val), map.unit.get());
+            } else {
+                state = new DecimalType(val);
+            }
+        }
+        logger.debug("{}: Updating channel {} with {}", thingId, channel.getUID().getId(), state);
+        updateState(channel.getUID(), state);
     }
 
     private void updateVehicleLocation() {

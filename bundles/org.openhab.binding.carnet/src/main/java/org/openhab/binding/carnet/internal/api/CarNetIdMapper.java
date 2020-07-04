@@ -16,9 +16,16 @@ import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+
+import javax.measure.Unit;
+import javax.measure.quantity.Length;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.smarthome.core.library.unit.MetricPrefix;
+import org.eclipse.smarthome.core.library.unit.SIUnits;
+import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
 
 /**
  * The {@link CarNetIdMapper} maps status value IDs from the API to channel definitions.
@@ -29,20 +36,23 @@ import org.eclipse.jdt.annotation.Nullable;
  */
 @NonNullByDefault
 public class CarNetIdMapper {
+    public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
+
     public static class CNIdMapEntry {
         public String id = "";
         public String symbolicName = "";
         public String channelName = "";
         public String itemType = "";
         public String groupName = "";
+        public Optional<Unit<?>> unit = Optional.empty();
     }
 
     private Map<String, CNIdMapEntry> map = new HashMap<String, CNIdMapEntry>();
 
     public CarNetIdMapper() {
         // Status
-        add("KILOMETER_STATUS", "0x0101010002", "kilometerStatus", ITEMT_NUMBER);
-        add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_NUMBER);
+        add("KILOMETER_STATUS", "0x0101010002", "kilometerStatus", ITEMT_DISTANCE, CHANNEL_GROUP_STATUS, KILOMETRE);
+        add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_TEMP);
         add("LIGHT_STATUS", "0x0301010001", "statusLight", ITEMT_SWITCH);
         add("PARKING_BRAKE", "0x0301030001", "parkingBrake", ITEMT_SWITCH);
         add("SAFETY_STATE_TRUNK_LID", "0x030104000F", "trunkLidState", ITEMT_NUMBER);
@@ -58,27 +68,34 @@ public class CarNetIdMapper {
         add("POSITION_SERVICE_FLAP", "0x0301050010", "serviceFlapPos", ITEMT_NUMBER);
 
         // Gas
-        add("FUEL_LEVEL_IN_PERCENTAGE", "0x030103000A", "gasPercentage", ITEMT_NUMBER, CHANNEL_GROUP_GAS);
-        add("TOTAL_RANGE", "0x0301030005", "gasTotalRange", ITEMT_NUMBER, CHANNEL_GROUP_GAS);
-        add("STATE_OF_CHARGE", "0x0301030002", "chargingState", ITEMT_SWITCH, CHANNEL_GROUP_GAS);
-        add("PRIMARY_RANGE", "0x0301030006", "primaryRange", ITEMT_NUMBER, CHANNEL_GROUP_GAS);
-        add("PRIMARY_DRIVE", "0x0301030007", "primaryDrive", ITEMT_NUMBER, CHANNEL_GROUP_GAS);
-        add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_NUMBER, CHANNEL_GROUP_GAS);
-        add("SECONDARY_DRIVE", "0x0301030009", "secondaryDrive", ITEMT_NUMBER, CHANNEL_GROUP_GAS);
+        add("FUEL_LEVEL_IN_PERCENTAGE", "0x030103000A", "fuelPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE,
+                SmartHomeUnits.PERCENT);
+        add("TOTAL_RANGE", "0x0301030005", "totalRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
+        add("PRIMARY_RANGE", "0x0301030006", "primaryRange", ITEMT_NUMBER, CHANNEL_GROUP_RANGE, KILOMETRE);
+        add("PRIMARY_DRIVE", "0x0301030007", "primaryDrive", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
+        add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_NUMBER, CHANNEL_GROUP_RANGE, KILOMETRE);
+        add("SECONDARY_DRIVE", "0x0301030009", "secondaryDrive", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
+        add("15CNG_LEVEL_IN_PERCENTAGE", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE,
+                SmartHomeUnits.PERCENT);
+        add("STATE_OF_CHARGE", "0x0301030002", "chargingState", ITEMT_SWITCH, CHANNEL_GROUP_RANGE);
 
         // Maintenance
-        add("OIL_LEVEL_AMOUNT_IN_LITERS", "0x0204040001", "oilAmount", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
-        add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
-        add("OIL_LEVEL_DIPSTICK_PERCENTAGE", "0x0204040003", "oilPercentage", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
-        add("WARNING_OIL_CHANGE", "0x0203010005", "oilWarning", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
-        add("MAINTENANCE_INTERVAL_AD_BLUE_RANGE", "0x02040C0001", "distanceAdBlue", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
-        add("15CNG_LEVEL_IN_PERCENTAGE", "0x030103000D");
-        add("MAINTINT_DISTANCE_TO_OIL_CHANGE", "0x0203010001", "distanceOilChange", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
-        add("MAINTINT_TIME_TO_OIL_CHANGE", "0x0203010002", "intervalOilChange", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
-        add("MAINTINT_MONTHLY_MILEAGE", "0x0203010007", "monthlyMilage", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
-        add("MAINTINT_DIST_TO_INSPECTION", "0x0203010003", "distanceToInspection", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
-        add("MAINTINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
         add("MAINTINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
+        add("MAINTINT_DIST_TO_INSPECTION", "0x0203010003", "distanceToInspection", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
+                KILOMETRE);
+        add("MAINTINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
+        add("WARNING_OIL_CHANGE", "0x0203010005", "oilWarning", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
+        add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
+        add("OIL_LEVEL_DIPSTICK_PERCENTAGE", "0x0204040003", "oilPercentage", ITEMT_PERCENT, CHANNEL_GROUP_MAINT,
+                SmartHomeUnits.PERCENT);
+        add("OIL_LEVEL_AMOUNT_IN_LITERS", "0x0204040001", "oilAmount", ITEMT_VOLUME, CHANNEL_GROUP_MAINT,
+                SmartHomeUnits.LITRE);
+        add("MAINTINT_DISTANCE_TO_OIL_CHANGE", "0x0203010001", "distanceOilChange", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
+                KILOMETRE);
+        add("MAINTINT_TIME_TO_OIL_CHANGE", "0x0203010002", "intervalOilChange", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
+        add("MAINTENANCE_INTERVAL_AD_BLUE_RANGE", "0x02040C0001", "distanceAdBlue", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
+                KILOMETRE);
+        add("MAINTINT_MONTHLY_MILEAGE", "0x0203010007", "monthlyMilage", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
 
         // Doors/trunk
         add("STATE_CONVERTABLE_TOP", "0x0301050009", "covertableTopState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
@@ -143,22 +160,29 @@ public class CarNetIdMapper {
         return null;
     }
 
-    private void add(String name, String id, String channelName, String itemType, String groupName) {
+    private void add(String name, String id, String channelName, String itemType, String groupName,
+            @Nullable Unit<?> unit) {
         CNIdMapEntry entry = new CNIdMapEntry();
         entry.id = id;
         entry.symbolicName = name;
         entry.channelName = channelName;
         entry.itemType = itemType;
         entry.groupName = groupName;
+        if (unit != null) {
+            entry.unit = Optional.of(unit);
+        }
         map.put(id, entry);
     }
 
+    private void add(String name, String id, String channelName, String itemType, String groupName) {
+        add(name, id, channelName, itemType, groupName, null);
+    }
+
     private void add(String name, String id, String channelName, String itemType) {
-        add(name, id, channelName, itemType, CHANNEL_GROUP_STATUS);
+        add(name, id, channelName, itemType, CHANNEL_GROUP_STATUS, null);
     }
 
     private void add(String name, String id) {
-        add(name, id, "", "", CHANNEL_GROUP_STATUS);
+        add(name, id, "", "", CHANNEL_GROUP_STATUS, null);
     }
-
 }

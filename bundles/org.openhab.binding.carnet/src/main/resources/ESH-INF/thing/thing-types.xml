@@ -11,7 +11,7 @@
 
 		<channel-groups>
 			<channel-group id="general" typeId="general" />
-			<channel-group id="locationData" typeId="locationData" />
+			<channel-group id="location" typeId="location" />
 			<channel-group id="status" typeId="status" />
 			<channel-group id="range" typeId="range" />
 			<channel-group id="maintenance" typeId="maintenance" />
@@ -27,10 +27,11 @@
 		<label>Vehicle</label>
 		<description>General information on the vehicle</description>
 		<channels>
+            <channel id="test" typeId="test" />
 			<channel id="vin" typeId="vin" />
 			<channel id="lock" typeId="lock" />
 			<!-- channel id="clima" typeId="clima" / -->
-			<!-- channel id="windowsHeat" typeId="windowsHeat" / -->
+			<!-- channel id="heating" typeId="windowsHeat" / -->
 			<!-- channel id="preHeater" typeId="preHeater" / -->
 			<!-- channel id="charger" typeId="charger" / -->
 			<channel id="update" typeId="update" />
@@ -40,7 +41,7 @@
 		<label>Status</label>
 		<description>Vehicle Status</description>
 	</channel-group-type>
-	<channel-group-type id="locationData">
+	<channel-group-type id="location">
 		<label>Location</label>
 		<description>Vehicle location</description>
 		<channels>
@@ -122,5 +123,11 @@
 		<label>Parking Time</label>
 		<description>The time when the was parked</description>
 	</channel-type>
+
+    <channel-type id="test" advanced="true">
+        <item-type>Number</item-type>
+        <label>Test</label>
+        <state min="1" readOnly="true" pattern="%f %unit%"/>
+    </channel-type>
 
 </thing:thing-descriptions>
