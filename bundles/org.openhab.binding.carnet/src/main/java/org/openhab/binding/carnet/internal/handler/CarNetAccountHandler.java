@@ -32,7 +32,6 @@ import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
-import org.eclipse.smarthome.core.thing.type.DynamicStateDescriptionProvider;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.openhab.binding.carnet.internal.CarNetDeviceListener;
@@ -76,8 +75,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
      *
      * @param bridge Bridge object representing a FRITZ!Box
      */
-    public CarNetAccountHandler(Bridge bridge, @Nullable CarNetTextResources resources,
-            @Nullable DynamicStateDescriptionProvider stateDescriptionProvider, @Nullable CarNetApi api) {
+    public CarNetAccountHandler(Bridge bridge, @Nullable CarNetTextResources resources, CarNetApi api) {
         super(bridge);
         // this.stateDescriptionProvider = stateDescriptionProvider;
         this.api = api;

@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.carnet.internal.api;
+package org.openhab.binding.carnet.internal.handler;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
@@ -20,36 +20,48 @@ import java.util.Optional;
 
 import javax.measure.Unit;
 import javax.measure.quantity.Length;
+import javax.measure.quantity.Time;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.unit.MetricPrefix;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
+import org.osgi.service.component.annotations.Component;
+
+import tec.uom.se.unit.Units;
 
 /**
- * The {@link CarNetIdMapper} maps status value IDs from the API to channel definitions.
+ * The {@link CarNetIChanneldMapper} maps status value IDs from the API to channel definitions.
  *
  * @author Markus Michels - Initial contribution
  * @author Lorenzo Bernardi - Additional contribution
  *
  */
 @NonNullByDefault
-public class CarNetIdMapper {
+@Component(service = CarNetIChanneldMapper.class, immediate = true)
+public class CarNetIChanneldMapper {
     public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
+    public static final Unit<Time> DAYS = Units.DAY;
 
-    public static class CNIdMapEntry {
+    public static class ChannelIdMapEntry {
         public String id = "";
         public String symbolicName = "";
         public String channelName = "";
         public String itemType = "";
         public String groupName = "";
+
+        public boolean advanced = false;
+        public boolean readOnly = true;
         public Optional<Unit<?>> unit = Optional.empty();
+        public Optional<Integer> min = Optional.empty();
+        public Optional<Integer> max = Optional.empty();
+        public Optional<Integer> step = Optional.empty();
+        public Optional<String> pattern = Optional.empty();
     }
 
-    private Map<String, CNIdMapEntry> map = new HashMap<String, CNIdMapEntry>();
-
-    public CarNetIdMapper() {
+    private static Map<String, ChannelIdMapEntry> map = new HashMap<String, ChannelIdMapEntry>();
+    static {
         // Status
         add("KILOMETER_STATUS", "0x0101010002", "kilometerStatus", ITEMT_DISTANCE, CHANNEL_GROUP_STATUS, KILOMETRE);
         add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_TEMP);
@@ -71,9 +83,9 @@ public class CarNetIdMapper {
         add("FUEL_LEVEL_IN_PERCENTAGE", "0x030103000A", "fuelPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE,
                 SmartHomeUnits.PERCENT);
         add("TOTAL_RANGE", "0x0301030005", "totalRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
-        add("PRIMARY_RANGE", "0x0301030006", "primaryRange", ITEMT_NUMBER, CHANNEL_GROUP_RANGE, KILOMETRE);
+        add("PRIMARY_RANGE", "0x0301030006", "primaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
         add("PRIMARY_DRIVE", "0x0301030007", "primaryDrive", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
-        add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_NUMBER, CHANNEL_GROUP_RANGE, KILOMETRE);
+        add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
         add("SECONDARY_DRIVE", "0x0301030009", "secondaryDrive", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
         add("15CNG_LEVEL_IN_PERCENTAGE", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE,
                 SmartHomeUnits.PERCENT);
@@ -83,7 +95,7 @@ public class CarNetIdMapper {
         add("MAINTINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
         add("MAINTINT_DIST_TO_INSPECTION", "0x0203010003", "distanceToInspection", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
                 KILOMETRE);
-        add("MAINTINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
+        add("MAINTINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
         add("WARNING_OIL_CHANGE", "0x0203010005", "oilWarning", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
         add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
         add("OIL_LEVEL_DIPSTICK_PERCENTAGE", "0x0204040003", "oilPercentage", ITEMT_PERCENT, CHANNEL_GROUP_MAINT,
@@ -92,7 +104,7 @@ public class CarNetIdMapper {
                 SmartHomeUnits.LITRE);
         add("MAINTINT_DISTANCE_TO_OIL_CHANGE", "0x0203010001", "distanceOilChange", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
                 KILOMETRE);
-        add("MAINTINT_TIME_TO_OIL_CHANGE", "0x0203010002", "intervalOilChange", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
+        add("MAINTINT_TIME_TO_OIL_CHANGE", "0x0203010002", "intervalOilChange", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
         add("MAINTENANCE_INTERVAL_AD_BLUE_RANGE", "0x02040C0001", "distanceAdBlue", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
                 KILOMETRE);
         add("MAINTINT_MONTHLY_MILEAGE", "0x0203010007", "monthlyMilage", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
@@ -147,12 +159,12 @@ public class CarNetIdMapper {
         add("UTC_TIME_STATUS", "0x0101010001");
     }
 
-    public @Nullable CNIdMapEntry find(String id) {
-        for (Map.Entry<String, CNIdMapEntry> e : map.entrySet()) {
+    public @Nullable ChannelIdMapEntry find(String id) {
+        for (Map.Entry<String, ChannelIdMapEntry> e : map.entrySet()) {
             if (e.getKey().equalsIgnoreCase(id)) {
                 return e.getValue();
             }
-            CNIdMapEntry v = e.getValue();
+            ChannelIdMapEntry v = e.getValue();
             if (v.symbolicName.equalsIgnoreCase(id) || v.channelName.equalsIgnoreCase(id)) {
                 return v;
             }
@@ -160,9 +172,9 @@ public class CarNetIdMapper {
         return null;
     }
 
-    private void add(String name, String id, String channelName, String itemType, String groupName,
+    private static void add(String name, String id, String channelName, String itemType, String groupName,
             @Nullable Unit<?> unit) {
-        CNIdMapEntry entry = new CNIdMapEntry();
+        ChannelIdMapEntry entry = new ChannelIdMapEntry();
         entry.id = id;
         entry.symbolicName = name;
         entry.channelName = channelName;
@@ -174,15 +186,15 @@ public class CarNetIdMapper {
         map.put(id, entry);
     }
 
-    private void add(String name, String id, String channelName, String itemType, String groupName) {
+    private static void add(String name, String id, String channelName, String itemType, String groupName) {
         add(name, id, channelName, itemType, groupName, null);
     }
 
-    private void add(String name, String id, String channelName, String itemType) {
+    private static void add(String name, String id, String channelName, String itemType) {
         add(name, id, channelName, itemType, CHANNEL_GROUP_STATUS, null);
     }
 
-    private void add(String name, String id) {
+    private static void add(String name, String id) {
         add(name, id, "", "", CHANNEL_GROUP_STATUS, null);
     }
 }

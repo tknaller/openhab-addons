@@ -24,8 +24,6 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
-import org.eclipse.smarthome.core.i18n.LocaleProvider;
-import org.eclipse.smarthome.core.i18n.TranslationProvider;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
@@ -33,13 +31,14 @@ import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandlerFactory;
-import org.eclipse.smarthome.core.thing.type.DynamicStateDescriptionProvider;
 import org.eclipse.smarthome.io.net.http.HttpClientFactory;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.discovery.CarNetDiscoveryService;
 import org.openhab.binding.carnet.internal.handler.CarNetAccountHandler;
+import org.openhab.binding.carnet.internal.handler.CarNetIChanneldMapper;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
@@ -55,17 +54,37 @@ import org.slf4j.LoggerFactory;
 @Component(configurationPid = "binding.carnet", service = ThingHandlerFactory.class)
 public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     private final Logger logger = LoggerFactory.getLogger(CarNetHandlerFactory.class);
+    private final CarNetTextResources resources;
+    private final CarNetIChanneldMapper channelIdMapper;
+    private final Map<ThingUID, @Nullable ServiceRegistration<?>> discoveryServiceRegistrations = new HashMap<>();
 
     /**
      * shared instance of HTTP client for asynchronous calls
      */
     private @Nullable HttpClient httpClient;
-    private @Nullable DynamicStateDescriptionProvider stateDescriptionProvider;
-    private @Nullable LocaleProvider localeProvider;
-    private @Nullable TranslationProvider i18nProvider;
-    private @Nullable CarNetTextResources resources;
     private CarNetApi api = new CarNetApi();
-    private final Map<ThingUID, @Nullable ServiceRegistration<?>> discoveryServiceRegistrations = new HashMap<>();
+
+    @Activate
+    public CarNetHandlerFactory(@Reference CarNetTextResources resources, @Reference CarNetIChanneldMapper channelIdMapper,
+            @Reference HttpClientFactory httpClientFactory) {
+        this.resources = resources;
+        this.channelIdMapper = channelIdMapper;
+        try {
+            // this.httpClient = httpClientFactory.getCommonHttpClient();
+            SslContextFactory ssl = new SslContextFactory();
+            // ssl.setIncludeCipherSuites("^TLS_RSA_.*$");
+            String[] excludedCiphersWithoutTlsRsaExclusion = Arrays.stream(ssl.getExcludeCipherSuites())
+                    .filter(cipher -> !cipher.equals("^TLS_RSA_.*$")).toArray(String[]::new);
+            ssl.setExcludeCipherSuites(excludedCiphersWithoutTlsRsaExclusion);
+            this.httpClient = new HttpClient(ssl);
+            logger.debug("{}", httpClient.dump());
+            if (this.httpClient != null) {
+                this.httpClient.start();
+            }
+        } catch (Exception e) {
+            logger.warn("Unable to start HttpClient!");
+        }
+    }
 
     @Override
     public boolean supportsThingType(ThingTypeUID thingTypeUID) {
@@ -76,17 +95,13 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
-        if (resources == null) {
-            resources = new CarNetTextResources(this.getBundleContext().getBundle(), i18nProvider, localeProvider);
-        }
         if (THING_TYPE_ACCOUNT.equals(thingTypeUID)) {
             api = new CarNetApi(httpClient);
-            CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, resources, stateDescriptionProvider,
-                    api);
+            CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, resources, api);
             registerDeviceDiscoveryService(handler);
             return handler;
         } else if (THING_TYPE_VEHICLE.equals(thingTypeUID)) {
-            return new CarNetVehicleHandler(thing, api, resources);
+            return new CarNetVehicleHandler(thing, api, resources, channelIdMapper);
         }
 
         return null;
@@ -100,8 +115,7 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     }
 
     private synchronized void registerDeviceDiscoveryService(CarNetAccountHandler bridgeHandler) {
-        CarNetDiscoveryService discoveryService = new CarNetDiscoveryService(bridgeHandler, bundleContext.getBundle(),
-                new CarNetTextResources(this.getBundleContext().getBundle(), i18nProvider, localeProvider));
+        CarNetDiscoveryService discoveryService = new CarNetDiscoveryService(bridgeHandler, bundleContext.getBundle());
         discoveryService.activate();
         this.discoveryServiceRegistrations.put(bridgeHandler.getThing().getUID(), bundleContext
                 .registerService(DiscoveryService.class.getName(), discoveryService, new Hashtable<String, Object>()));
@@ -119,53 +133,5 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
             serviceRegistration.unregister();
             discoveryServiceRegistrations.remove(bridgeHandler.getThing().getUID());
         }
-    }
-
-    @Reference
-    protected void setLocaleProvider(LocaleProvider localeProvider) {
-        this.localeProvider = localeProvider;
-    }
-
-    protected void unsetLocaleProvider(LocaleProvider localeProvider) {
-        this.localeProvider = null;
-    }
-
-    @Reference
-    public void setTranslationProvider(TranslationProvider i18nProvider) {
-        this.i18nProvider = i18nProvider;
-    }
-
-    public void unsetTranslationProvider(TranslationProvider i18nProvider) {
-        this.i18nProvider = null;
-    }
-
-    @Reference
-    protected void setHttpClientFactory(HttpClientFactory httpClientFactory) {
-        try {
-            // this.httpClient = httpClientFactory.getCommonHttpClient();
-            SslContextFactory ssl = new SslContextFactory();
-            // ssl.setIncludeCipherSuites("^TLS_RSA_.*$");
-            String[] excludedCiphersWithoutTlsRsaExclusion = Arrays.stream(ssl.getExcludeCipherSuites())
-                    .filter(cipher -> !cipher.equals("^TLS_RSA_.*$")).toArray(String[]::new);
-            ssl.setExcludeCipherSuites(excludedCiphersWithoutTlsRsaExclusion);
-            this.httpClient = new HttpClient(ssl);
-            logger.debug("{}", httpClient.dump());
-            this.httpClient.start();
-        } catch (Exception e) {
-            logger.warn("Unable to start HttpClient!");
-        }
-    }
-
-    protected void unsetHttpClientFactory(HttpClientFactory httpClientFactory) {
-        this.httpClient = null;
-    }
-
-    @Reference
-    protected void setDynamicStateDescriptionProvider(DynamicStateDescriptionProvider stateDescriptionProvider) {
-        this.stateDescriptionProvider = stateDescriptionProvider;
-    }
-
-    protected void unsetDynamicStateDescriptionProvider(DynamicStateDescriptionProvider stateDescriptionProvider) {
-        this.stateDescriptionProvider = null;
     }
 }

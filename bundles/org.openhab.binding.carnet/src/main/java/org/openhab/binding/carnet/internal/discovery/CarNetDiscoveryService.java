@@ -30,7 +30,6 @@ import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.openhab.binding.carnet.internal.CarNetDeviceListener;
 import org.openhab.binding.carnet.internal.CarNetException;
-import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.handler.CarNetAccountHandler;
 import org.osgi.framework.Bundle;
@@ -48,14 +47,12 @@ import org.slf4j.LoggerFactory;
 public class CarNetDiscoveryService extends AbstractDiscoveryService implements CarNetDeviceListener {
     private final Logger logger = LoggerFactory.getLogger(CarNetDiscoveryService.class);
     private final CarNetAccountHandler accountHandler;
-    private final CarNetTextResources resources;
     private ThingUID bridgeUID;
     private static final int TIMEOUT = 10;
 
-    public CarNetDiscoveryService(CarNetAccountHandler bridgeHandler, Bundle bundle, CarNetTextResources resources) {
+    public CarNetDiscoveryService(CarNetAccountHandler bridgeHandler, Bundle bundle) {
         super(SUPPORTED_THING_TYPES_UIDS, TIMEOUT);
         Validate.notNull(bridgeHandler);
-        this.resources = resources;
         this.accountHandler = bridgeHandler;
         this.bridgeUID = bridgeHandler.getThing().getUID();
 
@@ -63,6 +60,9 @@ public class CarNetDiscoveryService extends AbstractDiscoveryService implements 
 
     @Override
     public void informationUpdate(@Nullable List<CarNetVehicleInformation> vehicleList) {
+        if (vehicleList == null) {
+            return;
+        }
         for (CarNetVehicleInformation vehicle : vehicleList) {
             logger.debug("Discovery for [{}]", vehicle.getId());
             Map<String, Object> properties = new TreeMap<String, Object>();

@@ -75,6 +75,7 @@ public class CarNetBindingConstants {
     public static final String ITEMT_TEMP = "Number:Temperature";
     public static final String ITEMT_DISTANCE = "Number:Length";
     public static final String ITEMT_VOLUME = "Number:Volume";
+    public static final String ITEMT_TIME = "Number:Time";
     public static final String ITEMT_PERCENT = "Number:Dimensionless";
 
     public static final int API_TOKEN_REFRESH_INTERVAL_SEC = 5 * 60; // interval to check for valid token
