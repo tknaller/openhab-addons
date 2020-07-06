@@ -27,7 +27,9 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.unit.MetricPrefix;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 
 import tec.uom.se.unit.Units;
 
@@ -60,13 +62,34 @@ public class CarNetIChanneldMapper {
         public Optional<String> pattern = Optional.empty();
     }
 
+    @Activate
+    public CarNetIChanneldMapper() {
+    }
+
+    public @Nullable ChannelIdMapEntry find(String id) {
+        for (Map.Entry<String, ChannelIdMapEntry> e : map.entrySet()) {
+            if (e.getKey().equalsIgnoreCase(id)) {
+                return e.getValue();
+            }
+            ChannelIdMapEntry v = e.getValue();
+            if (v.symbolicName.equalsIgnoreCase(id) || v.channelName.equalsIgnoreCase(id)) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    @Deactivate
+    public void deactivate() {
+    }
+
     private static Map<String, ChannelIdMapEntry> map = new HashMap<String, ChannelIdMapEntry>();
     static {
         // Status
         add("KILOMETER_STATUS", "0x0101010002", "kilometerStatus", ITEMT_DISTANCE, CHANNEL_GROUP_STATUS, KILOMETRE);
         add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_TEMP);
-        add("LIGHT_STATUS", "0x0301010001", "statusLight", ITEMT_SWITCH);
-        add("PARKING_BRAKE", "0x0301030001", "parkingBrake", ITEMT_SWITCH);
+        add("LIGHT_STATUS", "0x0301010001", "statusLight", ITEMT_NUMBER);
+        add("PARKING_BRAKE", "0x0301030001", "parkingBrake", ITEMT_NUMBER);
         add("SAFETY_STATE_TRUNK_LID", "0x030104000F", "trunkLidState", ITEMT_NUMBER);
         add("POSITION_CONVERTIBLE_TOP", "0x030105000A", "positionConvertableTop", ITEMT_NUMBER);
         add("STATE_SUN_ROOF_MOTOR_COVER", "0x030105000B", "roofMotorCoverState", ITEMT_NUMBER);
@@ -76,7 +99,7 @@ public class CarNetIChanneldMapper {
         add("STATE_SPOILER", "0x0301050011", "spoilerState", ITEMT_NUMBER);
         add("POSITION_SPOILER", "0x0301050012", "spoilerPos", ITEMT_NUMBER);
         add("SAFETY_STATE_HOOD", "0x0301040012", "hoodState", ITEMT_NUMBER);
-        add("STATE_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_SWITCH);
+        add("STATE_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_NUMBER);
         add("POSITION_SERVICE_FLAP", "0x0301050010", "serviceFlapPos", ITEMT_NUMBER);
 
         // Gas
@@ -92,12 +115,12 @@ public class CarNetIChanneldMapper {
         add("STATE_OF_CHARGE", "0x0301030002", "chargingState", ITEMT_SWITCH, CHANNEL_GROUP_RANGE);
 
         // Maintenance
-        add("MAINTINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
+        add("MAINTINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
         add("MAINTINT_DIST_TO_INSPECTION", "0x0203010003", "distanceToInspection", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
                 KILOMETRE);
         add("MAINTINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
-        add("WARNING_OIL_CHANGE", "0x0203010005", "oilWarning", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
-        add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
+        add("WARNING_OIL_CHANGE", "0x0203010005", "oilWarning", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
+        add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarningLevel", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
         add("OIL_LEVEL_DIPSTICK_PERCENTAGE", "0x0204040003", "oilPercentage", ITEMT_PERCENT, CHANNEL_GROUP_MAINT,
                 SmartHomeUnits.PERCENT);
         add("OIL_LEVEL_AMOUNT_IN_LITERS", "0x0204040001", "oilAmount", ITEMT_VOLUME, CHANNEL_GROUP_MAINT,
@@ -110,37 +133,37 @@ public class CarNetIChanneldMapper {
         add("MAINTINT_MONTHLY_MILEAGE", "0x0203010007", "monthlyMilage", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
 
         // Doors/trunk
-        add("STATE_CONVERTABLE_TOP", "0x0301050009", "covertableTopState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_TRUNK_LID", "0x030104000E", "trunkLidOpen", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_TRUNK_LID", "0x030104000D", "trunkLidLock", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_HOOD", "0x0301040011", "hoodOpen", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_HOOD", "0x0301040010", "hoodLock", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_LEFT_FRONT_DOOR", "0x0301040002", "doorFrontLeftOpen", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_LEFT_FRONT_DOOR", "0x0301040001", "doorFrontLeftLock", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("STATE_CONVERTABLE_TOP", "0x0301050009", "covertableTopState", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
+        add("OPEN_STATE_TRUNK_LID", "0x030104000E", "trunkLidOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
+        add("LOCK_STATE_TRUNK_LID", "0x030104000D", "trunkLidLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
+        add("OPEN_STATE_HOOD", "0x0301040011", "hoodOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
+        add("LOCK_STATE_HOOD", "0x0301040010", "hoodLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
+        add("OPEN_STATE_LEFT_FRONT_DOOR", "0x0301040002", "doorFrontLeftOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
+        add("LOCK_STATE_LEFT_FRONT_DOOR", "0x0301040001", "doorFrontLeftLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
         add("SAFETY_STATE_LEFT_FRONT_DOOR", "0x0301040003", "doorFrontLeftSafety", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_RIGHT_FRONT_DOOR", "0x0301040008", "doorFrontRightOpen", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_RIGHT_FRONT_DOOR", "0x0301040007", "doorFrontRightLock", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("OPEN_STATE_RIGHT_FRONT_DOOR", "0x0301040008", "doorFrontRightOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
+        add("LOCK_STATE_RIGHT_FRONT_DOOR", "0x0301040007", "doorFrontRightLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
         add("SAFETY_STATE_RIGHT_FRONT_DOOR", "0x0301040009", "doorFrontRightSafety", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_LEFT_REAR_DOOR", "0x0301040005", "doorRearLeftOpen", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_LEFT_REAR_DOOR", "0x0301040004", "doorRearLeftLock", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("OPEN_STATE_LEFT_REAR_DOOR", "0x0301040005", "doorRearLeftOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
+        add("LOCK_STATE_LEFT_REAR_DOOR", "0x0301040004", "doorRearLeftLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
         add("SAFETY_STATE_LEFT_REAR_DOOR", "0x0301040006", "doorRearLeftSafety", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_RIGHT_REAR_DOOR", "0x030104000B", "doorRearRightOpen", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_RIGHT_REAR_DOOR", "0x030104000A", "doorRearRightLock", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("OPEN_STATE_RIGHT_REAR_DOOR", "0x030104000B", "doorRearRightOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
+        add("LOCK_STATE_RIGHT_REAR_DOOR", "0x030104000A", "doorRearRightLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
         add("SAFETY_STATE_RIGHT_REAR_DOOR", "0x030104000C", "doorRearRightSafety", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
 
         // Windows
-        add("STATE_LEFT_FRONT_WINDOW", "0x0301050001", "windowFrontLeftState", ITEMT_SWITCH, CHANNEL_GROUP_WINDOWS);
+        add("STATE_LEFT_FRONT_WINDOW", "0x0301050001", "windowFrontLeftState", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
         add("POSITION_LEFT_FRONT_WINDOW", "0x0301050002", "windowFrontLeftPos", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
-        add("STATE_LEFT_REAR_WINDOW", "0x0301050003", "windowRearLeftState", ITEMT_SWITCH, CHANNEL_GROUP_WINDOWS);
+        add("STATE_LEFT_REAR_WINDOW", "0x0301050003", "windowRearLeftState", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
         add("POSITION_LEFT_REAR_WINDOW", "0x0301050004", "windowRearLeftPos", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
-        add("STATE_RIGHT_FRONT_WINDOW", "0x0301050005", "windowFrontRightState", ITEMT_SWITCH, CHANNEL_GROUP_WINDOWS);
+        add("STATE_RIGHT_FRONT_WINDOW", "0x0301050005", "windowFrontRightState", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
         add("POSITION_RIGHT_FRONT_WINDOW", "0x0301050006", "windowFrontRightPos", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
-        add("STATE_RIGHT_REAR_WINDOW", "0x0301050007", "windowRearRightState", ITEMT_SWITCH, CHANNEL_GROUP_WINDOWS);
+        add("STATE_RIGHT_REAR_WINDOW", "0x0301050007", "windowRearRightState", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
         add("POSITION_RIGHT_REAR_WINDOW", "0x0301050008", "windowRearRightPos", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
 
         // Tires
         add("TIREPRESS_LEFT_FRONT_CURRENT", "0x0301060001", "tirePresFrontLeft", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
-        add("TIREPRESS_LEFT_FRONT_DESIRED", "0x0301060002");
+        add("TIREPRESS_LEFT_FRONT_DESIRED", "0x0301060002", "tireDesiredFrontLeft", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
         add("TIREPRESS_LEFT_REAR_CURRENT", "0x0301060003", "tirePresRearLeft", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
         add("TIREPRESS_LEFT_REAR_DESIRED", "0x0301060004");
         add("TIREPRESS_RIGHT_FRONT_CURRENT", "0x0301060005", "tirePresFrontRight", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
@@ -157,19 +180,6 @@ public class CarNetIChanneldMapper {
 
         // Misc
         add("UTC_TIME_STATUS", "0x0101010001");
-    }
-
-    public @Nullable ChannelIdMapEntry find(String id) {
-        for (Map.Entry<String, ChannelIdMapEntry> e : map.entrySet()) {
-            if (e.getKey().equalsIgnoreCase(id)) {
-                return e.getValue();
-            }
-            ChannelIdMapEntry v = e.getValue();
-            if (v.symbolicName.equalsIgnoreCase(id) || v.channelName.equalsIgnoreCase(id)) {
-                return v;
-            }
-        }
-        return null;
     }
 
     private static void add(String name, String id, String channelName, String itemType, String groupName,
