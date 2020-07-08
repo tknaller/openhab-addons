@@ -34,7 +34,7 @@ public class CarNetApiErrorDTO {
     public String error = "";
     public String code = "";
     public String description = "";
-    public CNErrorMessage2Details details = new CNErrorMessage2Details();
+    public @Nullable CNErrorMessage2Details details = new CNErrorMessage2Details();
 
     public CarNetApiErrorDTO() {
     }
@@ -106,9 +106,9 @@ public class CarNetApiErrorDTO {
     }
 
     public static class CNErrorMessage2Details {
-        public String challenge = "";
-        public String user = "";
-        public String reason = "";
-        public String delay = "";
+        public @Nullable String challenge = "";
+        public @Nullable String user = "";
+        public @Nullable String reason = "";
+        public @Nullable String delay = "";
     }
 }

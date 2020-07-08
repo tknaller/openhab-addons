@@ -21,21 +21,11 @@
 		</parameter>
 		<parameter name="country" type="text" required="true">
 			<label>Country</label>
-			<description>Country in which the vehicle was bought.</description>
+			<description>Market in which is associated (must not match the country where the vehicle was bought).</description>
 			<options>
-				<option value="DE">Germany</option>
-				<option value="AT">Austria</option>
-				<option value="CH">Switzerland</option>
-				<option value="BE">Belgium</option>
-				<option value="FR">France</option>
-				<option value="DK">Denmark</option>
-				<option value="ES">Spain</option>
-				<option value="IT">Italy</option>
-				<option value="PL">Poland</option>
-				<option value="SW">Sweden</option>
-				<option value="CAN">Canada</option>
-				<option value="US">United States</option>
+				<option value="DE">Default</option>
 			</options>
+			<default>DE</default>
 		</parameter>
 		<parameter name="user" type="text" required="true" groupName="authentication">
 			<label>Online User</label>

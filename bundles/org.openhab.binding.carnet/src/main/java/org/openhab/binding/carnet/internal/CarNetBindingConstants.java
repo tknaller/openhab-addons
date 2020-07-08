@@ -80,4 +80,7 @@ public class CarNetBindingConstants {
 
     public static final int API_TOKEN_REFRESH_INTERVAL_SEC = 5 * 60; // interval to check for valid token
     public static final int API_REQUEST_TIMEOUT = 60;
+
+    public static final String API_STATUS_MSG_PREFIX = "api-status";
+    public static final String API_STATUS_CLASS_SECURUTY = "VSR.security";
 }

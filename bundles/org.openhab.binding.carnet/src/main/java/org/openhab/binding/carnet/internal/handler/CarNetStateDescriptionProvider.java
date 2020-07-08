@@ -108,7 +108,7 @@ public class CarNetStateDescriptionProvider implements DynamicStateDescriptionPr
                     break;
                 case ITEMT_NUMBER:
                 default:
-                    if (channelDef.unit.isPresent()) {
+                    if (channelDef.unit != null) {
                         pattern = "%f %unit%";
                     }
             }

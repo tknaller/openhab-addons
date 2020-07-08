@@ -20,13 +20,16 @@ import java.util.Optional;
 
 import javax.measure.Unit;
 import javax.measure.quantity.Length;
+import javax.measure.quantity.Temperature;
 import javax.measure.quantity.Time;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.smarthome.core.library.unit.ImperialUnits;
 import org.eclipse.smarthome.core.library.unit.MetricPrefix;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData.CNStatusField;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -45,6 +48,7 @@ import tec.uom.se.unit.Units;
 public class CarNetIChanneldMapper {
     public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
     public static final Unit<Time> DAYS = Units.DAY;
+    public static final Unit<Temperature> DKELVIN = MetricPrefix.DECI(Units.KELVIN);
 
     public static class ChannelIdMapEntry {
         public String id = "";
@@ -55,7 +59,7 @@ public class CarNetIChanneldMapper {
 
         public boolean advanced = false;
         public boolean readOnly = true;
-        public Optional<Unit<?>> unit = Optional.empty();
+        public @Nullable Unit<?> unit;
         public Optional<Integer> min = Optional.empty();
         public Optional<Integer> max = Optional.empty();
         public Optional<Integer> step = Optional.empty();
@@ -79,6 +83,35 @@ public class CarNetIChanneldMapper {
         return null;
     }
 
+    public ChannelIdMapEntry updateDefinition(CNStatusField field, ChannelIdMapEntry definition) {
+        if (gs(field.unit).contains("%")) {
+            definition.itemType = ITEMT_PERCENT;
+            definition.unit = SmartHomeUnits.PERCENT;
+        } else if (gs(field.unit).equalsIgnoreCase("d")) {
+            definition.itemType = ITEMT_TIME;
+            definition.unit = DAYS;
+        } else if (gs(field.unit).equalsIgnoreCase("l")) {
+            definition.itemType = ITEMT_VOLUME;
+            definition.unit = SmartHomeUnits.LITRE;
+        } else if (gs(field.unit).equalsIgnoreCase("dK")) {
+            definition.itemType = ITEMT_TEMP;
+            definition.unit = DKELVIN;
+        } else if (gs(field.unit).equalsIgnoreCase("C")) {
+            definition.itemType = ITEMT_TEMP;
+            definition.unit = SIUnits.CELSIUS;
+        } else if (gs(field.unit).equalsIgnoreCase("F")) {
+            definition.itemType = ITEMT_TEMP;
+            definition.unit = ImperialUnits.FAHRENHEIT;
+        } else if (gs(field.unit).equalsIgnoreCase("km")) {
+            definition.itemType = ITEMT_DISTANCE;
+            definition.unit = KILOMETRE;
+        } else if (gs(field.unit).equalsIgnoreCase("km/h")) {
+            definition.itemType = ITEMT_DISTANCE;
+            definition.unit = SIUnits.KILOMETRE_PER_HOUR;
+        }
+        return definition;
+    }
+
     @Deactivate
     public void deactivate() {
     }
@@ -87,9 +120,9 @@ public class CarNetIChanneldMapper {
     static {
         // Status
         add("KILOMETER_STATUS", "0x0101010002", "kilometerStatus", ITEMT_DISTANCE, CHANNEL_GROUP_STATUS, KILOMETRE);
-        add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_TEMP);
+        add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_TEMP, CHANNEL_GROUP_STATUS, SIUnits.CELSIUS);
         add("LIGHT_STATUS", "0x0301010001", "statusLight", ITEMT_NUMBER);
-        add("PARKING_BRAKE", "0x0301030001", "parkingBrake", ITEMT_NUMBER);
+        add("PARKING_BRAKE", "0x0301030001", "parkingBrake", ITEMT_SWITCH);
         add("SAFETY_STATE_TRUNK_LID", "0x030104000F", "trunkLidState", ITEMT_NUMBER);
         add("POSITION_CONVERTIBLE_TOP", "0x030105000A", "positionConvertableTop", ITEMT_NUMBER);
         add("STATE_SUN_ROOF_MOTOR_COVER", "0x030105000B", "roofMotorCoverState", ITEMT_NUMBER);
@@ -99,7 +132,7 @@ public class CarNetIChanneldMapper {
         add("STATE_SPOILER", "0x0301050011", "spoilerState", ITEMT_NUMBER);
         add("POSITION_SPOILER", "0x0301050012", "spoilerPos", ITEMT_NUMBER);
         add("SAFETY_STATE_HOOD", "0x0301040012", "hoodState", ITEMT_NUMBER);
-        add("STATE_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_NUMBER);
+        add("STATE_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_SWITCH);
         add("POSITION_SERVICE_FLAP", "0x0301050010", "serviceFlapPos", ITEMT_NUMBER);
 
         // Gas
@@ -107,20 +140,20 @@ public class CarNetIChanneldMapper {
                 SmartHomeUnits.PERCENT);
         add("TOTAL_RANGE", "0x0301030005", "totalRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
         add("PRIMARY_RANGE", "0x0301030006", "primaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
-        add("PRIMARY_DRIVE", "0x0301030007", "primaryDrive", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
+        add("PRIMARY_FUEL_TYPE", "0x0301030007", "primaryFueType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
         add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
-        add("SECONDARY_DRIVE", "0x0301030009", "secondaryDrive", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
+        add("SECONDARY_DRIVE", "0x0301030009", "secondaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
         add("15CNG_LEVEL_IN_PERCENTAGE", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE,
                 SmartHomeUnits.PERCENT);
         add("STATE_OF_CHARGE", "0x0301030002", "chargingState", ITEMT_SWITCH, CHANNEL_GROUP_RANGE);
 
         // Maintenance
-        add("MAINTINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
+        add("MAINTINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
         add("MAINTINT_DIST_TO_INSPECTION", "0x0203010003", "distanceToInspection", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
                 KILOMETRE);
         add("MAINTINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
-        add("WARNING_OIL_CHANGE", "0x0203010005", "oilWarning", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
-        add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarningLevel", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
+        add("WARNING_OIL_CHANGE", "0x0203010005", "oilWarning", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
+        add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
         add("OIL_LEVEL_DIPSTICK_PERCENTAGE", "0x0204040003", "oilPercentage", ITEMT_PERCENT, CHANNEL_GROUP_MAINT,
                 SmartHomeUnits.PERCENT);
         add("OIL_LEVEL_AMOUNT_IN_LITERS", "0x0204040001", "oilAmount", ITEMT_VOLUME, CHANNEL_GROUP_MAINT,
@@ -190,9 +223,7 @@ public class CarNetIChanneldMapper {
         entry.channelName = channelName;
         entry.itemType = itemType;
         entry.groupName = groupName;
-        if (unit != null) {
-            entry.unit = Optional.of(unit);
-        }
+        entry.unit = unit;
         map.put(id, entry);
     }
 
@@ -206,5 +237,9 @@ public class CarNetIChanneldMapper {
 
     private static void add(String name, String id) {
         add(name, id, "", "", CHANNEL_GROUP_STATUS, null);
+    }
+
+    private static String gs(@Nullable String s) {
+        return s != null ? s : "";
     }
 }
