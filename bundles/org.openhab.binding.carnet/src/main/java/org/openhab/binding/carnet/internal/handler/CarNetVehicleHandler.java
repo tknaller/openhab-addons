@@ -134,20 +134,20 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         String error = "";
         try {
             switch (channelId) {
-                case CHANNEL_GENERAL_UPDATE:
+                case CHANNEL_CONTROL_UPDATE:
                     updateVehicleStatus();
                     updateState(channelUID.getId(), OnOffType.OFF);
                     break;
-                case CHANNEL_GENERAL_LOCK:
+                case CHANNEL_CONTROL_LOCK:
                     api.lockDoor((OnOffType) command == OnOffType.ON);
                     break;
-                case CHANNEL_GENERAL_CLIMA:
+                case CHANNEL_CONTROL_CLIMA:
                     api.climaControl((OnOffType) command == OnOffType.ON);
                     break;
-                case CHANNEL_GENERAL_WINHEAT:
+                case CHANNEL_CONTROL_WINHEAT:
                     api.controlWindowHeating((OnOffType) command == OnOffType.ON);
                     break;
-                case CHANNEL_GENERAL_PREHEAT:
+                case CHANNEL_CONTROL_PREHEAT:
                     api.controlPreHeating((OnOffType) command == OnOffType.ON);
                     break;
                 default:
@@ -225,8 +225,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                             }
                         }
                     } else {
-                        logger.debug("{}: Unknown data field  {}.{}, value={} {}", vin, data.id, field.id, field.value,
-                                field.unit);
+                        logger.debug("{}: Unknown data field  {}.{}, value={}{}", vin, data.id, field.id, field.value,
+                                gs(field.unit));
                     }
                 }
             }
@@ -354,27 +354,27 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         CarNetVehicleStatus status = api.getVehicleStatus();
         for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
             for (CNStatusField field : data.fields) {
-                ChannelIdMapEntry defFrom = idMapper.find(field.id);
-                if (defFrom != null) {
-                    logger.debug("{}: {}={}{} (channel {}#{})", thingId, defFrom.symbolicName, gs(field.value),
-                            gs(field.unit), gs(defFrom.groupName), gs(defFrom.channelName));
-                    if (!defFrom.channelName.isEmpty()) {
-                        Channel channel = getThing().getChannel(defFrom.groupName + "#" + defFrom.channelName);
+                ChannelIdMapEntry definition = idMapper.find(field.id);
+                if (definition != null) {
+                    logger.debug("{}: {}={}{} (channel {}#{})", thingId, definition.symbolicName, gs(field.value),
+                            gs(field.unit), gs(definition.groupName), gs(definition.channelName));
+                    if (!definition.channelName.isEmpty()) {
+                        Channel channel = getThing().getChannel(definition.groupName + "#" + definition.channelName);
                         if (channel != null) {
                             logger.debug("Updading channel {} with value {}", channel.getUID(), gs(field.value));
-                            switch (defFrom.itemType) {
+                            switch (definition.itemType) {
                                 case ITEMT_SWITCH:
-                                    updateState(channel.getUID(), OnOffType.from(gs(field.value)));
+                                    updateSwitchChannel(channel, definition, field);
                                     break;
                                 case ITEMT_STRING:
                                     updateState(channel.getUID(), new StringType(gs(field.value)));
                                     break;
                                 case ITEMT_NUMBER:
                                 default:
-                                    updateNumberChannel(channel, defFrom, field);
+                                    updateNumberChannel(channel, definition, field);
                             }
                         } else {
-                            logger.debug("Channel {}#{} not found", defFrom.groupName, defFrom.channelName);
+                            logger.debug("Channel {}#{} not found", definition.groupName, definition.channelName);
                         }
                     }
                 } else {
@@ -412,6 +412,30 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
         }
         logger.debug("{}: Updating channel {} with {}", thingId, channel.getUID().getId(), state);
+        updateState(channel.getUID(), state);
+    }
+
+    private void updateSwitchChannel(Channel channel, ChannelIdMapEntry definition, CNStatusField field) {
+        int value = Integer.parseInt(gs(field.value));
+        boolean on;
+        if (definition.symbolicName.toUpperCase().contains("STATE2_")) {
+            on = value == 2; // 3=open, 2=closed
+        } else if (definition.symbolicName.toUpperCase().contains("STATE3_")
+                || definition.symbolicName.toUpperCase().contains("SAFETY_")) {
+            on = value == 3; // 2=open, 3=closed
+        } else if (definition.symbolicName.toUpperCase().contains("LOCK2_")) {
+            // mark a closed lock ON
+            on = value == 2; // 2=open, 3=closed
+        } else if (definition.symbolicName.toUpperCase().contains("LOCK3_")) {
+            // mark a closed lock ON
+            on = value == 3; // 3=open, 2=closed
+        } else {
+            on = value == 1;
+        }
+
+        State state = on ? OnOffType.ON : OnOffType.OFF;
+        logger.debug("{}: Map value {} to state {} for channe {}, symnolicName{}", thingId, value, state,
+                definition.channelName, definition.symbolicName);
         updateState(channel.getUID(), state);
     }
 

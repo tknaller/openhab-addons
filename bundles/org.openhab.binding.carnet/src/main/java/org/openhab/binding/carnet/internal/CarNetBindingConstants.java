@@ -40,12 +40,14 @@ public class CarNetBindingConstants {
     // List of all ChannelGroups and Channels
     public static final String CHANNEL_GROUP_GENERAL = "general";
     public static final String CHANNEL_GENERAL_VIN = "vin";
-    public static final String CHANNEL_GENERAL_LOCK = "lock";
-    public static final String CHANNEL_GENERAL_CLIMA = "clima";
-    public static final String CHANNEL_GENERAL_WINHEAT = "windowsHeat";
-    public static final String CHANNEL_GENERAL_PREHEAT = "preHeater";
-    public static final String CHANNEL_GENERAL_CHARGER = "charger";
-    public static final String CHANNEL_GENERAL_UPDATE = "update";
+
+    public static final String CHANNEL_GROUP_CONTROL = "control";
+    public static final String CHANNEL_CONTROL_LOCK = "lock";
+    public static final String CHANNEL_CONTROL_CLIMA = "clima";
+    public static final String CHANNEL_CONTROL_WINHEAT = "windowsHeat";
+    public static final String CHANNEL_CONTROL_PREHEAT = "preHeater";
+    public static final String CHANNEL_CONTROL_CHARGER = "charger";
+    public static final String CHANNEL_CONTROL_UPDATE = "update";
 
     public static final String CHANNEL_GROUP_LOCATION = "location";
     public static final String CHANNEL_LOCATTION_GEO = "position";
@@ -74,6 +76,7 @@ public class CarNetBindingConstants {
     public static final String ITEMT_LOCATION = "Location";
     public static final String ITEMT_TEMP = "Number:Temperature";
     public static final String ITEMT_DISTANCE = "Number:Length";
+    public static final String ITEMT_SPEED = "Number:Speed";
     public static final String ITEMT_VOLUME = "Number:Volume";
     public static final String ITEMT_TIME = "Number:Time";
     public static final String ITEMT_PERCENT = "Number:Dimensionless";

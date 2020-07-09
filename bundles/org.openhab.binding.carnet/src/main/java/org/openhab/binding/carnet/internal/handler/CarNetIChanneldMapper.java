@@ -14,7 +14,7 @@ package org.openhab.binding.carnet.internal.handler;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -49,6 +49,106 @@ public class CarNetIChanneldMapper {
     public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
     public static final Unit<Time> DAYS = Units.DAY;
     public static final Unit<Temperature> DKELVIN = MetricPrefix.DECI(Units.KELVIN);
+
+    private static Map<String, ChannelIdMapEntry> map = new LinkedHashMap<String, ChannelIdMapEntry>();
+    static {
+        // Status
+        add("KILOMETER_STATUS", "0x0101010002", "kilometerStatus", ITEMT_DISTANCE, CHANNEL_GROUP_STATUS, KILOMETRE);
+        add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_TEMP, CHANNEL_GROUP_STATUS, SIUnits.CELSIUS);
+        add("STATE2_PARKING_LIGHT", "0x0301010001", "parkingLight", ITEMT_SWITCH, CHANNEL_GROUP_STATUS);
+        add("STATE3_PARKING_BRAKE", "0x0301030001", "parkingBrake", ITEMT_SWITCH, CHANNEL_GROUP_GENERAL);
+        add("POSITION_CONVERTIBLE_TOP", "0x030105000A", "positionConvertableTop", ITEMT_PERCENT);
+        add("STATE3_SUN_ROOF_MOTOR_COVER", "0x030105000B", "roofMotorCoverState", ITEMT_SWITCH);
+        add("POSITION_SUN_ROOF_MOTOR_COVER", "0x030105000C", "roofMotorCoverPos", ITEMT_PERCENT);
+        add("STATE3_SUN_ROOF_REAR_MOTOR_COVER_3", "0x030105000D", "roofRearMotorCoverState", ITEMT_SWITCH);
+        add("POSITION_SUN_ROOF_REAR_MOTOR_COVER_3", "0x030105000E", "roofRearMotorCoverPos", ITEMT_PERCENT);
+        add("STATE3_SPOILER", "0x0301050011", "spoilerState", ITEMT_SWITCH);
+        add("POSITION_SPOILER", "0x0301050012", "spoilerPos", ITEMT_PERCENT);
+        add("STATE3_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_SWITCH);
+        add("POSITION_SERVICE_FLAP", "0x0301050010"/* , "serviceFlapPos", ITEMT_PERCENT */);
+
+        // Gas
+        add("FUEL_LEVEL_IN_PERCENTAGE", "0x030103000A", "fuelPercentage", ITEMT_PERCENT, CHANNEL_GROUP_GENERAL,
+                SmartHomeUnits.PERCENT);
+        add("TOTAL_RANGE", "0x0301030005", "totalRange", ITEMT_DISTANCE, CHANNEL_GROUP_GENERAL, KILOMETRE);
+        add("PRIMARY_RANGE", "0x0301030006", "primaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
+        add("PRIMARY_FUEL_TYPE", "0x0301030007", "primaryFueType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
+        add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
+        add("SECONDARY_DRIVE", "0x0301030009", "secondaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
+        add("15CNG_LEVEL_IN_PERCENTAGE", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE,
+                SmartHomeUnits.PERCENT);
+        add("STATE2_OF_CHARGE", "0x0301030002", "chargingState", ITEMT_SWITCH, CHANNEL_GROUP_RANGE);
+
+        // Maintenance
+        add("MAINTINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_SWITCH, CHANNEL_GROUP_GENERAL);
+        add("MAINTINT_DIST_TO_INSPECTION", "0x0203010003", "distanceToInspection", ITEMT_DISTANCE,
+                CHANNEL_GROUP_GENERAL, KILOMETRE);
+        add("MAINTINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
+        add("WARNING_OIL_CHANGE", "0x0203010005", "oilWarning", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
+        add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_GENERAL);
+        add("OIL_LEVEL_DIPSTICK_PERCENTAGE", "0x0204040003", "oilPercentage", ITEMT_PERCENT, CHANNEL_GROUP_MAINT,
+                SmartHomeUnits.PERCENT);
+        add("OIL_LEVEL_AMOUNT_IN_LITERS", "0x0204040001", "oilAmount", ITEMT_VOLUME, CHANNEL_GROUP_MAINT,
+                SmartHomeUnits.LITRE);
+        add("MAINTINT_DISTANCE_TO_OIL_CHANGE", "0x0203010001", "distanceOilChange", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
+                KILOMETRE);
+        add("MAINTINT_TIME_TO_OIL_CHANGE", "0x0203010002", "intervalOilChange", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
+        add("MAINTENANCE_INTERVAL_AD_BLUE_RANGE", "0x02040C0001", "distanceAdBlue", ITEMT_DISTANCE,
+                CHANNEL_GROUP_GENERAL, KILOMETRE);
+        add("MAINTINT_MONTHLY_MILEAGE", "0x0203010007", "monthlyMilage", ITEMT_DISTANCE, CHANNEL_GROUP_GENERAL,
+                KILOMETRE);
+
+        // Doors/trunk
+        add("STATE3_CONVERTABLE_TOP", "0x0301050009", "covertableTopState", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
+        add("STATE3_TRUNK_LID", "0x030104000E", "trunkLidState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("LOCK2_TRUNK_LID", "0x030104000D", "trunkLidLocked", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("SAFETY_TRUNK_LID", "0x030104000F", "trunkLidState", ITEMT_SWITCH);
+        add("STATE3_HOOD", "0x0301040011", "hoodState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("LOCK3_HOOD", "0x0301040010", "hoodLocked", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("SAFETY_HOOD", "0x0301040012", "hoodState", ITEMT_SWITCH);
+        add("STATE3_LEFT_FRONT_DOOR", "0x0301040002", "doorFrontLeftState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("LOCK2_LEFT_FRONT_DOOR", "0x0301040001", "doorFrontLeftLocked", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("SAFETY_LEFT_FRONT_DOOR", "0x0301040003", "doorFrontLeftSafety", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("STATE3_RIGHT_FRONT_DOOR", "0x0301040008", "doorFrontRightState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("LOCK2_RIGHT_FRONT_DOOR", "0x0301040007", "doorFrontRightLocked", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("SAFETY_RIGHT_FRONT_DOOR", "0x0301040009", "doorFrontRightSafety", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("STATE3_LEFT_REAR_DOOR", "0x0301040005", "doorRearLeftState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("LOCK2_LEFT_REAR_DOOR", "0x0301040004", "doorRearLeftLocked", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("SAFETY_LEFT_REAR_DOOR", "0x0301040006", "doorRearLeftSafety", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("STATE3_RIGHT_REAR_DOOR", "0x030104000B", "doorRearRightState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("LOCK2_RIGHT_REAR_DOOR", "0x030104000A", "doorRearRightLocked", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+        add("SAFETY_RIGHT_REAR_DOOR", "0x030104000C", "doorRearRightSafety", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
+
+        // Windows
+        add("STATE3_LEFT_FRONT_WINDOW", "0x0301050001", "windowFrontLeftState", ITEMT_SWITCH, CHANNEL_GROUP_WINDOWS);
+        add("POSITION_LEFT_FRONT_WINDOW", "0x0301050002", "windowFrontLeftPos", ITEMT_PERCENT, CHANNEL_GROUP_WINDOWS);
+        add("STATE3_LEFT_REAR_WINDOW", "0x0301050003", "windowRearLeftState", ITEMT_SWITCH, CHANNEL_GROUP_WINDOWS);
+        add("POSITION_LEFT_REAR_WINDOW", "0x0301050004", "windowRearLeftPos", ITEMT_PERCENT, CHANNEL_GROUP_WINDOWS);
+        add("STATE3_RIGHT_FRONT_WINDOW", "0x0301050005", "windowFrontRightState", ITEMT_SWITCH, CHANNEL_GROUP_WINDOWS);
+        add("POSITION_RIGHT_FRONT_WINDOW", "0x0301050006", "windowFrontRightPos", ITEMT_PERCENT, CHANNEL_GROUP_WINDOWS);
+        add("STATE3_RIGHT_REAR_WINDOW", "0x0301050007", "windowRearRightState", ITEMT_SWITCH, CHANNEL_GROUP_WINDOWS);
+        add("POSITION_RIGHT_REAR_WINDOW", "0x0301050008", "windowRearRightPos", ITEMT_PERCENT, CHANNEL_GROUP_WINDOWS);
+
+        // Tires
+        add("TIREPRESS_LEFT_FRONT_CURRENT", "0x0301060001", "tirePresFrontLeft", ITEMT_SWITCH, CHANNEL_GROUP_TIRES);
+        add("TIREPRESS_LEFT_FRONT_DESIRED", "0x0301060002", "tireDesiredFrontLeft", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
+        add("TIREPRESS_LEFT_REAR_CURRENT", "0x0301060003", "tirePresRearLeft", ITEMT_SWITCH, CHANNEL_GROUP_TIRES);
+        add("TIREPRESS_LEFT_REAR_DESIRED", "0x0301060004");
+        add("TIREPRESS_RIGHT_FRONT_CURRENT", "0x0301060005", "tirePresFrontRight", ITEMT_SWITCH, CHANNEL_GROUP_TIRES);
+        add("TIREPRESS_RIGHT_FRONT_DESIRED", "0x0301060006");
+        add("TIREPRESS_RIGHT_REAR_CURRENT", "0x0301060007", "tirePresRearRight", ITEMT_SWITCH, CHANNEL_GROUP_TIRES);
+        add("TIREPRESS_RIGHT_REAR_DESIRED", "0x0301060008");
+        add("TIREPRESS_LEFT_FRONT_TIRE_DIFF", "0x030106000B");
+        add("TIREPRESS_LEFT_REAR_TIRE_DIFF", "0x030106000C");
+        add("TIREPRESS_RIGHT_FRONT_TIRE_DIFF", "0x030106000D");
+        add("TIREPRESS_RIGHT_REAR_TIRE_DIFF", "0x030106000E");
+        add("TIREPRESS_SPARE_TIRE_CURRENT", "0x0301060009");
+        add("TIREPRESS_SPARE_TIRE_DESIRED", "0x030106000A");
+        add("TIREPRESS_SPARE_TIRE_DIFF", "0x030106000F");
+
+        // Misc
+        add("UTC_TIME_STATUS", "0x0101010001");
+    }
 
     public static class ChannelIdMapEntry {
         public String id = "";
@@ -93,6 +193,9 @@ public class CarNetIChanneldMapper {
         } else if (gs(field.unit).equalsIgnoreCase("l")) {
             definition.itemType = ITEMT_VOLUME;
             definition.unit = SmartHomeUnits.LITRE;
+        } else if (gs(field.unit).equalsIgnoreCase("gal")) {
+            definition.itemType = ITEMT_VOLUME;
+            definition.unit = CustomUnits.GALLON;
         } else if (gs(field.unit).equalsIgnoreCase("dK")) {
             definition.itemType = ITEMT_TEMP;
             definition.unit = DKELVIN;
@@ -105,9 +208,18 @@ public class CarNetIChanneldMapper {
         } else if (gs(field.unit).equalsIgnoreCase("km")) {
             definition.itemType = ITEMT_DISTANCE;
             definition.unit = KILOMETRE;
-        } else if (gs(field.unit).equalsIgnoreCase("km/h")) {
+        } else if (gs(field.unit).equalsIgnoreCase("mi")) {
             definition.itemType = ITEMT_DISTANCE;
+            definition.unit = ImperialUnits.MILE;
+        } else if (gs(field.unit).equalsIgnoreCase("in")) {
+            definition.itemType = ITEMT_DISTANCE;
+            definition.unit = ImperialUnits.INCH;
+        } else if (gs(field.unit).equalsIgnoreCase("km/h")) {
+            definition.itemType = ITEMT_SPEED;
             definition.unit = SIUnits.KILOMETRE_PER_HOUR;
+        } else if (gs(field.unit).equalsIgnoreCase("mph")) {
+            definition.itemType = ITEMT_SPEED;
+            definition.unit = ImperialUnits.MILES_PER_HOUR;
         }
         return definition;
     }
@@ -116,113 +228,17 @@ public class CarNetIChanneldMapper {
     public void deactivate() {
     }
 
-    private static Map<String, ChannelIdMapEntry> map = new HashMap<String, ChannelIdMapEntry>();
-    static {
-        // Status
-        add("KILOMETER_STATUS", "0x0101010002", "kilometerStatus", ITEMT_DISTANCE, CHANNEL_GROUP_STATUS, KILOMETRE);
-        add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_TEMP, CHANNEL_GROUP_STATUS, SIUnits.CELSIUS);
-        add("LIGHT_STATUS", "0x0301010001", "statusLight", ITEMT_NUMBER);
-        add("PARKING_BRAKE", "0x0301030001", "parkingBrake", ITEMT_SWITCH);
-        add("SAFETY_STATE_TRUNK_LID", "0x030104000F", "trunkLidState", ITEMT_NUMBER);
-        add("POSITION_CONVERTIBLE_TOP", "0x030105000A", "positionConvertableTop", ITEMT_NUMBER);
-        add("STATE_SUN_ROOF_MOTOR_COVER", "0x030105000B", "roofMotorCoverState", ITEMT_NUMBER);
-        add("POSITION_SUN_ROOF_MOTOR_COVER", "0x030105000C", "roofMotorCoverPos", ITEMT_NUMBER);
-        add("STATE_SUN_ROOF_REAR_MOTOR_COVER_3", "0x030105000D", "roofRearMotorCoverState", ITEMT_NUMBER);
-        add("POSITION_SUN_ROOF_REAR_MOTOR_COVER_3", "0x030105000E", "roofRearMotorCoverPos", ITEMT_NUMBER);
-        add("STATE_SPOILER", "0x0301050011", "spoilerState", ITEMT_NUMBER);
-        add("POSITION_SPOILER", "0x0301050012", "spoilerPos", ITEMT_NUMBER);
-        add("SAFETY_STATE_HOOD", "0x0301040012", "hoodState", ITEMT_NUMBER);
-        add("STATE_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_SWITCH);
-        add("POSITION_SERVICE_FLAP", "0x0301050010", "serviceFlapPos", ITEMT_NUMBER);
-
-        // Gas
-        add("FUEL_LEVEL_IN_PERCENTAGE", "0x030103000A", "fuelPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE,
-                SmartHomeUnits.PERCENT);
-        add("TOTAL_RANGE", "0x0301030005", "totalRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
-        add("PRIMARY_RANGE", "0x0301030006", "primaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
-        add("PRIMARY_FUEL_TYPE", "0x0301030007", "primaryFueType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
-        add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
-        add("SECONDARY_DRIVE", "0x0301030009", "secondaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
-        add("15CNG_LEVEL_IN_PERCENTAGE", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE,
-                SmartHomeUnits.PERCENT);
-        add("STATE_OF_CHARGE", "0x0301030002", "chargingState", ITEMT_SWITCH, CHANNEL_GROUP_RANGE);
-
-        // Maintenance
-        add("MAINTINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
-        add("MAINTINT_DIST_TO_INSPECTION", "0x0203010003", "distanceToInspection", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
-                KILOMETRE);
-        add("MAINTINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
-        add("WARNING_OIL_CHANGE", "0x0203010005", "oilWarning", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
-        add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
-        add("OIL_LEVEL_DIPSTICK_PERCENTAGE", "0x0204040003", "oilPercentage", ITEMT_PERCENT, CHANNEL_GROUP_MAINT,
-                SmartHomeUnits.PERCENT);
-        add("OIL_LEVEL_AMOUNT_IN_LITERS", "0x0204040001", "oilAmount", ITEMT_VOLUME, CHANNEL_GROUP_MAINT,
-                SmartHomeUnits.LITRE);
-        add("MAINTINT_DISTANCE_TO_OIL_CHANGE", "0x0203010001", "distanceOilChange", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
-                KILOMETRE);
-        add("MAINTINT_TIME_TO_OIL_CHANGE", "0x0203010002", "intervalOilChange", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
-        add("MAINTENANCE_INTERVAL_AD_BLUE_RANGE", "0x02040C0001", "distanceAdBlue", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
-                KILOMETRE);
-        add("MAINTINT_MONTHLY_MILEAGE", "0x0203010007", "monthlyMilage", ITEMT_NUMBER, CHANNEL_GROUP_MAINT);
-
-        // Doors/trunk
-        add("STATE_CONVERTABLE_TOP", "0x0301050009", "covertableTopState", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_TRUNK_LID", "0x030104000E", "trunkLidOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_TRUNK_LID", "0x030104000D", "trunkLidLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_HOOD", "0x0301040011", "hoodOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_HOOD", "0x0301040010", "hoodLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_LEFT_FRONT_DOOR", "0x0301040002", "doorFrontLeftOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_LEFT_FRONT_DOOR", "0x0301040001", "doorFrontLeftLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("SAFETY_STATE_LEFT_FRONT_DOOR", "0x0301040003", "doorFrontLeftSafety", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_RIGHT_FRONT_DOOR", "0x0301040008", "doorFrontRightOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_RIGHT_FRONT_DOOR", "0x0301040007", "doorFrontRightLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("SAFETY_STATE_RIGHT_FRONT_DOOR", "0x0301040009", "doorFrontRightSafety", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_LEFT_REAR_DOOR", "0x0301040005", "doorRearLeftOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_LEFT_REAR_DOOR", "0x0301040004", "doorRearLeftLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("SAFETY_STATE_LEFT_REAR_DOOR", "0x0301040006", "doorRearLeftSafety", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("OPEN_STATE_RIGHT_REAR_DOOR", "0x030104000B", "doorRearRightOpen", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("LOCK_STATE_RIGHT_REAR_DOOR", "0x030104000A", "doorRearRightLock", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-        add("SAFETY_STATE_RIGHT_REAR_DOOR", "0x030104000C", "doorRearRightSafety", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
-
-        // Windows
-        add("STATE_LEFT_FRONT_WINDOW", "0x0301050001", "windowFrontLeftState", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
-        add("POSITION_LEFT_FRONT_WINDOW", "0x0301050002", "windowFrontLeftPos", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
-        add("STATE_LEFT_REAR_WINDOW", "0x0301050003", "windowRearLeftState", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
-        add("POSITION_LEFT_REAR_WINDOW", "0x0301050004", "windowRearLeftPos", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
-        add("STATE_RIGHT_FRONT_WINDOW", "0x0301050005", "windowFrontRightState", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
-        add("POSITION_RIGHT_FRONT_WINDOW", "0x0301050006", "windowFrontRightPos", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
-        add("STATE_RIGHT_REAR_WINDOW", "0x0301050007", "windowRearRightState", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
-        add("POSITION_RIGHT_REAR_WINDOW", "0x0301050008", "windowRearRightPos", ITEMT_NUMBER, CHANNEL_GROUP_WINDOWS);
-
-        // Tires
-        add("TIREPRESS_LEFT_FRONT_CURRENT", "0x0301060001", "tirePresFrontLeft", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
-        add("TIREPRESS_LEFT_FRONT_DESIRED", "0x0301060002", "tireDesiredFrontLeft", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
-        add("TIREPRESS_LEFT_REAR_CURRENT", "0x0301060003", "tirePresRearLeft", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
-        add("TIREPRESS_LEFT_REAR_DESIRED", "0x0301060004");
-        add("TIREPRESS_RIGHT_FRONT_CURRENT", "0x0301060005", "tirePresFrontRight", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
-        add("TIREPRESS_RIGHT_FRONT_DESIRED", "0x0301060006");
-        add("TIREPRESS_RIGHT_REAR_CURRENT", "0x0301060007", "tirePresRearRight", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
-        add("TIREPRESS_RIGHT_REAR_DESIRED", "0x0301060008");
-        add("TIREPRESS_LEFT_FRONT_TIRE_DIFF", "0x030106000B");
-        add("TIREPRESS_LEFT_REAR_TIRE_DIFF", "0x030106000C");
-        add("TIREPRESS_RIGHT_FRONT_TIRE_DIFF", "0x030106000D");
-        add("TIREPRESS_RIGHT_REAR_TIRE_DIFF", "0x030106000E");
-        add("TIREPRESS_SPARE_TIRE_CURRENT", "0x0301060009");
-        add("TIREPRESS_SPARE_TIRE_DESIRED", "0x030106000A");
-        add("TIREPRESS_SPARE_TIRE_DIFF", "0x030106000F");
-
-        // Misc
-        add("UTC_TIME_STATUS", "0x0101010001");
-    }
-
     private static void add(String name, String id, String channelName, String itemType, String groupName,
             @Nullable Unit<?> unit) {
         ChannelIdMapEntry entry = new ChannelIdMapEntry();
         entry.id = id;
         entry.symbolicName = name;
+        entry.groupName = groupName;
         entry.channelName = channelName;
         entry.itemType = itemType;
-        entry.groupName = groupName;
+        if (itemType.equals(ITEMT_PERCENT) && (unit == null)) {
+            unit = SmartHomeUnits.PERCENT;
+        }
         entry.unit = unit;
         map.put(id, entry);
     }
