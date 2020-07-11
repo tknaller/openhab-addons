@@ -86,4 +86,5 @@ public class CarNetBindingConstants {
 
     public static final String API_STATUS_MSG_PREFIX = "api-status";
     public static final String API_STATUS_CLASS_SECURUTY = "VSR.security";
+    public static final String API_STATUS_GW_ERROR = "gw.error";
 }

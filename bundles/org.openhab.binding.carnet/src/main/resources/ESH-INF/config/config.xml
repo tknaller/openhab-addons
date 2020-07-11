@@ -24,6 +24,7 @@
 			<description>Market in which is associated (must not match the country where the vehicle was bought).</description>
 			<options>
 				<option value="DE">Default</option>
+				<option value="United States">US</option>
 			</options>
 			<default>DE</default>
 		</parameter>

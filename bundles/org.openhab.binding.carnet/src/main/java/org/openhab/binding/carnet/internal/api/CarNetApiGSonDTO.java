@@ -109,6 +109,26 @@ public class CarNetApiGSonDTO {
         public CNVehicles userVehicles;
     }
 
+    public static class CarNetHomeRegion {
+        /*
+         * {
+         * "homeRegion":{
+         * "baseUri":{"systemId":"ICTO-10487", "content":"https://mal-1a.prd.ece.vwg-connect.com/api"}
+         * }
+         * }
+         */
+        public class CNHomeRegion {
+            public class CNBaseUri {
+                public String systemId;
+                public String content;
+            }
+
+            CNBaseUri baseUri;
+        }
+
+        public CNHomeRegion homeRegion;
+    }
+
     public static class CarNetVehicleDetails {
         /*
          * {

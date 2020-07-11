@@ -15,6 +15,8 @@ package org.openhab.binding.carnet.internal.api;
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_REQUEST_TIMEOUT;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +24,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -33,6 +36,7 @@ import java.util.concurrent.TimeoutException;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -48,6 +52,7 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNApiToken;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetActionResponse;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetDestinations;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetHistory;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetHomeRegion;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthentication;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
@@ -128,6 +133,7 @@ public class CarNetApi {
         logger.debug("Initializing CarNet API");
         Validate.notNull(httpClient);
         this.httpClient = httpClient;
+        this.httpClient.setFollowRedirects(true);
     }
 
     public boolean isInitialized() {
@@ -283,6 +289,9 @@ public class CarNetApi {
     }
 
     private String createVwToken() throws CarNetException {
+        if (!vwToken.isExpired()) {
+            return vwToken.accessToken;
+        }
         createIdToken();
 
         // "User-Agent": "okhttp/3.7.0",
@@ -290,7 +299,7 @@ public class CarNetApi {
         // "X-App-Name": "myAudi",
         // "X-Client-Id": "77869e21-e30a-4a92-b016-48ab7d3db1d8",
         // "Host": "mbboauth-1d.prd.ece.vwg-connect.com",
-        Map<String, String> headers = new TreeMap<>();
+        Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
         headers.put(CNAPI_HEADER_VERS, "3.14.0");
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
@@ -309,6 +318,32 @@ public class CarNetApi {
         }
         vwToken = new CarNetToken(token);
         return vwToken.accessToken;
+    }
+
+    public void getVehicleRights() throws CarNetException {
+        String url = CNAPI_VWURL_OPERATIONS + config.vehicle.vin;
+        Map<String, String> headers = fillActionHeaders("", createVwToken());
+        String json = httpGet(url, headers);
+        try {
+            FileWriter myWriter = new FileWriter("carnetServices.json");
+            myWriter.write(json);
+            myWriter.close();
+        } catch (IOException e) {
+
+        }
+    }
+
+    public String getHomeReguionUrl() throws CarNetException {
+        if (!config.vehicle.homeRegionUrl.isEmpty()) {
+            return config.vehicle.homeRegionUrl;
+        }
+        String url = CNAPI_VWURL_HOMEREGION.replace("{2}", config.vehicle.vin);
+        Map<String, String> headers = fillActionHeaders("", createVwToken());
+        String json = httpGet(url, headers);
+        CarNetHomeRegion region = gson.fromJson(json, CarNetHomeRegion.class);
+        config.vehicle.homeRegionUrl = StringUtils.substringBefore(region.homeRegion.baseUri.content, "/api")
+                + "/fs-car/";
+        return config.vehicle.homeRegionUrl;
     }
 
     private String createSecurityToken(String service, String action) throws CarNetException {
@@ -331,7 +366,7 @@ public class CarNetApi {
         // "X-App-Name": "myAudi",
         // "Accept": "application/json",
         // "Authorization": "Bearer " + self.vwToken.get("access_token"),
-        Map<String, String> headers = new TreeMap<>();
+        Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
         headers.put(CNAPI_HEADER_VERS, "3.14.0");
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
@@ -446,6 +481,55 @@ public class CarNetApi {
     public boolean getChargerStatus() throws CarNetException {
         String json = httpGet(CNAPI_URI_CHARGER_STATUS);
         return true;
+    }
+
+    public boolean getTrpData(String type) throws CarNetException {
+        try {
+            String action = "list";
+            // Map<String, String> headers = fillActionHeaders("", createVwToken());
+            Map<String, String> headers = new HashMap<>();
+            headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
+            headers.put(CNAPI_HEADER_APP, xappName);
+            headers.put(CNAPI_HEADER_VERS, xappVersion);
+            headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
+            headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
+
+            String url = CNAPI_VWURL_TRIP_DATA.replace("{3}", type).replace("{4}", action);
+            String json = httpGet(url, headers, createVwToken());
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.getApiResult().getApiError().toString());
+        }
+        return true;
+    }
+
+    public void getPersonalData() throws CarNetException {
+        return;
+        /*
+         * url: "https://customer-profile.apps.emea.vwapps.io/v1/customers/" + this.config.userid + "/personalData",
+         * headers: {
+         * "user-agent": "okhttp/3.7.0",
+         * "X-App-version": this.xappversion,
+         * "X-App-name": this.xappname,
+         * authorization: "Bearer " + this.config.atoken,
+         * accept: "application/json",
+         * Host: "customer-profile.apps.emea.vwapps.io",
+         * },
+         */
+
+        /*
+         * String url = "https://customer-profile.apps.emea.vwapps.io/v1/customers/" + config.account.user
+         * + "/personalData";
+         * // Map<String, String> headers = fillActionHeaders("", createBrandToken());
+         * Map<String, String> headers = new HashMap<>();
+         * headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
+         * headers.put(CNAPI_HEADER_APP, xappName);
+         * headers.put(CNAPI_HEADER_VERS, xappVersion);
+         * headers.put(HttpHeader.AUTHORIZATION.toString(), createVwToken());
+         * // headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
+         * headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
+         * headers.put(HttpHeader.HOST.toString(), "customer-profile.apps.emea.vwapps.io");
+         * String json = httpGet(url, headers, createBrandToken());
+         */
     }
 
     public void lockDoor(boolean lock) throws CarNetException {
@@ -597,8 +681,9 @@ public class CarNetApi {
         headers.put(CNAPI_HEADER_VERS, "3.14.0");
         headers.put("X-Market", "de_DE");
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
+        headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
         headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + token);
-        headers.put(HttpHeader.CONTENT_TYPE.toString(), CNAPI_CONTENTT_FORM_URLENC);
+        // headers.put(HttpHeader.CONTENT_TYPE.toString(), CNAPI_CONTENTT_FORM_URLENC);
         return headers;
     }
 
@@ -620,9 +705,11 @@ public class CarNetApi {
         headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0)");
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
         headers.put(CNAPI_HEADER_VERS, "3.14.0");
-        headers.put(HttpHeader.CONTENT_TYPE.toString(), contentType);
+        if (!contentType.isEmpty()) {
+            headers.put(HttpHeader.CONTENT_TYPE.toString(), contentType);
+        }
         headers.put(HttpHeader.ACCEPT.toString(),
-                "application/json, application/vnd.vwg.mbb.ChargerAction_v1_0_0+xml,application/vnd.volkswagenag.com-error-v1+xml,application/vnd.vwg.mbb.genericError_v1_0_2+xml, application/vnd.vwg.mbb.RemoteStandheizung_v2_0_0+xml, application/vnd.vwg.mbb.genericError_v1_0_2+xml,application/vnd.vwg.mbb.RemoteLockUnlock_v1_0_0+xml,*/*");
+                "application/json, application/vnd.vwg.mbb.ChargerAction_v1_0_0+xml,application/vnd.volkswagenag.com-error-v1+xml,application/vnd.vwg.mbb.genericError_v1_0_2+xml,application/vnd.vwg.mbb.RemoteStandheizung_v2_0_0+xml,application/vnd.vwg.mbb.genericError_v1_0_2+xml,application/vnd.vwg.mbb.RemoteLockUnlock_v1_0_0+xml,application/vnd.vwg.mbb.operationList_v3_0_2+xml,application/vnd.vwg.mbb.genericError_v1_0_2+xml,*/*");
         headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
 
         headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + token);

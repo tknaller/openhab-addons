@@ -11,7 +11,7 @@
 
 		<channel-groups>
 			<channel-group id="general" typeId="general" />
-            <channel-group id="control" typeId="control" />
+			<channel-group id="control" typeId="control" />
 			<channel-group id="location" typeId="location" />
 			<channel-group id="status" typeId="status" />
 			<channel-group id="range" typeId="range" />
@@ -32,20 +32,20 @@
 			<channel id="vin" typeId="vin" />
 		</channels>
 	</channel-group-type>
-	
-    <channel-group-type id="control">
-        <label>Control</label>
-        <description>Includes Control Functions</description>
-        <channels>
-            <channel id="lock" typeId="lock" />
-            <!-- channel id="clima" typeId="clima" / -->
-            <!-- channel id="heating" typeId="windowsHeat" / -->
-            <!-- channel id="preHeater" typeId="preHeater" / -->
-            <!-- channel id="charger" typeId="charger" / -->
-            <channel id="update" typeId="update" />
-        </channels>
-    </channel-group-type>
-    
+
+	<channel-group-type id="control">
+		<label>Control</label>
+		<description>Includes Control Functions</description>
+		<channels>
+			<channel id="lock" typeId="lock" />
+			<!-- channel id="clima" typeId="clima" / -->
+			<!-- channel id="heating" typeId="windowsHeat" / -->
+			<!-- channel id="preHeater" typeId="preHeater" / -->
+			<!-- channel id="charger" typeId="charger" / -->
+			<channel id="update" typeId="update" />
+		</channels>
+	</channel-group-type>
+
 	<channel-group-type id="status">
 		<label>Status</label>
 		<description>Vehicle Status</description>

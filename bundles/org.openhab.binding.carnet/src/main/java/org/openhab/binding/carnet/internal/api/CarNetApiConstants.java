@@ -62,17 +62,21 @@ public class CarNetApiConstants {
     public static final String CNAPI_URI_DESTINATIONS = "destinationfeedservice/mydestinations/v1/{0}/{1}/vehicles/{2}/destinations";
     public static final String CNAPI_URI_HISTORY = "bs/dwap/v1/{0}/{1}/vehicles/{2}/history";
     public static final String CNAPI_URI_CMD_HONK = "bs/rhf/v1/{0}/{1}/vehicles/{2}/honkAndFlash";
+    public static final String CNAPI_URI_GETTRIP = "bs/tripstatistics/v1/{0}/{1}/vehicles/{2}/tripdata/{3}?type={4}";
 
     private static final String VWPRE = "https://msg.volkswagen.de/fs-car/";
     public static final String CNAPI_VWURL_CLIMATE_STATUS = VWPRE + CNAPI_URI_CLIMATER_STATUS;
     public static final String CNAPI_VWURL_CHARGER_STATUS = VWPRE + CNAPI_URI_CHARGER_STATUS;
     public static final String CNAPI_VWURL_STORED_POS = VWPRE + CNAPI_URI_STORED_POS;
     public static final String CNAPI_VWURL_TIMER = VWPRE + CNAPI_URI_CLIMATER_TIMER;
+    public static final String CNAPI_VWURL_TRIP_DATA = VWPRE + CNAPI_URI_GETTRIP;
+    public static final String CNAPI_VWURL_CHARGER = VWPRE + CNAPI_URI_CHARGER_STATUS;
 
     public static final String CNAPI_URL_GET_SEC_TOKEN = "https://mbboauth-1d.prd.ece.vwg-connect.com/mbbcoauth/mobile/oauth2/v1/token";
     public static final String CNAPI_URL_GET_CHALLENGE = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/vehicles/";
     public static final String CNAPI_URL_ACK_CHALLENGE = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/security-pin-auth-completed";
-    public static final String CNAPI_VWURL_OPERATIONS = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/operationlist/v3/vehicles/{2}";
+    public static final String CNAPI_VWURL_HOMEREGION = "https://mal-1a.prd.ece.vwg-connect.com/api/cs/vds/v1/vehicles/{2}/homeRegion";
+    public static final String CNAPI_VWURL_OPERATIONS = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/operationlist/v3/vehicles/";
 
     public static final String CNAPI_AUDIURL_OPERATIONS = "https://msg.audi.de/myaudi/vehicle-management/v1/vehicles";
 
@@ -86,4 +90,8 @@ public class CarNetApiConstants {
     public static final String CNAPI_SERVICE_CLIMATISATION = "climatisation";
     public static final String CNAPI_SERVICE_PREHEATING = "rheating_v1";
     public static final String CNAPI_RHEATING_ACTION = "P_QSACT";
+
+    public static final String CNAPI_SERVICE_TRIPSTATS = "tripstatistics";
+    public static final String CNAPI_TRIP_SHORT_TERM = "shortTerm";
+    public static final String CNAPI_TRIP_LONG_TERM = "longTerm";
 }

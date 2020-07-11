@@ -57,6 +57,7 @@ import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiConstants;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO.CNErrorMessage2Details;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
@@ -120,7 +121,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
         scheduler.schedule(() -> {
             initializeThing();
-            setupPollingJob(5);
+            setupPollingJob();
         }, 2, TimeUnit.SECONDS);
     }
 
@@ -206,9 +207,13 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_VIN, new StringType(vin));
             api.setConfig(config);
 
+            // Get available services
+            api.getHomeReguionUrl();
+            api.getVehicleRights();
+            api.getPersonalData();
+
             // Try to query status information from vehicle
             Map<String, ChannelIdMapEntry> channels = new HashMap<String, ChannelIdMapEntry>();
-
             logger.debug("{}: Get Vehicle Status", vin);
             CarNetVehicleStatus status = api.getVehicleStatus();
             for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
@@ -233,6 +238,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
             Collection<ChannelIdMapEntry> channelsCol = channels.values();
             createChannels(new ArrayList<ChannelIdMapEntry>(channelsCol));
+
         } catch (CarNetException e) {
             CarNetApiErrorDTO res = e.getApiResult().getApiError();
             if (res.description.contains("disabled ")) {
@@ -285,11 +291,15 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             logger.debug("{}: {}({})", thingId, message, error.description);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING, message);
         }
+        if (!error.code.isEmpty()) {
+            String message = resources.get(API_STATUS_MSG_PREFIX + "." + error.code);
+            logger.debug("{}: {}({} - {})", thingId, message, error.code, error.description);
+        }
         CarNetApiResult http = e.getApiResult();
         if (!http.isHttpOk()) {
-            logger.debug("{}: {}", thingId, http.toString());
+            logger.debug("{}: {}", thingId, http.response);
         }
-        logger.debug("{}: {}", thingId, e.toString(), e);
+        logger.debug("{}: {}", thingId, e.toString());
         return "Unknown Error";
     }
 
@@ -384,6 +394,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
         }
 
+        api.getTrpData(CarNetApiConstants.CNAPI_TRIP_SHORT_TERM);
     }
 
     private void updateNumberChannel(Channel channel, ChannelIdMapEntry definition, CNStatusField field) {
@@ -468,9 +479,9 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
      * @param initialWaitTime The delay before the first refresh. Maybe 0 to immediately
      *            initiate a refresh.
      */
-    private void setupPollingJob(int initialWaitTime) {
+    private void setupPollingJob() {
         cancelPollingJob();
-        logger.trace("Setting up polling job with fixed delay {} minutes, starting in {} seconds", 10, initialWaitTime);
+        logger.trace("Setting up polling job with fixed delay {} minutes, starting in {} seconds", 10, 1);
         pollingJob = scheduler.scheduleWithFixedDelay(() -> {
             if ((accountHandler != null) && (accountHandler.getThing().getStatus() == ThingStatus.ONLINE)) {
                 String error = "";
@@ -488,7 +499,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
                 }
             }
-        }, initialWaitTime, config.refreshInterval, TimeUnit.SECONDS);
+        }, 1, config.refreshInterval, TimeUnit.SECONDS);
     }
 
     /**
