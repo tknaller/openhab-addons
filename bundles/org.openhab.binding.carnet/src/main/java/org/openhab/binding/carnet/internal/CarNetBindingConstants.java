@@ -40,6 +40,10 @@ public class CarNetBindingConstants {
     // List of all ChannelGroups and Channels
     public static final String CHANNEL_GROUP_GENERAL = "general";
     public static final String CHANNEL_GENERAL_VIN = "vin";
+    public static final String CHANNEL_GENERAL_LOCKED = "vehicleLocked";
+    public static final String CHANNEL_GENERAL_MAINTREQ = "maintenanceRequired";
+    public static final String CHANNEL_GENERAL_WINCLOSED = "windowsClosed";
+    public static final String CHANNEL_GENERAL_TIRESOK = "tiresOk";
 
     public static final String CHANNEL_GROUP_CONTROL = "control";
     public static final String CHANNEL_CONTROL_LOCK = "lock";

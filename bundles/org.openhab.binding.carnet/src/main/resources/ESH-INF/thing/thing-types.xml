@@ -6,16 +6,16 @@
 
 	<!-- Sample Thing Type -->
 	<thing-type id="vehicle">
-		<label>Vehicle</label>
-		<description>The thing represents one vehicle</description>
+		<label>@text/thing-type.carnet.vehicle.label</label>
+		<description>@text/thing-type.carnet.vehicle.description</description>
 
 		<channel-groups>
 			<channel-group id="general" typeId="general" />
 			<channel-group id="control" typeId="control" />
-			<channel-group id="location" typeId="location" />
 			<channel-group id="status" typeId="status" />
-			<channel-group id="range" typeId="range" />
+			<channel-group id="location" typeId="location" />
 			<channel-group id="maintenance" typeId="maintenance" />
+			<channel-group id="range" typeId="range" />
 			<channel-group id="doors" typeId="doors" />
 			<channel-group id="windows" typeId="windows" />
 			<channel-group id="tires" typeId="tires" />
@@ -25,21 +25,24 @@
 	</thing-type>
 
 	<channel-group-type id="general">
-		<label>Vehicle</label>
-		<description>General information on the vehicle</description>
+		<label>@text/thing-type.carnet.vehicle.group.general.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.general.description</description>
 		<channels>
-			<channel id="test" typeId="test" />
 			<channel id="vin" typeId="vin" />
+			<channel id="vehicleLocked" typeId="vehicleLocked" />
+			<channel id="maintenanceRequired" typeId="maintenanceRequired" />
+			<channel id="windowsClosed" typeId="windowsClosed" />
+			<channel id="tiresOk" typeId="tiresOk" />
 		</channels>
 	</channel-group-type>
 
 	<channel-group-type id="control">
-		<label>Control</label>
-		<description>Includes Control Functions</description>
+		<label>@text/thing-type.carnet.vehicle.group.control.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.control.description</description>
 		<channels>
 			<channel id="lock" typeId="lock" />
 			<!-- channel id="clima" typeId="clima" / -->
-			<!-- channel id="heating" typeId="windowsHeat" / -->
+			<!-- channel id="windowHeat" typeId="windowHeat" / -->
 			<!-- channel id="preHeater" typeId="preHeater" / -->
 			<!-- channel id="charger" typeId="charger" / -->
 			<channel id="update" typeId="update" />
@@ -47,12 +50,12 @@
 	</channel-group-type>
 
 	<channel-group-type id="status">
-		<label>Status</label>
-		<description>Vehicle Status</description>
+		<label>@text/thing-type.carnet.vehicle.group.status.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.status.description</description>
 	</channel-group-type>
 	<channel-group-type id="location">
-		<label>Location</label>
-		<description>Vehicle location</description>
+		<label>@text/thing-type.carnet.vehicle.group.location.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.location.description</description>
 		<channels>
 			<channel id="position" typeId="position" />
 			<channel id="lastUpdate" typeId="lastUpdate" />
@@ -60,83 +63,100 @@
 		</channels>
 	</channel-group-type>
 	<channel-group-type id="range">
-		<label>Range</label>
-		<description>Status values around gas or electrical ranges</description>
+		<label>@text/thing-type.carnet.vehicle.group.range.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.range.description</description>
 	</channel-group-type>
 	<channel-group-type id="maintenance">
-		<label>Maintenance</label>
-		<description>Maintenance Data</description>
+		<label>@text/thing-type.carnet.vehicle.group.maintenance.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.maintenance.description</description>
 	</channel-group-type>
 	<channel-group-type id="windows">
-		<label>Windows</label>
-		<description>Status of the windows</description>
+		<label>@text/thing-type.carnet.vehicle.group.windows.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.windows.description</description>
 	</channel-group-type>
 	<channel-group-type id="doors">
-		<label>Doors</label>
-		<description>Status of all doors</description>
+		<label>@text/thing-type.carnet.vehicle.group.doors.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.doors.description</description>
 	</channel-group-type>
 	<channel-group-type id="tires">
-		<label>Tires</label>
-		<description>Status of all tires</description>
+		<label>@text/thing-type.carnet.vehicle.group.tires.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.tires.description</description>
 	</channel-group-type>
 
+	<!-- Group general -->
 	<channel-type id="vin">
 		<item-type>String</item-type>
-		<label>VIN</label>
-		<description>The Vehicle Identification number - a unique ID to identify the vehicle</description>
+		<label>@text/channel-type.carnet.vin.label</label>
+		<description>@text/channel-type.carnet.vin.description</description>
 		<state readOnly="true" />
 	</channel-type>
+	<channel-type id="vehicleLocked">
+		<item-type>Switch</item-type>
+		<label>@text/channel-type.carnet.vehicleLocked.label</label>
+		<description>@text/channel-type.carnet.vehicleLocked.description</description>
+	</channel-type>
+	<channel-type id="maintenanceRequired">
+		<item-type>Switch</item-type>
+		<label>@text/channel-type.carnet.maintenanceRequired.label</label>
+		<description>@text/channel-type.carnet.maintenanceRequired.description</description>
+	</channel-type>
+	<channel-type id="windowsClosed">
+		<item-type>Switch</item-type>
+		<label>@text/channel-type.carnet.windowsClosed.label</label>
+		<description>@text/channel-type.carnet.windowsClosed.description</description>
+	</channel-type>
+	<channel-type id="tiresOk">
+		<item-type>Switch</item-type>
+		<label>@text/channel-type.carnet.tiresOk.label</label>
+		<description>@text/channel-type.carnet.tiresOk.description</description>
+	</channel-type>
+
+	<!-- Group control -->
 	<channel-type id="lock">
 		<item-type>Switch</item-type>
-		<label>Lock Doors</label>
-		<description>Lock/unlock doors, requires SPIN</description>
+		<label>@text/channel-type.carnet.lock.label</label>
+		<description>@text/channel-type.carnet.lock.description</description>
 	</channel-type>
 	<channel-type id="clima">
 		<item-type>Switch</item-type>
-		<label>A/C</label>
-		<description>Start/Stop A/C</description>
+		<label>@text/channel-type.carnet.clima.label</label>
+		<description>@text/channel-type.carnet.clima.description</description>
 	</channel-type>
-	<channel-type id="windowsHeat">
+	<channel-type id="windowHeat">
 		<item-type>Switch</item-type>
-		<label>Window Heat</label>
-		<description>Start/Stop window heating</description>
+		<label>@text/channel-type.carnet.windowHeat.label</label>
+		<description>@text/channel-type.carnet.windowHeat.description</description>
 	</channel-type>
 	<channel-type id="preHeater">
 		<item-type>Switch</item-type>
-		<label>Pre Heater</label>
-		<description>Start/Stop pre-heater</description>
+		<label>@text/channel-type.carnet.preHeater.label</label>
+		<description>@text/channel-type.carnet.preHeater.description</description>
 	</channel-type>
 	<channel-type id="charger">
 		<item-type>Switch</item-type>
-		<label>Charger</label>
-		<description>Set battery charger</description>
+		<label>@text/channel-type.carnet.charger.label</label>
+		<description>@text/channel-type.carnet.charger.description</description>
 	</channel-type>
 	<channel-type id="update">
 		<item-type>Switch</item-type>
-		<label>Update Car Data</label>
-		<description>Every change to this channel requests an update of the vehicle information</description>
+		<label>@text/channel-type.carnet.update.label</label>
+		<description>@text/channel-type.carnet.update.description</description>
 	</channel-type>
 
+	<!-- Group location -->
 	<channel-type id="position">
 		<item-type>Location</item-type>
-		<label>Vehicle Location</label>
-		<description>Last known Geo location of the vehicle</description>
+		<label>@text/channel-type.carnet.position.label</label>
+		<description>@text/channel-type.carnet.position.description</description>
 	</channel-type>
 	<channel-type id="lastUpdate">
 		<item-type>DateTime</item-type>
-		<label>Location updated</label>
-		<description>The time when the vehicle sent the location last time</description>
+		<label>@text/channel-type.carnet.lastUpdate.label</label>
+		<description>@text/channel-type.carnet.lastUpdate.description</description>
 	</channel-type>
 	<channel-type id="parkingTime">
 		<item-type>DateTime</item-type>
-		<label>Parking Time</label>
-		<description>The time when the was parked</description>
+		<label>@text/channel-type.carnet.parkingTime.label</label>
+		<description>@text/channel-type.carnet.parkingTime.description</description>
 	</channel-type>
-
-	<channel-type id="test" advanced="true">
-		<item-type>Number</item-type>
-		<label>Test</label>
-		<state min="1" readOnly="true" pattern="%f %unit%" />
-	</channel-type>
-
 </thing:thing-descriptions>

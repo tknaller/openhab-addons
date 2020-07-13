@@ -57,7 +57,6 @@ import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
-import org.openhab.binding.carnet.internal.api.CarNetApiConstants;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO.CNErrorMessage2Details;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
@@ -66,7 +65,8 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleSta
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData.CNStatusField;
 import org.openhab.binding.carnet.internal.api.CarNetApiResult;
 import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
-import org.openhab.binding.carnet.internal.handler.CarNetIChanneldMapper.ChannelIdMapEntry;
+import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper;
+import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -208,9 +208,10 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             api.setConfig(config);
 
             // Get available services
-            api.getHomeReguionUrl();
-            api.getVehicleRights();
-            api.getPersonalData();
+            // api.getPersonalData();
+            // api.getHomeReguionUrl();
+            // api.getVehicleData();
+            // api.getVehicleRights();
 
             // Try to query status information from vehicle
             Map<String, ChannelIdMapEntry> channels = new HashMap<String, ChannelIdMapEntry>();
@@ -361,6 +362,11 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private void updateVehicleStatus() throws CarNetException {
         // Try to query status information from vehicle
         logger.debug("{}: Get Vehicle Status", thingId);
+        boolean maintenanceRequired = false; // true if any maintenance is required
+        boolean vehicleLocked = true; // aggregates all lock states
+        boolean windowsClosed = true; // true if all Windows are closed
+        boolean tiresOk = true; // tire if all tire pressures are ok
+
         CarNetVehicleStatus status = api.getVehicleStatus();
         for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
             for (CNStatusField field : data.fields) {
@@ -386,6 +392,11 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                         } else {
                             logger.debug("Channel {}#{} not found", definition.groupName, definition.channelName);
                         }
+
+                        vehicleLocked &= checkLocked(field, definition);
+                        maintenanceRequired |= checkMaintenance(field, definition);
+                        tiresOk &= checkTires(field, definition);
+                        windowsClosed &= checkWindows(field, definition);
                     }
                 } else {
                     logger.debug("{}: Unknown data field  {}.{}, value={} {}", thingId, data.id, field.id, field.value,
@@ -394,7 +405,55 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
         }
 
-        api.getTrpData(CarNetApiConstants.CNAPI_TRIP_SHORT_TERM);
+        // Update aggregated status
+        updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_LOCKED, vehicleLocked ? OnOffType.ON : OnOffType.OFF);
+        updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_MAINTREQ,
+                maintenanceRequired ? OnOffType.ON : OnOffType.OFF);
+        updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_TIRESOK, tiresOk ? OnOffType.ON : OnOffType.OFF);
+        updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_WINCLOSED,
+                windowsClosed ? OnOffType.ON : OnOffType.OFF);
+
+        // api.getTrpData(CarNetApiConstants.CNAPI_TRIP_SHORT_TERM);
+    }
+
+    private boolean checkMaintenance(CNStatusField field, ChannelIdMapEntry definition) {
+        if (definition.symbolicName.contains("MAINT_ALARM") && !field.value.equals(String.valueOf(1))) {
+            logger.debug("{}: Maintenance required: {} has incorrect pressure", thingId, definition.symbolicName);
+            return true;
+        }
+        if (definition.symbolicName.contains("AD_BLUE_RANGE") && (Integer.parseInt(field.value) < 1000)) {
+            logger.debug("{}: Maintenance required: Ad Blue at {} (< 1.000km)", thingId, field.value);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean checkLocked(CNStatusField field, ChannelIdMapEntry definition) {
+        if (definition.symbolicName.contains("LOCK")) {
+            boolean result = (definition.symbolicName.contains("LOCK2") && field.value.equals(String.valueOf(2)))
+                    || (definition.symbolicName.contains("LOCK3") && field.value.equals(String.valueOf(3)));
+            if (!result) {
+                logger.debug("{}: Vehicle is not completetly locked: {}", thingId, definition.channelName);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean checkWindows(CNStatusField field, ChannelIdMapEntry definition) {
+        if (definition.symbolicName.contains("WINDOWS") && definition.symbolicName.contains("STATE")
+                && !field.value.equals(String.valueOf(3))) {
+            logger.debug("{}: Window {} is not closed", thingId, definition.channelName);
+        }
+        return true;
+    }
+
+    private boolean checkTires(CNStatusField field, ChannelIdMapEntry definition) {
+        if (definition.symbolicName.contains("TIREPRESS") && definition.symbolicName.contains("CURRENT")
+                && !field.value.equals(String.valueOf(1))) {
+            logger.debug("{}: Tire pressure for {} is not ok", thingId, definition.channelName);
+        }
+        return true;
     }
 
     private void updateNumberChannel(Channel channel, ChannelIdMapEntry definition, CNStatusField field) {

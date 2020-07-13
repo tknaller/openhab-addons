@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.carnet.internal.handler;
+package org.openhab.binding.carnet.internal.provider;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
@@ -29,10 +29,13 @@ import org.eclipse.smarthome.core.library.unit.ImperialUnits;
 import org.eclipse.smarthome.core.library.unit.MetricPrefix;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
+import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData.CNStatusField;
+import org.openhab.binding.carnet.internal.handler.CustomUnits;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 
 import tec.uom.se.unit.Units;
 
@@ -49,30 +52,31 @@ public class CarNetIChanneldMapper {
     public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
     public static final Unit<Time> DAYS = Units.DAY;
     public static final Unit<Temperature> DKELVIN = MetricPrefix.DECI(Units.KELVIN);
+    private final CarNetTextResources resources;
 
     private static Map<String, ChannelIdMapEntry> map = new LinkedHashMap<String, ChannelIdMapEntry>();
     static {
         // Status
-        add("KILOMETER_STATUS", "0x0101010002", "kilometerStatus", ITEMT_DISTANCE, CHANNEL_GROUP_STATUS, KILOMETRE);
-        add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_TEMP, CHANNEL_GROUP_STATUS, SIUnits.CELSIUS);
-        add("STATE2_PARKING_LIGHT", "0x0301010001", "parkingLight", ITEMT_SWITCH, CHANNEL_GROUP_STATUS);
+        add("KILOMETER_STATUS", "0x0101010002", "kilometerStatus", ITEMT_DISTANCE, CHANNEL_GROUP_GENERAL, KILOMETRE);
+        add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_TEMP, CHANNEL_GROUP_GENERAL, SIUnits.CELSIUS);
+        add("STATE2_PARKING_LIGHT", "0x0301010001", "parkingLight", ITEMT_SWITCH, CHANNEL_GROUP_GENERAL);
         add("STATE3_PARKING_BRAKE", "0x0301030001", "parkingBrake", ITEMT_SWITCH, CHANNEL_GROUP_GENERAL);
         add("POSITION_CONVERTIBLE_TOP", "0x030105000A", "positionConvertableTop", ITEMT_PERCENT);
         add("STATE3_SUN_ROOF_MOTOR_COVER", "0x030105000B", "roofMotorCoverState", ITEMT_SWITCH);
-        add("POSITION_SUN_ROOF_MOTOR_COVER", "0x030105000C", "roofMotorCoverPos", ITEMT_PERCENT);
-        add("STATE3_SUN_ROOF_REAR_MOTOR_COVER_3", "0x030105000D", "roofRearMotorCoverState", ITEMT_SWITCH);
-        add("POSITION_SUN_ROOF_REAR_MOTOR_COVER_3", "0x030105000E", "roofRearMotorCoverPos", ITEMT_PERCENT);
+        add("POSITION_SUN_ROOF_MOTOR_COVER", "0x030105000C");
+        add("STATE3_SUN_ROOF_REAR_MOTOR_COVER", "0x030105000D", "roofRearMotorCoverState", ITEMT_SWITCH);
+        add("POSITION_SUN_ROOF_REAR_MOTOR_COVER", "0x030105000E");
         add("STATE3_SPOILER", "0x0301050011", "spoilerState", ITEMT_SWITCH);
         add("POSITION_SPOILER", "0x0301050012", "spoilerPos", ITEMT_PERCENT);
         add("STATE3_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_SWITCH);
-        add("POSITION_SERVICE_FLAP", "0x0301050010"/* , "serviceFlapPos", ITEMT_PERCENT */);
+        add("POSITION_SERVICE_FLAP", "0x0301050010");
 
-        // Gas
+        // Range
         add("FUEL_LEVEL_IN_PERCENTAGE", "0x030103000A", "fuelPercentage", ITEMT_PERCENT, CHANNEL_GROUP_GENERAL,
                 SmartHomeUnits.PERCENT);
         add("TOTAL_RANGE", "0x0301030005", "totalRange", ITEMT_DISTANCE, CHANNEL_GROUP_GENERAL, KILOMETRE);
         add("PRIMARY_RANGE", "0x0301030006", "primaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
-        add("PRIMARY_FUEL_TYPE", "0x0301030007", "primaryFueType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
+        add("PRIMARY_FUEL_TYPE", "0x0301030007", "primaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
         add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
         add("SECONDARY_DRIVE", "0x0301030009", "secondaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
         add("15CNG_LEVEL_IN_PERCENTAGE", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE,
@@ -80,23 +84,21 @@ public class CarNetIChanneldMapper {
         add("STATE2_OF_CHARGE", "0x0301030002", "chargingState", ITEMT_SWITCH, CHANNEL_GROUP_RANGE);
 
         // Maintenance
-        add("MAINTINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_SWITCH, CHANNEL_GROUP_GENERAL);
-        add("MAINTINT_DIST_TO_INSPECTION", "0x0203010003", "distanceToInspection", ITEMT_DISTANCE,
-                CHANNEL_GROUP_GENERAL, KILOMETRE);
-        add("MAINTINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
-        add("WARNING_OIL_CHANGE", "0x0203010005", "oilWarning", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
-        add("OIL_LEVEL_MINIMUM_WARNING", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_GENERAL);
-        add("OIL_LEVEL_DIPSTICK_PERCENTAGE", "0x0204040003", "oilPercentage", ITEMT_PERCENT, CHANNEL_GROUP_MAINT,
+        add("MAINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
+        add("MAINT_DIST_TO_INSPECTION", "0x0203010003", "distanceToInspection", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
+                KILOMETRE);
+        add("MAINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
+        add("MAINT_ALARM_OIL_CHANGE", "0x0203010005", "oilWarningChange", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
+        add("MAINT_ALARM_OIL_MINIMUM", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
+        add("MAINT_OIL_DIPSTICK_PERCENTAGE", "0x0204040003", "oilPercentage", ITEMT_PERCENT, CHANNEL_GROUP_MAINT,
                 SmartHomeUnits.PERCENT);
-        add("OIL_LEVEL_AMOUNT_IN_LITERS", "0x0204040001", "oilAmount", ITEMT_VOLUME, CHANNEL_GROUP_MAINT,
-                SmartHomeUnits.LITRE);
-        add("MAINTINT_DISTANCE_TO_OIL_CHANGE", "0x0203010001", "distanceOilChange", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
+        add("MAINT_OIL_LEVEL_AMOUNT_IN_LITERS", "0x0204040001");
+        add("MAINT_DISTANCE_TO_OIL_CHANGE", "0x0203010001", "distanceOilChange", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
                 KILOMETRE);
-        add("MAINTINT_TIME_TO_OIL_CHANGE", "0x0203010002", "intervalOilChange", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
-        add("MAINTENANCE_INTERVAL_AD_BLUE_RANGE", "0x02040C0001", "distanceAdBlue", ITEMT_DISTANCE,
-                CHANNEL_GROUP_GENERAL, KILOMETRE);
-        add("MAINTINT_MONTHLY_MILEAGE", "0x0203010007", "monthlyMilage", ITEMT_DISTANCE, CHANNEL_GROUP_GENERAL,
+        add("MAINT_OIL_TIME_TO_CHANGE", "0x0203010002", "intervalOilChange", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
+        add("MAINT_INTERVAL_AD_BLUE_RANGE", "0x02040C0001", "distanceAdBlue", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
                 KILOMETRE);
+        add("MAINT_MONTHLY_MILEAGE", "0x0203010007", "monthlyMilage", ITEMT_DISTANCE, CHANNEL_GROUP_GENERAL, KILOMETRE);
 
         // Doors/trunk
         add("STATE3_CONVERTABLE_TOP", "0x0301050009", "covertableTopState", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
@@ -105,7 +107,7 @@ public class CarNetIChanneldMapper {
         add("SAFETY_TRUNK_LID", "0x030104000F", "trunkLidState", ITEMT_SWITCH);
         add("STATE3_HOOD", "0x0301040011", "hoodState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
         add("LOCK3_HOOD", "0x0301040010", "hoodLocked", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
-        add("SAFETY_HOOD", "0x0301040012", "hoodState", ITEMT_SWITCH);
+        add("SAFETY_HOOD", "0x0301040012", "hoodSafety", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
         add("STATE3_LEFT_FRONT_DOOR", "0x0301040002", "doorFrontLeftState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
         add("LOCK2_LEFT_FRONT_DOOR", "0x0301040001", "doorFrontLeftLocked", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
         add("SAFETY_LEFT_FRONT_DOOR", "0x0301040003", "doorFrontLeftSafety", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
@@ -131,7 +133,7 @@ public class CarNetIChanneldMapper {
 
         // Tires
         add("TIREPRESS_LEFT_FRONT_CURRENT", "0x0301060001", "tirePresFrontLeft", ITEMT_SWITCH, CHANNEL_GROUP_TIRES);
-        add("TIREPRESS_LEFT_FRONT_DESIRED", "0x0301060002", "tireDesiredFrontLeft", ITEMT_NUMBER, CHANNEL_GROUP_TIRES);
+        add("TIREPRESS_LEFT_FRONT_DESIRED", "0x0301060002");
         add("TIREPRESS_LEFT_REAR_CURRENT", "0x0301060003", "tirePresRearLeft", ITEMT_SWITCH, CHANNEL_GROUP_TIRES);
         add("TIREPRESS_LEFT_REAR_DESIRED", "0x0301060004");
         add("TIREPRESS_RIGHT_FRONT_CURRENT", "0x0301060005", "tirePresFrontRight", ITEMT_SWITCH, CHANNEL_GROUP_TIRES);
@@ -142,9 +144,9 @@ public class CarNetIChanneldMapper {
         add("TIREPRESS_LEFT_REAR_TIRE_DIFF", "0x030106000C");
         add("TIREPRESS_RIGHT_FRONT_TIRE_DIFF", "0x030106000D");
         add("TIREPRESS_RIGHT_REAR_TIRE_DIFF", "0x030106000E");
-        add("TIREPRESS_SPARE_TIRE_CURRENT", "0x0301060009");
-        add("TIREPRESS_SPARE_TIRE_DESIRED", "0x030106000A");
-        add("TIREPRESS_SPARE_TIRE_DIFF", "0x030106000F");
+        add("TIREPRESS_SPARE_CURRENT", "0x0301060009");
+        add("TIREPRESS_SPARE_DESIRED", "0x030106000A");
+        add("TIREPRESS_SPARE_DIFF", "0x030106000F");
 
         // Misc
         add("UTC_TIME_STATUS", "0x0101010001");
@@ -164,10 +166,33 @@ public class CarNetIChanneldMapper {
         public Optional<Integer> max = Optional.empty();
         public Optional<Integer> step = Optional.empty();
         public Optional<String> pattern = Optional.empty();
+
+        public String getGroup() {
+            return !groupName.isEmpty() ? groupName : CHANNEL_GROUP_STATUS;
+        }
+
+        public String getLabel(CarNetTextResources resources) {
+            return getChannelAttribute(resources, "label");
+        }
+
+        public String getDescription(CarNetTextResources resources) {
+            return getChannelAttribute(resources, "description");
+        }
+
+        public String getAdvanced(CarNetTextResources resources) {
+            return getChannelAttribute(resources, "advanced");
+        }
+
+        public String getChannelAttribute(CarNetTextResources resources, String attribute) {
+            String key = "channel-type.carnet." + channelName + "." + attribute;
+            String value = resources.getText(key);
+            return !value.equals(key) ? value : "";
+        }
     }
 
     @Activate
-    public CarNetIChanneldMapper() {
+    public CarNetIChanneldMapper(@Reference CarNetTextResources resources) {
+        this.resources = resources;
     }
 
     public @Nullable ChannelIdMapEntry find(String id) {
