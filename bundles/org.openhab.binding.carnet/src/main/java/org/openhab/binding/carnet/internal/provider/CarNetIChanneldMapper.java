@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import javax.measure.Unit;
+import javax.measure.quantity.Dimensionless;
 import javax.measure.quantity.Length;
 import javax.measure.quantity.Temperature;
 import javax.measure.quantity.Time;
@@ -51,6 +52,7 @@ import tec.uom.se.unit.Units;
 public class CarNetIChanneldMapper {
     public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
     public static final Unit<Time> DAYS = Units.DAY;
+    public static final Unit<Dimensionless> PERCENT = SmartHomeUnits.PERCENT;
     public static final Unit<Temperature> DKELVIN = MetricPrefix.DECI(Units.KELVIN);
     private final CarNetTextResources resources;
 
@@ -72,16 +74,14 @@ public class CarNetIChanneldMapper {
         add("POSITION_SERVICE_FLAP", "0x0301050010");
 
         // Range
-        add("FUEL_LEVEL_IN_PERCENTAGE", "0x030103000A", "fuelPercentage", ITEMT_PERCENT, CHANNEL_GROUP_GENERAL,
-                SmartHomeUnits.PERCENT);
+        add("FUEL_LEVEL_PERCENT", "0x030103000A", "fuelPercentage", ITEMT_PERCENT, CHANNEL_GROUP_GENERAL, PERCENT);
         add("TOTAL_RANGE", "0x0301030005", "totalRange", ITEMT_DISTANCE, CHANNEL_GROUP_GENERAL, KILOMETRE);
         add("PRIMARY_RANGE", "0x0301030006", "primaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
         add("PRIMARY_FUEL_TYPE", "0x0301030007", "primaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
         add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
         add("SECONDARY_DRIVE", "0x0301030009", "secondaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
-        add("15CNG_LEVEL_IN_PERCENTAGE", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE,
-                SmartHomeUnits.PERCENT);
-        add("STATE2_OF_CHARGE", "0x0301030002", "chargingState", ITEMT_SWITCH, CHANNEL_GROUP_RANGE);
+        add("15CNG_LEVEL_IN_PERCENT", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE, PERCENT);
+        add("CHARGING_LEVEL_PERCENT", "0x0301030002", "chargingLevel", ITEMT_PERCENT, CHANNEL_GROUP_RANGE, PERCENT);
 
         // Maintenance
         add("MAINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
@@ -90,8 +90,7 @@ public class CarNetIChanneldMapper {
         add("MAINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_TIME, CHANNEL_GROUP_MAINT, DAYS);
         add("MAINT_ALARM_OIL_CHANGE", "0x0203010005", "oilWarningChange", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
         add("MAINT_ALARM_OIL_MINIMUM", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
-        add("MAINT_OIL_DIPSTICK_PERCENTAGE", "0x0204040003", "oilPercentage", ITEMT_PERCENT, CHANNEL_GROUP_MAINT,
-                SmartHomeUnits.PERCENT);
+        add("MAINT_OIL_DIPSTICK_PERCENT", "0x0204040003", "oilPercentage", ITEMT_PERCENT, CHANNEL_GROUP_MAINT, PERCENT);
         add("MAINT_OIL_LEVEL_AMOUNT_IN_LITERS", "0x0204040001");
         add("MAINT_DISTANCE_TO_OIL_CHANGE", "0x0203010001", "distanceOilChange", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
                 KILOMETRE);
