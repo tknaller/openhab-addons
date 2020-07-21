@@ -421,7 +421,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             logger.debug("{}: Maintenance required: {} has incorrect pressure", thingId, definition.symbolicName);
             return true;
         }
-        if (definition.symbolicName.contains("AD_BLUE_RANGE") && (Integer.parseInt(field.value) < 1000)) {
+        if (definition.symbolicName.contains("AD_BLUE_RANGE") && !field.value.isEmpty()
+                && (Integer.parseInt(field.value) < 1000)) {
             logger.debug("{}: Maintenance required: Ad Blue at {} (< 1.000km)", thingId, field.value);
             return true;
         }
