@@ -82,8 +82,7 @@ public class CarNetException extends Exception {
 
         String url = !apiResult.url.isEmpty() ? MessageFormat.format("{0} {1} (HTTP {2} {3})", apiResult.method,
                 apiResult.url, apiResult.httpCode, apiResult.httpReason) : "";
-        String resultString = !apiResult.response.isEmpty()
-                ? MessageFormat.format(", result = '{0}'", apiResult.response)
+        String resultString = !apiResult.response.isEmpty() ? MessageFormat.format(", result = {0}", apiResult.response)
                 : "";
         return MessageFormat.format("{0} {1}{2}", message, url, resultString);
     }
