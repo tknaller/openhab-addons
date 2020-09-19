@@ -30,6 +30,7 @@ The binding gets in sync with the next status refresh.
 | shellyix3          | Shelly ix3                                             | SHIX3-1   |
 | shellyplug         | Shelly Plug                                            | SHPLG2-1  |
 | shellyplugs        | Shelly Plug-S                                          | SHPLG-S   |
+| shellyplugu1       | Shelly Plug US                                         | SHPLG-U1  |
 | shellyem           | Shelly EM with integrated Power Meters                 | SHEM      |
 | shellyem3          | Shelly 3EM with 3 integrated Power Meter               | SHEM-3    |
 | shellyrgbw2        | Shelly RGB Controller                                  | SHRGBW2   |
@@ -498,7 +499,7 @@ The Shelly 4Pro provides 4 relays and 4 power meters.
 |meter3    |             |         |         |See group meter1 for Shelly 2                                                    |
 |meter4    |             |         |         |See group meter1 for Shelly 2                                                    |
 
-### Shelly Plug-S (thing-type: shellyplugs)
+### Shelly Plug, Plug-S, Plug US (thing-type: shellyplug, shellyplugs, shellyplugu1)
 
 |Group     |Channel      |Type     |read-only|Description                                                                      |
 |----------|-------------|---------|---------|---------------------------------------------------------------------------------|

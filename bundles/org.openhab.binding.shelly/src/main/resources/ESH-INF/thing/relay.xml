@@ -191,6 +191,19 @@
 		<config-description-ref uri="thing-type:shelly:relay"/>
 	</thing-type>
 
+	<thing-type id="shellyplugu1">
+		<label>Shelly Plug US (SHPLG-U1)</label>
+		<description>Shelly Plug US with relay and meter</description>
+
+		<channel-groups>
+			<channel-group id="relay" typeId="relayChannelPlug"/>
+			<channel-group id="meter" typeId="meter"/>
+			<channel-group id="device" typeId="deviceStatus"/>
+		</channel-groups>
+
+		<config-description-ref uri="thing-type:shelly:relay"/>
+	</thing-type>
+
 	<thing-type id="shellydimmer">
 		<label>Shelly Dimmer (SHDM-1)</label>
 		<description>Shelly Dimmer</description>
