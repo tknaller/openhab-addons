@@ -24,6 +24,7 @@ import java.text.MessageFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,6 +43,7 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.StringContentProvider;
+import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
@@ -112,6 +114,8 @@ public class CarNetApi {
     private CarNetToken vwToken = new CarNetToken();
     private CopyOnWriteArrayList<CarNetToken> securityTokens = new CopyOnWriteArrayList<CarNetToken>();
     private Map<String, CarNetPendingRequest> pendingRequest = new ConcurrentHashMap<>();
+    private HttpFields lastHttpFields = new HttpFields();
+    private boolean nextRedirect = false;
 
     // Brand specific data
     String urlCountry = "";
@@ -247,12 +251,98 @@ public class CarNetApi {
             throw new CarNetException("API not completely initialized");
         }
         logger.debug("Requesting new access token");
-        Map<String, String> headers = new TreeMap<String, String>();
-        Map<String, String> data = new TreeMap<>();
-        data.put("grant_type", "password");
-        data.put("username", config.account.user);
+        /*
+         * Map<String, String> headers = new TreeMap<String, String>();
+         * Map<String, String> data = new TreeMap<>();
+         * data.put("grant_type", "password");
+         * data.put("username", config.account.user);
+         * data.put("password", config.account.password);
+         * String json = httpPost(CNAPI_URI_GET_TOKEN, headers, data, "", false);
+         */
+
+        String url = CNAPI_OAUTH_AUTHORIZE_URL + "?response_type=code"
+                + "&client_id=09b6cbec-cd19-4589-82fd-363dfa8c24da%40apps_vw-dilab_com&redirect_uri=myaudi%3A%2F%2F%2F"
+                + "&scope=address%20profile%20badge%20birthdate%20birthplace%20nationalIdentifier%20nationality%20profession%20email%20vin%20phone%20nickname%20name%20picture%20mbb%20gallery%20openid"
+                + "&state=7f8260b5-682f-4db8-b171-50a5189a1c08&nonce=583b9af2-7799-4c72-9cb0-e6c0f42b87b3"
+                + "&prompt=login&ui_locales=de-DE%20de";
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("Accept", "application/json, text/plain, */*");
+        headers.put("Content-Type", "application/json;charset=UTF-8");
+        headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
+        httpGet(url, headers);
+
+        url = lastHttpFields.get("Location"); // Signin URL
+        if (url.isEmpty()) {
+            throw new CarNetException("Unable to get signin URL");
+        }
+        String html = httpGet(url, headers);
+        String csrf = StringUtils.substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
+        String relayState = StringUtils.substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
+        String hmac = StringUtils.substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
+
+        // Authenticate: Username
+        headers.clear();
+        headers.put("Accept",
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
+        headers.put("Content-Type", "application/x-www-form-urlencoded");
+        headers.put(HttpHeader.USER_AGENT.toString(),
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36");
+        headers.put("Referer",
+                "https://identity.vwgroup.io/signin-service/v1/signin/09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com?relayState=1306273173f6e83fc92191ebf1b44c69cbaab41f");
+        Map<String, String> data = new LinkedHashMap<>();
+        data.put("_csrf", csrf);
+        data.put("relayState", relayState);
+        data.put("hmac", hmac);
+        data.put("email", config.account.user);
+        httpPost(CNAPI_OAUTH_IDENTIFIER_URL, headers, data, "", false);
+
+        // Authenticate: Password
+        url = CNAPI_OAUTH_BASE_URL + lastHttpFields.get("Location"); // Signin URL
+        headers.clear();
+        headers.put(HttpHeader.ACCEPT.toString(), "application/json, text/plain, */*");
+        headers.put(HttpHeader.CONTENT_TYPE.toString(), "application/json;charset=UTF-8");
+        headers.put(HttpHeader.USER_AGENT.toString(),
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36");
+        html = httpGet(url, headers);
+        csrf = StringUtils.substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
+        relayState = StringUtils.substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
+        hmac = StringUtils.substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
+
+        headers.clear();
+        headers.put("Accept",
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
+        headers.put("Content-Type", "application/x-www-form-urlencoded");
+        headers.put(HttpHeader.USER_AGENT.toString(),
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36");
+        headers.put("Referer",
+                "https://identity.vwgroup.io/signin-service/v1/signin/09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com?relayState=1306273173f6e83fc92191ebf1b44c69cbaab41f");
+        data.clear();
+        data.put("_csrf", csrf);
+        data.put("relayState", relayState);
+        data.put("hmac", hmac);
+        data.put("email", config.account.user);
         data.put("password", config.account.password);
-        String json = httpPost(CNAPI_URI_GET_TOKEN, headers, data, "", false);
+        httpPost(CNAPI_OAUTH_AUTHENTICATE_URL, headers, data, "", false);
+
+        url = lastHttpFields.get("Location"); // Continue URL
+        httpGet(url, headers);
+
+        url = lastHttpFields.get("Location"); // Consent URL
+        html = httpGet(url, headers);
+
+        url = lastHttpFields.get("Location"); // Signin Callback URL
+        html = httpGet(url, headers);
+
+        url = lastHttpFields.get("Location"); // Signin Callback URL
+        String authCode = StringUtils.substringAfter(url, "&code=");
+        data.clear();
+        data.put("client_id", "09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com");
+        data.put("grant_type", "authorization_code");
+        data.put("code", authCode);
+        data.put("redirect_uri", "myaudi:///");
+        data.put("response_type", "token id_token");
+        String json = httpPost(CNAPI_AUDI_TOKEN_URL, headers, data, "", false);
+
         // process token
         CNApiToken token = gson.fromJson(json, CNApiToken.class);
         if ((token.accessToken == null) || token.accessToken.isEmpty()) {
@@ -616,13 +706,14 @@ public class CarNetApi {
     private Map<String, String> fillBrandHeaders() throws CarNetException {
         Map<String, String> headers = new TreeMap<String, String>();
         createBrandToken();
-        String auth = MessageFormat.format("{0} {1} {2}", brandToken.authType, CNAPI_AUTH_AUDI_VERS,
+        String auth = MessageFormat.format("{0} {2}", brandToken.authType, CNAPI_AUTH_AUDI_VERS,
                 brandToken.accessToken);
         headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_EREMOTE);
         headers.put(CNAPI_HEADER_VERS, CNAPI_HEADER_VERS_VALUE);
         headers.put(HttpHeader.AUTHORIZATION.toString(), auth);
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
+        nextRedirect = true;
         return headers;
     }
 
@@ -788,20 +879,23 @@ public class CarNetApi {
             // Do request and get response
             logger.debug("HTTP {} {}, data='{}', headers={}", request.getMethod(), request.getURI(), data,
                     request.getHeaders());
+            request.followRedirects(nextRedirect);
             ContentResponse contentResponse = request.send();
             apiResult = new CarNetApiResult(contentResponse);
+            int code = contentResponse.getStatus();
             String response = contentResponse.getContentAsString().replaceAll("\t", "").replaceAll("\r\n", "").trim();
+            lastHttpFields = contentResponse.getHeaders();
 
             // validate response, API errors are reported as Json
             logger.trace("HTTP Response: {}", response);
             if (response.contains("\"error\":")) {
                 throw new CarNetException("Authentication failed", apiResult);
             }
-            int code = contentResponse.getStatus();
-            if ((code != HttpStatus.OK_200) && (code != HttpStatus.ACCEPTED_202)) {
+            if ((code != HttpStatus.OK_200) && (code != HttpStatus.ACCEPTED_202) && (code != HttpStatus.FOUND_302)
+                    && (code != HttpStatus.SEE_OTHER_303)) {
                 throw new CarNetException("API Call failed (HTTP" + code + ")", apiResult);
             }
-            if (response.isEmpty()) {
+            if (response.isEmpty() && (code != HttpStatus.FOUND_302) && (code != HttpStatus.SEE_OTHER_303)) {
                 throw new CarNetException("Invalid result received from API, maybe URL problem", apiResult);
             }
             return response;
