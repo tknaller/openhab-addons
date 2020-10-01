@@ -58,6 +58,7 @@ public class DreamScreenBindingConstants {
     public static final String CHANNEL_BRIGHTNESS = "brightness";
 
     // Mode values
+    public static final String MODE_SLEEP = "sleep";
     public static final String MODE_VIDEO = "video";
     public static final String MODE_MUSIC = "music";
     public static final String MODE_AMBIENT = "ambient";
