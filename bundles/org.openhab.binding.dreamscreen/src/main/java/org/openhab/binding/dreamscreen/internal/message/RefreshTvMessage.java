@@ -35,7 +35,8 @@ public class RefreshTvMessage extends RefreshMessage {
         if (RefreshMessage.matches(data)) {
             final int msgLen = data[1] & 0xFF;
             final byte productId = data[msgLen];
-            return productId == DreamScreenHdHandler.PRODUCT_ID || productId == DreamScreen4kHandler.PRODUCT_ID || productId == DreamScreenSoloHandler.PRODUCT_ID;
+            return productId == DreamScreenHdHandler.PRODUCT_ID || productId == DreamScreen4kHandler.PRODUCT_ID
+                    || productId == DreamScreenSoloHandler.PRODUCT_ID;
         }
         return false;
     }
