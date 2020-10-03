@@ -48,7 +48,7 @@ import tec.uom.se.unit.Units;
  *
  */
 @NonNullByDefault
-@Component(service = CarNetIChanneldMapper.class, immediate = true)
+@Component(service = CarNetIChanneldMapper.class)
 public class CarNetIChanneldMapper {
     public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
     public static final Unit<Time> DAYS = Units.DAY;

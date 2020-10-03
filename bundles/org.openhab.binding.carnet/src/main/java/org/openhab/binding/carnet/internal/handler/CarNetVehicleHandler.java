@@ -14,6 +14,8 @@ package org.openhab.binding.carnet.internal.handler;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -106,8 +108,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         updateStatus(ThingStatus.UNKNOWN);
 
         // Register listener and wait for account being ONLINE
-        Bridge bridge = getBridge();
         CarNetAccountHandler handler = null;
+        Bridge bridge = getBridge();
         if (bridge != null) {
             handler = (CarNetAccountHandler) bridge.getHandler();
         }
@@ -120,9 +122,27 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         accountHandler.registerListener(this);
 
         scheduler.schedule(() -> {
-            initializeThing();
-            setupPollingJob();
+            if (accountHandler != null) {
+                if (accountHandler.getThing().getStatus() == ThingStatus.ONLINE) {
+                    initializeThing();
+                }
+                setupPollingJob();
+            }
         }, 2, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Brigde status changed
+     */
+    @Override
+    public void stateChanged(ThingStatus status, ThingStatusDetail detail, String message) {
+        ThingStatus thingStatus = getThing().getStatus();
+        if ((status == ThingStatus.ONLINE) && (thingStatus != ThingStatus.ONLINE)) {
+            initializeThing();
+        }
+        if (thingStatus != status) {
+            updateStatus(status, detail, message);
+        }
     }
 
     @Override
@@ -167,20 +187,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     }
 
     /**
-     * Brigde status changed
-     */
-    @Override
-    public void stateChanged(ThingStatus status, ThingStatusDetail detail, String message) {
-        ThingStatus thingStatus = getThing().getStatus();
-        if ((status == ThingStatus.ONLINE) && (thingStatus != ThingStatus.ONLINE)) {
-            initializeThing();
-        }
-        if (thingStatus != status) {
-            updateStatus(status, detail, message);
-        }
-    }
-
-    /**
      * (re-)initialize the thing
      *
      * @return true=successful
@@ -206,12 +212,15 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         try {
             updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_VIN, new StringType(vin));
             api.setConfig(config);
+            String json = api.getServices();
+            try {
+                logger.debug("Dave service list to {}/carnetServices.json", System.getProperty("user.dir"));
+                FileWriter myWriter = new FileWriter("carnetServices.json");
+                myWriter.write(json);
+                myWriter.close();
+            } catch (IOException e) {
 
-            // Get available services
-            // api.getPersonalData();
-            // api.getHomeReguionUrl();
-            // api.getVehicleData();
-            // api.getVehicleRights();
+            }
 
             // Try to query status information from vehicle
             Map<String, ChannelIdMapEntry> channels = new HashMap<String, ChannelIdMapEntry>();
@@ -240,6 +249,9 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             Collection<ChannelIdMapEntry> channelsCol = channels.values();
             createChannels(new ArrayList<ChannelIdMapEntry>(channelsCol));
 
+            // api.getVehicleUsers();
+
+            updateVehicleStatus();
         } catch (CarNetException e) {
             CarNetApiErrorDTO res = e.getApiResult().getApiError();
             if (res.description.contains("disabled ")) {
@@ -413,7 +425,27 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_WINCLOSED,
                 windowsClosed ? OnOffType.ON : OnOffType.OFF);
 
-        // api.getTrpData(CarNetApiConstants.CNAPI_TRIP_SHORT_TERM);
+        updateVehicleLocation();
+
+        // Get available services
+        // updateClimater();
+        // api.getPersonalData();
+        // api.getHomeReguionUrl();
+        // api.getVehicleData();
+        // api.getVehicleRights();
+        api.getHistory();
+    }
+
+    private boolean updateClimater() {
+        /*
+         * try {
+         * api.getTimer();
+         * return true;
+         * } catch (CarNetException e) {
+         * // ignore API errors, service might not be enabled
+         * }
+         */
+        return false;
     }
 
     private boolean checkMaintenance(CNStatusField field, ChannelIdMapEntry definition) {
@@ -513,17 +545,16 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private void updateVehicleLocation() throws CarNetException {
         try {
             logger.debug("{}: Get Vehicle Position", thingId);
-            CarNetVehiclePosition position;
-            position = api.getVehiclePosition();
-            PointType location = new PointType(new DecimalType(position.getLattitude()),
-                    new DecimalType(position.getLongitude()));
-            updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_GEO, location);
+            updateLocation(api.getStoredPosition(), CHANNEL_STORED_POS);
+
+            CarNetVehiclePosition position = updateLocation(api.getVehiclePosition(), CHANNEL_LOCATTION_GEO);
             String time = position.getCarSentTime();
             updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_TIME, new DateTimeType(time));
             String parkingTime = position.getParkingTime();
             updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_PARK,
                     parkingTime != null ? new DateTimeType(position.getParkingTime()) : UnDefType.NULL);
         } catch (CarNetException e) {
+            updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_STORED_POS, UnDefType.UNDEF);
             updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_GEO, UnDefType.UNDEF);
             updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_TIME, UnDefType.UNDEF);
             updateState(CHANNEL_GROUP_LOCATION + "#" + CHANNEL_LOCATTION_PARK, UnDefType.UNDEF);
@@ -531,6 +562,14 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 throw e;
             }
         }
+    }
+
+    private CarNetVehiclePosition updateLocation(CarNetVehiclePosition position, String channel) {
+        PointType location = new PointType(new DecimalType(position.getLattitude()),
+                new DecimalType(position.getLongitude()));
+        updateState(CHANNEL_GROUP_LOCATION + "#" + channel, location);
+        return position;
+
     }
 
     /**
@@ -541,13 +580,12 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
      */
     private void setupPollingJob() {
         cancelPollingJob();
-        logger.trace("Setting up polling job with fixed delay {} minutes, starting in {} seconds", 10, 1);
+        logger.trace("Setting up polling job with an interval of {} seconds", config.refreshInterval);
         pollingJob = scheduler.scheduleWithFixedDelay(() -> {
             if ((accountHandler != null) && (accountHandler.getThing().getStatus() == ThingStatus.ONLINE)) {
                 String error = "";
                 try {
                     updateVehicleStatus();
-                    updateVehicleLocation();
                 } catch (CarNetException e) {
                     error = getError(e);
                 } catch (RuntimeException e) {

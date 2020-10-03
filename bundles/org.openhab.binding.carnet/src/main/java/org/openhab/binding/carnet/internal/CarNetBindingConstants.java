@@ -55,6 +55,7 @@ public class CarNetBindingConstants {
 
     public static final String CHANNEL_GROUP_LOCATION = "location";
     public static final String CHANNEL_LOCATTION_GEO = "position";
+    public static final String CHANNEL_STORED_POS = "storedPosition";
     public static final String CHANNEL_LOCATTION_TIME = "lastUpdate";
     public static final String CHANNEL_LOCATTION_PARK = "parkingTime";
 

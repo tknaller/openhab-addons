@@ -38,7 +38,7 @@ import org.osgi.service.component.annotations.Reference;
  *
  * @author Markus Eckhardt - Initial contribution
  */
-@Component(service = { ChannelTypeProvider.class, CarNetChannelTypeProvider.class }, immediate = true)
+@Component(service = { ChannelTypeProvider.class, CarNetChannelTypeProvider.class })
 public class CarNetChannelTypeProvider implements ChannelTypeProvider {
     private final CarNetTextResources resources;
     private final CarNetIChanneldMapper channelIdMapper;

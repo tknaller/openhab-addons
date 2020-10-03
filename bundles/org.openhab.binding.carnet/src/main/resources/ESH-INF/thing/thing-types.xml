@@ -58,6 +58,7 @@
 		<description>@text/thing-type.carnet.vehicle.group.location.description</description>
 		<channels>
 			<channel id="position" typeId="position" />
+			<channel id="storedPosition" typeId="storedPosition" />
 			<channel id="lastUpdate" typeId="lastUpdate" />
 			<channel id="parkingTime" typeId="parkingTime" />
 		</channels>
@@ -148,6 +149,11 @@
 		<item-type>Location</item-type>
 		<label>@text/channel-type.carnet.position.label</label>
 		<description>@text/channel-type.carnet.position.description</description>
+	</channel-type>
+	<channel-type id="storedPosition">
+		<item-type>Stored Position</item-type>
+		<label>@text/channel-type.carnet.storedPosition.label</label>
+		<description>@text/channel-type.carnet.storedPosition.description</description>
 	</channel-type>
 	<channel-type id="lastUpdate">
 		<item-type>DateTime</item-type>

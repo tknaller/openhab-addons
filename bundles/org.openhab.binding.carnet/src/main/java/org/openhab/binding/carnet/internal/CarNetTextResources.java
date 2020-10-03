@@ -28,7 +28,7 @@ import org.osgi.service.component.annotations.Reference;
  *
  * @author Markus Michels - Initial contribution
  */
-@Component(service = CarNetTextResources.class, immediate = true, configurationPid = "localization.carnet")
+@Component(service = CarNetTextResources.class)
 public class CarNetTextResources {
     private final Bundle bundle;
     private final TranslationProvider i18nProvider;
