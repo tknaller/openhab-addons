@@ -29,8 +29,6 @@ import org.openhab.binding.shelly.internal.handler.ShellyProtectedHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyRelayHandler;
 import org.openhab.binding.shelly.internal.util.ShellyTranslationProvider;
 import org.openhab.binding.shelly.internal.util.ShellyUtils;
-import org.openhab.core.i18n.LocaleProvider;
-import org.openhab.core.i18n.TranslationProvider;
 import org.openhab.core.io.net.http.HttpClientFactory;
 import org.openhab.core.net.HttpServiceUtil;
 import org.openhab.core.net.NetworkAddressService;
@@ -75,14 +73,18 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
      */
     @Activate
     public ShellyHandlerFactory(@Reference NetworkAddressService networkAddressService,
-            @Reference LocaleProvider localeProvider, @Reference TranslationProvider i18nProvider,
-            @Reference HttpClientFactory httpClientFactory, ComponentContext componentContext,
-            Map<String, Object> configProperties) {
+            @Reference ShellyTranslationProvider translationProvider, @Reference HttpClientFactory httpClientFactory,
+            ComponentContext componentContext, Map<String, Object> configProperties) {
         logger.debug("Activate Shelly HandlerFactory");
         super.activate(componentContext);
+        messages = translationProvider;
+        // Save bindingConfig & pass it to all registered listeners
+        bindingConfig.updateFromProperties(configProperties);
 
-        messages = new ShellyTranslationProvider(bundleContext.getBundle(), i18nProvider, localeProvider);
-        localIP = ShellyUtils.getString(networkAddressService.getPrimaryIpv4HostAddress());
+        localIP = bindingConfig.localIP;
+        if (localIP.isEmpty()) {
+            localIP = ShellyUtils.getString(networkAddressService.getPrimaryIpv4HostAddress());
+        }
         if (localIP.isEmpty()) {
             logger.warn("{}", messages.get("message.init.noipaddress"));
         }
@@ -95,9 +97,6 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
         logger.debug("Using OH HTTP port {}", httpPort);
 
         this.coapServer = new ShellyCoapServer();
-
-        // Save bindingConfig & pass it to all registered listeners
-        bindingConfig.updateFromProperties(configProperties);
     }
 
     @Override
