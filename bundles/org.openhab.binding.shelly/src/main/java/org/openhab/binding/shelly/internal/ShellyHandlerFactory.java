@@ -80,9 +80,14 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
             Map<String, Object> configProperties) {
         logger.debug("Activate Shelly HandlerFactory");
         super.activate(componentContext);
-
         messages = new ShellyTranslationProvider(bundleContext.getBundle(), i18nProvider, localeProvider);
-        localIP = ShellyUtils.getString(networkAddressService.getPrimaryIpv4HostAddress());
+        // Save bindingConfig & pass it to all registered listeners
+        bindingConfig.updateFromProperties(configProperties);
+
+        localIP = bindingConfig.localIP;
+        if (localIP.isEmpty()) {
+            localIP = ShellyUtils.getString(networkAddressService.getPrimaryIpv4HostAddress());
+        }
         if (localIP.isEmpty()) {
             logger.warn("{}", messages.get("message.init.noipaddress"));
         }
@@ -95,9 +100,6 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
         logger.debug("Using OH HTTP port {}", httpPort);
 
         this.coapServer = new ShellyCoapServer();
-
-        // Save bindingConfig & pass it to all registered listeners
-        bindingConfig.updateFromProperties(configProperties);
     }
 
     @Override
@@ -164,9 +166,5 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
                 return;
             }
         }
-    }
-
-    public ShellyBindingConfiguration getBindingConfig() {
-        return bindingConfig;
     }
 }

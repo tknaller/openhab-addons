@@ -18,6 +18,11 @@
 			<label>Default Password</label>
 			<description>Default password to access protected Shelly devices.</description>
 		</parameter>
+		<parameter name="localIP" type="text">
+			<label>Local Interface IP</label>
+			<description>Local interface IP to listen for CoIoT messages, default: use OH network configuration</description>
+			<default></default>
+		</parameter>
 		<parameter name="autoCoIoT" type="boolean">
 			<default>true</default>
 			<label>Auto-enable CoIoT</label>
