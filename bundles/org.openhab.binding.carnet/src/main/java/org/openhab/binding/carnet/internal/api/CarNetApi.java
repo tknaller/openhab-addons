@@ -15,7 +15,11 @@ package org.openhab.binding.carnet.internal.api;
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_REQUEST_TIMEOUT;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -47,14 +51,14 @@ import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.util.UrlEncoded;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNApiToken;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetActionResponse;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetDestinations;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetHistory;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetHomeRegion;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthentication;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
@@ -73,6 +77,8 @@ import com.google.gson.Gson;
  */
 @NonNullByDefault
 public class CarNetApi {
+    public static final String UTF_8 = StandardCharsets.UTF_8.name();
+
     private class CombinedConfig {
         CarNetAccountConfiguration account = new CarNetAccountConfiguration();
         CarNetVehicleConfiguration vehicle = new CarNetVehicleConfiguration();
@@ -244,108 +250,113 @@ public class CarNetApi {
     }
 
     private String createBrandToken() throws CarNetException {
-        if (!brandToken.isExpired()) {
+        try {
+            if (!brandToken.isExpired()) {
+                return brandToken.accessToken;
+            }
+
+            if (!isInitialized()) {
+                throw new CarNetException("API not completely initialized");
+            }
+
+            logger.debug("{}: Logging in, account={}", config.vehicle.vin, config.account.user);
+            String url = CNAPI_OAUTH_AUTHORIZE_URL + "?response_type=code"
+                    + "&client_id=09b6cbec-cd19-4589-82fd-363dfa8c24da%40apps_vw-dilab_com&redirect_uri=myaudi%3A%2F%2F%2F"
+                    + "&scope=address%20profile%20badge%20birthdate%20birthplace%20nationalIdentifier%20nationality%20profession%20email%20vin%20phone%20nickname%20name%20picture%20mbb%20gallery%20openid"
+                    + "&state=7f8260b5-682f-4db8-b171-50a5189a1c08&nonce=583b9af2-7799-4c72-9cb0-e6c0f42b87b3"
+                    + "&prompt=login&ui_locales=de-DE%20de";
+            Map<String, String> headers = new LinkedHashMap<>();
+            headers.put("Accept", "application/json, text/plain, */*");
+            headers.put("Content-Type", "application/json;charset=UTF-8");
+            headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
+            httpGet(url, headers);
+
+            logger.debug("{}: OAuth: Get signin form", config.vehicle.vin);
+            url = lastHttpFields.get("Location"); // Signin URL
+            if (url.isEmpty()) {
+                throw new CarNetException("Unable to get signin URL");
+            }
+            String html = httpGet(url, headers);
+            String csrf = StringUtils.substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
+            String relayState = StringUtils.substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
+            String hmac = StringUtils.substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
+
+            // Authenticate: Username
+            logger.trace("{}: OAuth input: User", config.vehicle.vin);
+            headers.clear();
+            headers.put("Accept",
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
+            headers.put("Content-Type", "application/x-www-form-urlencoded");
+            headers.put(HttpHeader.USER_AGENT.toString(),
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36");
+            headers.put("Referer",
+                    "https://identity.vwgroup.io/signin-service/v1/signin/09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com?relayState=1306273173f6e83fc92191ebf1b44c69cbaab41f");
+            Map<String, String> data = new LinkedHashMap<>();
+            data.put("_csrf", csrf);
+            data.put("relayState", relayState);
+            data.put("hmac", hmac);
+            data.put("email", URLEncoder.encode(config.account.user, UTF_8));
+            httpPost(CNAPI_OAUTH_IDENTIFIER_URL, headers, data, "", false);
+
+            // Authenticate: Password
+            logger.trace("{}: OAuth input: Password", config.vehicle.vin);
+            url = CNAPI_OAUTH_BASE_URL + lastHttpFields.get("Location"); // Signin URL
+            headers.clear();
+            headers.put(HttpHeader.ACCEPT.toString(), "application/json, text/plain, */*");
+            headers.put(HttpHeader.CONTENT_TYPE.toString(), "application/json;charset=UTF-8");
+            headers.put(HttpHeader.USER_AGENT.toString(),
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36");
+            html = httpGet(url, headers);
+            csrf = StringUtils.substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
+            relayState = StringUtils.substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
+            hmac = StringUtils.substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
+
+            headers.clear();
+            headers.put("Accept",
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
+            headers.put("Content-Type", "application/x-www-form-urlencoded");
+            headers.put(HttpHeader.USER_AGENT.toString(),
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36");
+            headers.put("Referer",
+                    "https://identity.vwgroup.io/signin-service/v1/signin/09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com?relayState=1306273173f6e83fc92191ebf1b44c69cbaab41f");
+            data.clear();
+            data.put("_csrf", csrf);
+            data.put("relayState", relayState);
+            data.put("hmac", hmac);
+            data.put("email", URLEncoder.encode(config.account.user, UTF_8));
+            data.put("password", URLEncoder.encode(config.account.password, UTF_8));
+            httpPost(CNAPI_OAUTH_AUTHENTICATE_URL, headers, data, "", false);
+
+            url = lastHttpFields.get("Location"); // Continue URL
+            httpGet(url, headers);
+
+            url = lastHttpFields.get("Location"); // Consent URL
+            html = httpGet(url, headers);
+
+            url = lastHttpFields.get("Location"); // Signin Callback URL
+            html = httpGet(url, headers);
+
+            url = lastHttpFields.get("Location"); // Signin Callback URL
+            String authCode = StringUtils.substringAfter(url, "&code=");
+            data.clear();
+            data.put("client_id", "09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com");
+            data.put("grant_type", "authorization_code");
+            data.put("code", authCode);
+            data.put("redirect_uri", "myaudi:///");
+            data.put("response_type", "token id_token");
+            String json = httpPost(CNAPI_AUDI_TOKEN_URL, headers, data, "", false);
+            logger.trace("{}: OAuth successful", config.vehicle.vin);
+
+            // process token
+            CNApiToken token = gson.fromJson(json, CNApiToken.class);
+            if ((token.accessToken == null) || token.accessToken.isEmpty()) {
+                throw new CarNetException("Authentication failed: Unable to get access token!");
+            }
+            brandToken = new CarNetToken(token);
             return brandToken.accessToken;
+        } catch (UnsupportedEncodingException e) {
+            throw new CarNetException("Login failed", e);
         }
-
-        if (!isInitialized()) {
-            throw new CarNetException("API not completely initialized");
-        }
-
-        logger.debug("{}: Logging in, account={}", config.vehicle.vin, config.account.user);
-        String url = CNAPI_OAUTH_AUTHORIZE_URL + "?response_type=code"
-                + "&client_id=09b6cbec-cd19-4589-82fd-363dfa8c24da%40apps_vw-dilab_com&redirect_uri=myaudi%3A%2F%2F%2F"
-                + "&scope=address%20profile%20badge%20birthdate%20birthplace%20nationalIdentifier%20nationality%20profession%20email%20vin%20phone%20nickname%20name%20picture%20mbb%20gallery%20openid"
-                + "&state=7f8260b5-682f-4db8-b171-50a5189a1c08&nonce=583b9af2-7799-4c72-9cb0-e6c0f42b87b3"
-                + "&prompt=login&ui_locales=de-DE%20de";
-        Map<String, String> headers = new LinkedHashMap<>();
-        headers.put("Accept", "application/json, text/plain, */*");
-        headers.put("Content-Type", "application/json;charset=UTF-8");
-        headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
-        httpGet(url, headers);
-
-        url = lastHttpFields.get("Location"); // Signin URL
-        if (url.isEmpty()) {
-            throw new CarNetException("Unable to get signin URL");
-        }
-        String html = httpGet(url, headers);
-        String csrf = StringUtils.substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
-        String relayState = StringUtils.substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
-        String hmac = StringUtils.substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
-
-        // Authenticate: Username
-        logger.trace("{}: OAuth input: User", config.vehicle.vin);
-        headers.clear();
-        headers.put("Accept",
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
-        headers.put("Content-Type", "application/x-www-form-urlencoded");
-        headers.put(HttpHeader.USER_AGENT.toString(),
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36");
-        headers.put("Referer",
-                "https://identity.vwgroup.io/signin-service/v1/signin/09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com?relayState=1306273173f6e83fc92191ebf1b44c69cbaab41f");
-        Map<String, String> data = new LinkedHashMap<>();
-        data.put("_csrf", csrf);
-        data.put("relayState", relayState);
-        data.put("hmac", hmac);
-        data.put("email", config.account.user);
-        httpPost(CNAPI_OAUTH_IDENTIFIER_URL, headers, data, "", false);
-
-        // Authenticate: Password
-        logger.trace("{}: OAuth input: Password", config.vehicle.vin);
-        url = CNAPI_OAUTH_BASE_URL + lastHttpFields.get("Location"); // Signin URL
-        headers.clear();
-        headers.put(HttpHeader.ACCEPT.toString(), "application/json, text/plain, */*");
-        headers.put(HttpHeader.CONTENT_TYPE.toString(), "application/json;charset=UTF-8");
-        headers.put(HttpHeader.USER_AGENT.toString(),
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36");
-        html = httpGet(url, headers);
-        csrf = StringUtils.substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
-        relayState = StringUtils.substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
-        hmac = StringUtils.substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
-
-        headers.clear();
-        headers.put("Accept",
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
-        headers.put("Content-Type", "application/x-www-form-urlencoded");
-        headers.put(HttpHeader.USER_AGENT.toString(),
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36");
-        headers.put("Referer",
-                "https://identity.vwgroup.io/signin-service/v1/signin/09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com?relayState=1306273173f6e83fc92191ebf1b44c69cbaab41f");
-        data.clear();
-        data.put("_csrf", csrf);
-        data.put("relayState", relayState);
-        data.put("hmac", hmac);
-        data.put("email", config.account.user);
-        data.put("password", config.account.password);
-        httpPost(CNAPI_OAUTH_AUTHENTICATE_URL, headers, data, "", false);
-
-        url = lastHttpFields.get("Location"); // Continue URL
-        httpGet(url, headers);
-
-        url = lastHttpFields.get("Location"); // Consent URL
-        html = httpGet(url, headers);
-
-        url = lastHttpFields.get("Location"); // Signin Callback URL
-        html = httpGet(url, headers);
-
-        url = lastHttpFields.get("Location"); // Signin Callback URL
-        String authCode = StringUtils.substringAfter(url, "&code=");
-        data.clear();
-        data.put("client_id", "09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com");
-        data.put("grant_type", "authorization_code");
-        data.put("code", authCode);
-        data.put("redirect_uri", "myaudi:///");
-        data.put("response_type", "token id_token");
-        String json = httpPost(CNAPI_AUDI_TOKEN_URL, headers, data, "", false);
-        logger.trace("{}: OAuth successful", config.vehicle.vin);
-
-        // process token
-        CNApiToken token = gson.fromJson(json, CNApiToken.class);
-        if ((token.accessToken == null) || token.accessToken.isEmpty()) {
-            throw new CarNetException("Authentication failed: Unable to get access token!");
-        }
-        brandToken = new CarNetToken(token);
-        return brandToken.accessToken;
     }
 
     private String createVwToken() throws CarNetException {
@@ -381,28 +392,50 @@ public class CarNetApi {
         return vwToken.accessToken;
     }
 
-    public void getVehicleData() throws CarNetException {
-        String json = httpGet(CNAPI_AUDIURL_OPERATIONS, fillActionHeaders("", createVwToken()));
-        logger.debug("{}", json);
-    }
+    public @Nullable String getVehicleData() throws CarNetException {
+        try {
+            String json = httpGet(CNAPI_AUDIURL_OPERATIONS, fillActionHeaders("", createVwToken()));
+            return json;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
 
-    public void getVehicleRights() throws CarNetException {
-        String url = CNAPI_AUDIURL_OPERATIONS;
-        Map<String, String> headers = fillActionHeaders("", createVwToken());
-        String json = httpGet(url, headers);
-    }
-
-    public String getHomeReguionUrl() throws CarNetException {
-        if (!config.vehicle.homeRegionUrl.isEmpty()) {
-            return config.vehicle.homeRegionUrl;
         }
-        String url = CNAPI_VWURL_HOMEREGION.replace("{2}", config.vehicle.vin);
-        Map<String, String> headers = fillActionHeaders("", createVwToken());
-        String json = httpGet(url, headers);
-        CarNetHomeRegion region = gson.fromJson(json, CarNetHomeRegion.class);
-        config.vehicle.homeRegionUrl = StringUtils.substringBefore(region.homeRegion.baseUri.content, "/api")
-                + "/fs-car/";
-        return config.vehicle.homeRegionUrl;
+        return null;
+    }
+
+    public @Nullable String getVehicleRights() throws CarNetException {
+        try {
+            String url = CNAPI_AUDIURL_OPERATIONS;
+            Map<String, String> headers = fillActionHeaders("", createVwToken());
+            String json = httpGet(url, headers);
+            return json;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
+    }
+
+    public @Nullable String getHomeReguionUrl() throws CarNetException {
+        try {
+            if (!config.vehicle.homeRegionUrl.isEmpty()) {
+                return config.vehicle.homeRegionUrl;
+            }
+            String url = CNAPI_VWURL_HOMEREGION.replace("{2}", config.vehicle.vin);
+            Map<String, String> headers = fillActionHeaders("", createVwToken());
+            String json = httpGet(url, headers);
+            CarNetHomeRegion region = gson.fromJson(json, CarNetHomeRegion.class);
+            config.vehicle.homeRegionUrl = StringUtils.substringBefore(region.homeRegion.baseUri.content, "/api")
+                    + "/fs-car/";
+            return config.vehicle.homeRegionUrl;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
     }
 
     private String createSecurityToken(String service, String action) throws CarNetException {
@@ -512,49 +545,86 @@ public class CarNetApi {
         return position;
     }
 
-    public CarNetDestinations getDestinations() throws CarNetException {
-        String json = httpGet(CNAPI_URI_DESTINATIONS);
-        CarNetDestinations destinations = gson.fromJson(json, CarNetDestinations.class);
-        Validate.notNull(destinations, "Unable to get vehicle destinations!");
-        return destinations;
+    public @Nullable String getDestinations() throws CarNetException {
+        try {
+            String json = httpGet(CNAPI_URI_DESTINATIONS);
+            return json;
+            // CarNetDestinations destinations = gson.fromJson(json, CarNetDestinations.class);
+            // Validate.notNull(destinations, "Unable to get vehicle destinations!");
+            // return destinations;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
     }
 
-    public CarNetHistory getHistory() throws CarNetException {
-        // String json = httpGet(CNAPI_URI_HISTORY);
-        String json = httpGet(CNAPI_URI_HISTORY, fillMmiHeaders());
-        CarNetHistory history = gson.fromJson(json, CarNetHistory.class);
-        Validate.notNull(history, "Unable to get vehicle history!");
-        return history;
+    public @Nullable String getHistory() throws CarNetException {
+        try {
+            String json = httpGet(CNAPI_URI_HISTORY);
+            // String json = httpGet(CNAPI_URI_HISTORY, fillMmiHeaders());
+            // CarNetHistory history = gson.fromJson(json, CarNetHistory.class);
+            // Validate.notNull(history, "Unable to get vehicle history!");
+            // return history;
+            return json;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
     }
 
-    public boolean getClimaStatus() throws CarNetException {
-        String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS, fillMmiHeaders());
-        // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
-        // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
-        return true;
+    public @Nullable String getClimaStatus() throws CarNetException {
+        try {
+            String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS, fillMmiHeaders());
+            // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
+            // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
+            return json;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
-    public boolean getTimer() throws CarNetException {
-        String json = httpGet(CNAPI_URI_CLIMATER_TIMER);
-        return true;
+    public @Nullable String getClimaterTimer() throws CarNetException {
+        try {
+            String json = httpGet(CNAPI_URI_CLIMATER_TIMER);
+            return json;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
     }
 
-    public boolean getChargerStatus() throws CarNetException {
-        String json = httpGet(CNAPI_URI_CHARGER_STATUS);
-        return true;
+    public @Nullable String getChargerStatus() throws CarNetException {
+        try {
+            String json = httpGet(CNAPI_URI_CHARGER_STATUS);
+            return json;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
     }
 
-    public boolean getTrpData(String type) throws CarNetException {
+    public @Nullable String getTripData(String type) throws CarNetException {
         try {
             String action = "list";
             // Map<String, String> headers = fillActionHeaders("", createVwToken());
 
             String url = CNAPI_VWURL_TRIP_DATA.replace("{3}", type).replace("{4}", action);
             String json = httpGet(url, fillAppHeaders());
+            return json;
         } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.getApiResult().getApiError().toString());
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
         }
-        return true;
+        return null;
     }
 
     public Map<String, String> fillAppHeaders() throws CarNetException {
@@ -569,9 +639,9 @@ public class CarNetApi {
         return headers;
     }
 
-    public void getPersonalData() throws CarNetException {
-        if (isBrandAudi() || isBrandGo()) {
-            return; // not supported for Audi vehicles
+    public @Nullable String getPersonalData() throws CarNetException {
+        if (/* isBrandAudi() || */ isBrandGo()) {
+            return null; // not supported for Audi vehicles
         }
 
         /*
@@ -585,35 +655,55 @@ public class CarNetApi {
          * Host: "customer-profile.apps.emea.vwapps.io",
          * },
          */
+        String json = "{}";
+        try {
+            String url = "https://customer-profile.apps.emea.vwapps.io/v1/customers/"
+                    + UrlEncoded.encodeString(config.account.user) + "/personalData";
+            // Map<String, String> headers = fillActionHeaders("", createBrandToken());
+            Map<String, String> headers = new HashMap<>();
+            headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
+            headers.put(CNAPI_HEADER_APP, xappName);
+            headers.put(CNAPI_HEADER_VERS, xappVersion);
+            headers.put(HttpHeader.AUTHORIZATION.toString(), createVwToken());
+            // headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
+            headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
+            headers.put(HttpHeader.HOST.toString(), "customer-profile.apps.emea.vwapps.io");
+            json = httpGet(url, headers, createVwToken());
+            return json;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
 
-        String url = "https://customer-profile.apps.emea.vwapps.io/v1/customers/" + config.account.user
-                + "/personalData";
-        // Map<String, String> headers = fillActionHeaders("", createBrandToken());
-        Map<String, String> headers = new HashMap<>();
-        headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
-        headers.put(CNAPI_HEADER_APP, xappName);
-        headers.put(CNAPI_HEADER_VERS, xappVersion);
-        headers.put(HttpHeader.AUTHORIZATION.toString(), createVwToken());
-        // headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
-        headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
-        headers.put(HttpHeader.HOST.toString(), "customer-profile.apps.emea.vwapps.io");
-        String json = httpGet(url, headers, createVwToken());
-
+        }
+        return null;
     }
 
-    public String getServices() throws CarNetException {
+    public CarNetServiceList getServices() throws CarNetException {
         String url = CNAPI_VWURL_OPERATIONS + config.vehicle.vin;
         Map<String, String> headers = fillActionHeaders("", createVwToken());
-        return httpGet(url, headers);
+        String json = httpGet(url, headers);
+        try {
+            logger.debug("Dave service list to {}/carnetServices.json", System.getProperty("user.dir"));
+            FileWriter myWriter = new FileWriter("carnetServices.json");
+            myWriter.write(json);
+            myWriter.close();
+        } catch (IOException e) {
+        }
+        return gson.fromJson(json, CarNetServiceList.class);
     }
 
-    public void getVehicleUsers() throws CarNetException {
-        Map<String, String> headers = fillActionHeaders();
-        // nextRedirect = true;
-        String json = request(HttpMethod.GET,
-                "usermanagement/users/v1/{0}/{1}/users/dYeJ7CoMzqV0obHyRZJSyzkb9d11/vehicles/{2}"
-                // "https://msg.audi.de/fs-car/usermanagement/users/v1/{0}/{1}/vehicles/{2}",
-                , "", headers, "", config.vehicle.vin, "");
+    public @Nullable String getVehicleUsers() throws CarNetException {
+        try {
+            Map<String, String> headers = fillActionHeaders();
+            String json = request(HttpMethod.GET, "usermanagement/users/v1/{0}/{1}/vehicles/{2}", "", headers, "",
+                    config.vehicle.vin, "");
+            return json;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
     }
 
     public void lockDoor(boolean lock) throws CarNetException {
@@ -670,6 +760,82 @@ public class CarNetApi {
         logger.debug("{}: Checking for RLU status, requestId={}", vin, requestId);
         return checkRequestSuccessful(
                 "https://msg.volkswagen.de/fs-car/bs/rlu/v1/{0}/{1}/vehicles/{2}/requests/" + requestId + "/status");
+    }
+
+    public @Nullable String getPois() {
+        try {
+            String json = httpGet("{0}/{1}/vehicles/{2}/pois");
+            return json;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
+    }
+
+    public @Nullable String getUserInfo() {
+        try {
+            String json = httpGet("core/auth/v1/{0}/{1}/userInfo'");
+            return json;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
+    }
+
+    public @Nullable String getUserPairingStatus() {
+        try {
+            String json = httpGet("{0}/{1}/usermanagement/users/v1/vehicles/{2}/pairing");
+            return json;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
+    }
+
+    public @Nullable String getVehicleManagementInfo() {
+        try {
+            String json = httpGet(CNAPI_URI_VEHICLE_MANAGEMENT);
+            return json;
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
+    }
+
+    public @Nullable String getRluActionHistory() {
+        return callApi(CNAPI_URL_RLU_ACTIONS);
+    }
+
+    public @Nullable String getMyDestinationsFeed(String userId) {
+        return callApi("destinationfeedservice/mydestinations/v1/{0}/{1}/vehicles/{2}/users/{3}/");
+    }
+
+    public @Nullable String getUserNews() {
+        return callApi("https://msg.volkswagen.de/api/news/myfeeds/v1/{0}/{1}/vehicles/{2}/users/{3}/");
+    }
+
+    public @Nullable String getTripStats(String tripType) {
+        return callApi("bs/tripstatistics/v1/{0}/{1}/vehicles/{2}/tripdata/" + tripType + "?newest");
+    }
+
+    private @Nullable String callApi(String uri) {
+        try {
+            return httpGet(uri);
+        } catch (CarNetException e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        } catch (Exception e) {
+
+        }
+        return null;
+
     }
 
     public boolean checkRequestSuccessful(String url) {
@@ -904,8 +1070,9 @@ public class CarNetApi {
      *
      */
     private String getBrandUrl(String uriTemplate, String args, String vin) throws MalformedURLException {
-        String path = MessageFormat.format(uriTemplate, config.account.brand, config.account.country, vin);
-        if (!uriTemplate.contains("://")) { // no a full URL
+        String path = MessageFormat.format(uriTemplate, config.account.brand, config.account.country, vin,
+                config.vehicle.userId);
+        if (!uriTemplate.contains("://")) { // not a full URL
             return getUrl(path.isEmpty() ? path : path + (!args.isEmpty() ? "?" + args : ""));
         } else {
             return path + (!args.isEmpty() ? "?" + args : "");
@@ -953,7 +1120,8 @@ public class CarNetApi {
      * @return URL
      */
     private String getUrl(String path) throws MalformedURLException {
-        return getBaseUrl() + "/" + path;
+        String base = getBaseUrl();
+        return base.endsWith("/") && path.startsWith("/") ? base + path : base + "/" + path;
     }
 
     private String getBaseUrl() throws MalformedURLException {

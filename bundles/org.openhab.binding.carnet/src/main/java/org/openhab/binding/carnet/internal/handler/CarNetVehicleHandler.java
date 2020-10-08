@@ -14,8 +14,6 @@ package org.openhab.binding.carnet.internal.handler;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -61,6 +59,7 @@ import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO.CNErrorMessage2Details;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData;
@@ -128,7 +127,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 }
                 setupPollingJob();
             }
-        }, 2, TimeUnit.SECONDS);
+        }, 30, TimeUnit.SECONDS);
     }
 
     /**
@@ -212,15 +211,13 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         try {
             updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_VIN, new StringType(vin));
             api.setConfig(config);
-            String json = api.getServices();
-            try {
-                logger.debug("Dave service list to {}/carnetServices.json", System.getProperty("user.dir"));
-                FileWriter myWriter = new FileWriter("carnetServices.json");
-                myWriter.write(json);
-                myWriter.close();
-            } catch (IOException e) {
-
-            }
+            String url = api.getHomeReguionUrl();
+            config.homeRegionUrl = url != null ? url : "";
+            CarNetServiceList sl = api.getServices();
+            config.userId = sl.operationList.userId != null ? sl.operationList.userId : "";
+            logger.debug("{}: Active userId = {}, role = {} (securityLevel {}), status = {}", config.vin, config.userId,
+                    sl.operationList.role, sl.operationList.securityLevel, sl.operationList.status);
+            api.setConfig(config);
 
             // Try to query status information from vehicle
             Map<String, ChannelIdMapEntry> channels = new HashMap<String, ChannelIdMapEntry>();
@@ -228,20 +225,25 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             CarNetVehicleStatus status = api.getVehicleStatus();
             for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
                 for (CNStatusField field : data.fields) {
-                    ChannelIdMapEntry definition = idMapper.find(field.id);
-                    if (definition != null) {
-                        logger.info("{}: {}={}{} (channel {}#{})", thingId, definition.symbolicName, gs(field.value),
-                                gs(field.unit), definition.groupName, definition.channelName);
-                        if (!definition.channelName.isEmpty()) {
-                            if (!definition.channelName.startsWith(CHANNEL_GROUP_TIRES) || !field.value.contains("1")) {
-                                if (!channels.containsKey(definition.id)) {
-                                    channels.put(definition.id, definition);
+                    try {
+                        ChannelIdMapEntry definition = idMapper.find(field.id);
+                        if (definition != null) {
+                            logger.info("{}: {}={}{} (channel {}#{})", thingId, definition.symbolicName,
+                                    gs(field.value), gs(field.unit), definition.groupName, definition.channelName);
+                            if (!definition.channelName.isEmpty()) {
+                                if (!definition.channelName.startsWith(CHANNEL_GROUP_TIRES)
+                                        || !field.value.contains("1")) {
+                                    if (!channels.containsKey(definition.id)) {
+                                        channels.put(definition.id, definition);
+                                    }
                                 }
                             }
+                        } else {
+                            logger.debug("{}: Unknown data field  {}.{}, value={}{}", vin, data.id, field.id,
+                                    field.value, gs(field.unit));
                         }
-                    } else {
-                        logger.debug("{}: Unknown data field  {}.{}, value={}{}", vin, data.id, field.id, field.value,
-                                gs(field.unit));
+                    } catch (RuntimeException e) {
+
                     }
                 }
             }
@@ -252,6 +254,33 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             // api.getVehicleUsers();
 
             updateVehicleStatus();
+
+            // Get available services
+            // updateClimater();
+            String vmi = api.getVehicleManagementInfo();
+            String vd = api.getVehicleData();
+            String r = api.getVehicleRights();
+            String vu = api.getVehicleUsers();
+            String ui = api.getUserInfo();
+            String ps = api.getUserPairingStatus();
+            String t = api.getClimaterTimer();
+            String cs = api.getClimaStatus();
+            String ch = api.getChargerStatus();
+            String h = api.getHistory();
+            String std = api.getTripData("shortTerm");
+            String ltd = api.getTripData("longTerm");
+            String ts = api.getTripStats("shortTerm");
+            String d = api.getDestinations();
+            String df = api.getMyDestinationsFeed(config.userId);
+            String poi = api.getPois();
+            String rlu = api.getRluActionHistory();
+            String un = api.getUserNews();
+            logger.debug(
+                    "{}: Additional Data\nHome Registration URL: {}\nVehicle Users:{}\nVehicle Data: {}\nVehicle rights: {}\nHistory:{}\nTimer: {}\nClima Status: {}\nCharger Status: {}\nTrip Data short-term: {}\nTrip Data long-term: {}\nDestinations: {}\nPOIs: {}\nUser Info: {}\nUser Pairing Status: {}\nVehicle Management Info: {}\nRLU Action List: {}\nMyDestinationsFeed: {}\nUser News: {}\nTrip Stats short: {}",
+                    config.vin, config.homeRegionUrl, vu, vd, r, h, t, cs, ch, std, ltd, d, poi, ui, ps, vmi, rlu, df,
+                    un, ts);
+            logger.debug("\n------\n{}: End of Additional Data", config.vin);
+
         } catch (CarNetException e) {
             CarNetApiErrorDTO res = e.getApiResult().getApiError();
             if (res.description.contains("disabled ")) {
@@ -380,6 +409,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         boolean tiresOk = true; // tire if all tire pressures are ok
 
         CarNetVehicleStatus status = api.getVehicleStatus();
+        logger.debug("{}: Vehicle Status:\n{}", config.vin, status);
         for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
             for (CNStatusField field : data.fields) {
                 ChannelIdMapEntry definition = idMapper.find(field.id);
@@ -405,10 +435,12 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                             logger.debug("Channel {}#{} not found", definition.groupName, definition.channelName);
                         }
 
-                        vehicleLocked &= checkLocked(field, definition);
-                        maintenanceRequired |= checkMaintenance(field, definition);
-                        tiresOk &= checkTires(field, definition);
-                        windowsClosed &= checkWindows(field, definition);
+                        if ((field.value != null) && !field.value.isEmpty()) {
+                            vehicleLocked &= checkLocked(field, definition);
+                            maintenanceRequired |= checkMaintenance(field, definition);
+                            tiresOk &= checkTires(field, definition);
+                            windowsClosed &= checkWindows(field, definition);
+                        }
                     }
                 } else {
                     logger.debug("{}: Unknown data field  {}.{}, value={} {}", thingId, data.id, field.id, field.value,
@@ -426,25 +458,9 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 windowsClosed ? OnOffType.ON : OnOffType.OFF);
 
         updateVehicleLocation();
-
-        // Get available services
-        // updateClimater();
-        // api.getPersonalData();
-        // api.getHomeReguionUrl();
-        // api.getVehicleData();
-        // api.getVehicleRights();
-        api.getHistory();
     }
 
     private boolean updateClimater() {
-        /*
-         * try {
-         * api.getTimer();
-         * return true;
-         * } catch (CarNetException e) {
-         * // ignore API errors, service might not be enabled
-         * }
-         */
         return false;
     }
 
@@ -453,8 +469,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             logger.debug("{}: Maintenance required: {} has incorrect pressure", thingId, definition.symbolicName);
             return true;
         }
-        if (definition.symbolicName.contains("AD_BLUE_RANGE") && !field.value.isEmpty()
-                && (Integer.parseInt(field.value) < 1000)) {
+        if (definition.symbolicName.contains("AD_BLUE_RANGE") && (Integer.parseInt(field.value) < 1000)) {
             logger.debug("{}: Maintenance required: Ad Blue at {} (< 1.000km)", thingId, field.value);
             return true;
         }

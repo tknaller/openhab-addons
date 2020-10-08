@@ -24,6 +24,7 @@ public class CarNetVehicleConfiguration {
     public String vin = "";
     public String pin = "";
     public String homeRegionUrl = "";
+    public String userId = "";
 
     public int refreshInterval = 10 * 60;
 }

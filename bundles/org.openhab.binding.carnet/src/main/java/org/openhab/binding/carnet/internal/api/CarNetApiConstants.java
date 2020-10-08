@@ -50,6 +50,7 @@ public class CarNetApiConstants {
 
     // URIs: {0}=brand, {1} = VIN
     public static final String CNAPI_URI_GET_TOKEN = "core/auth/v1/{0}/{1}/token";
+    public static final String CNAPI_URI_VEHICLE_MANAGEMENT = "vehicleMgmt/vehicledata/v2/vehicles/{2}";
     public static final String CNAPI_URI_VEHICLE_LIST = "usermanagement/users/v1/{0}/{1}/vehicles";
     public static final String CNAPI_URI_VEHICLE_DETAILS = "promoter/portfolio/v1/{0}/{1}/vehicle//{2}/carportdata";
     public static final String CNAPI_URI_VEHICLE_DATA = "bs/vsr/v1/{0}/{1}/vehicles/{2}/requests";
@@ -87,12 +88,13 @@ public class CarNetApiConstants {
     public static final String CNAPI_AUDI_TOKEN_URL = "https://app-api.my.audi.com/myaudiappidk/v1/token";
     public static final String CNAPI_VW_TOKEN_URL = "https://mbboauth-1d.prd.ece.vwg-connect.com/mbbcoauth/mobile/oauth2/v1/token";
 
-    public static final String CNAPI_AUDIURL_OPERATIONS = "https://msg.audi.de/myaudi/vehicle-management/v1/vehicles";
+    public static final String CNAPI_AUDIURL_OPERATIONS = "https://msg.audi.de/myaudi/vehicle-management/v2/vehicles";
 
     public static final String CNAPI_URL_AUDI_GET_TOKEN = "https://id.audi.com/v1/token";
     public static final String CNAPI_URL_GO_GET_TOKEN = "https://id.audi.com/v1/token";
     public static final String CNAPI_URL_DEF_GET_TOKEN = "https://tokenrefreshservice.apps.emea.vwapps.io/refreshTokens";
 
+    public static final String CNAPI_URL_RLU_ACTIONS = "bs/rlu/v1/{0}/{1}/vehicles/{2}/actions";
     public static final String CNAPI_SERVICE_REMOTELOCK = "rlu_v1";
     public static final String CNAPI_RLU_LOCK = "LOCK";
     public static final String CNAPI_RLU_UNLOCK = "UNLOCK";

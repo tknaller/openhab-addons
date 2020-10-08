@@ -48,7 +48,7 @@ public class CarNetToken {
         if (token.validity != null) {
             int treshhold = token.validity - new Double(token.validity * 0.9).intValue();
             validity = token.validity - treshhold;
-            validity = 30;
+            validity = 300;
         }
         creationTime = new Date();
         if (!isValid()) {

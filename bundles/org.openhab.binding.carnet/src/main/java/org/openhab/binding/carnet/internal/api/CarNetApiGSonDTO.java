@@ -270,4 +270,82 @@ public class CarNetApiGSonDTO {
 
         CNRluActionResponse rluActionResponse;
     }
+
+    public static class CarNetRluHistory {
+        public class CNRluLockEntry {
+            // "valid":true,
+            // "locked":true,
+            // "open":false,
+            // "safe":false
+            public boolean valid;
+            public boolean locked;
+            public boolean open;
+            public Boolean safe = false; // maybe empty
+        }
+
+        public class CNRluLockStatus {
+            CNRluLockEntry driverDoor;
+            CNRluLockEntry coDriverDoor;
+            CNRluLockEntry driverRearDoor;
+            CNRluLockEntry coDriverRearDoor;
+            CNRluLockEntry frontLid;
+            CNRluLockEntry boot;
+            CNRluLockEntry flap;
+        }
+
+        public class CarNetRluLockAction {
+            // "operation":"lock",
+            // "timestamp":"2020-07-27T08:15:03Z",
+            // "channel":"app",
+            // "rluResult":"1",
+            // "lockStatus":{list of items
+            public String lock;
+            public String timestamp;
+            public String channel;
+            public String rluResult;
+            CNRluLockStatus lockStatus;
+        }
+
+        public class CarNetRluLockActionList {
+            // "action":[CarNetRluLockActionList]
+            public ArrayList<CarNetRluLockAction> action;
+
+        }
+
+        // "vin":"XXXXXXXXXX",
+        // "steeringWheelSide":"left",
+        // "doorModel":"four",
+        // "actions":{}
+        public String vin;
+        public String steeringWheelSide;
+        public String doorModel;
+        public CarNetRluLockActionList actions;
+    }
+
+    public static class CNServiceList {
+        // "vin":"XXXXXXXXXX",
+        // "channelClient":"APP",
+        // "userId":"YkvDWM0RUch5GHQjTzNyyYO3N841",
+        // "role":"PRIMARY_USER",
+        // "securityLevel":"HG_2c",
+        // "status":"ENABLED",
+        // "vehicleLifeCycleStatus":{
+        // "content":"DELIVERED",
+        // "garage":false
+        // },
+        // "serviceInfo[];"
+        // "privacyGroupStates":{
+        // "privacyGroupState":[]
+        // }
+        public String vin;
+        public String channelClient;
+        public String userId;
+        public String role;
+        public String securityLevel;
+        public String status;
+    }
+
+    public static class CarNetServiceList {
+        public CNServiceList operationList;
+    }
 }
