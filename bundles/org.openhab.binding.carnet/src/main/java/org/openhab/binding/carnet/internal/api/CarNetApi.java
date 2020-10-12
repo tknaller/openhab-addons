@@ -15,6 +15,7 @@ package org.openhab.binding.carnet.internal.api;
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_REQUEST_TIMEOUT;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -30,6 +31,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -54,11 +56,18 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.UrlEncoded;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNApiToken;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNPairingInfo;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNPairingInfo.CarNetPairingInfo;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData.CarNetVehicleData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetActionResponse;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetChargerInfo;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetDestinations;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetHomeRegion;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthentication;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceList;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
@@ -392,18 +401,6 @@ public class CarNetApi {
         return vwToken.accessToken;
     }
 
-    public @Nullable String getVehicleData() throws CarNetException {
-        try {
-            String json = httpGet(CNAPI_AUDIURL_OPERATIONS, fillActionHeaders("", createVwToken()));
-            return json;
-        } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
-        } catch (Exception e) {
-
-        }
-        return null;
-    }
-
     public @Nullable String getVehicleRights() throws CarNetException {
         try {
             String url = CNAPI_AUDIURL_OPERATIONS;
@@ -548,10 +545,15 @@ public class CarNetApi {
     public @Nullable String getDestinations() throws CarNetException {
         try {
             String json = httpGet(CNAPI_URI_DESTINATIONS);
-            return json;
-            // CarNetDestinations destinations = gson.fromJson(json, CarNetDestinations.class);
-            // Validate.notNull(destinations, "Unable to get vehicle destinations!");
-            // return destinations;
+            CarNetDestinations destinations = null;
+            if (!json.isEmpty()) {
+                destinations = gson.fromJson(json, CarNetDestinations.class);
+                if ((destinations != null) && (destinations.destinations != null)
+                        && destinations.destinations.destination.size() > 0) {
+                    return json;
+                }
+                return json;
+            }
         } catch (CarNetException e) {
             logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
         } catch (Exception e) {
@@ -578,9 +580,8 @@ public class CarNetApi {
 
     public @Nullable String getClimaStatus() throws CarNetException {
         try {
-            String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS, fillMmiHeaders());
-            // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
-            // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
+            // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS, fillMmiHeaders());
+            String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
             return json;
         } catch (Exception e) {
             return null;
@@ -599,30 +600,32 @@ public class CarNetApi {
         return null;
     }
 
-    public @Nullable String getChargerStatus() throws CarNetException {
-        try {
-            String json = httpGet(CNAPI_URI_CHARGER_STATUS);
-            return json;
-        } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
-        } catch (Exception e) {
-
+    public @Nullable CarNetChargerInfo getChargerStatus() throws CarNetException {
+        String json = callApi(CNAPI_URI_CHARGER_STATUS, "chargerStatus.json");
+        if (json != null) {
+            return gson.fromJson(json, CarNetChargerInfo.class);
         }
         return null;
     }
 
-    public @Nullable String getTripData(String type) throws CarNetException {
+    public @Nullable CarNetTripData getTripData(String type) throws CarNetException {
+        String json = "";
         try {
             String action = "list";
             // Map<String, String> headers = fillActionHeaders("", createVwToken());
 
             String url = CNAPI_VWURL_TRIP_DATA.replace("{3}", type).replace("{4}", action);
-            String json = httpGet(url, fillAppHeaders());
-            return json;
+            json = httpGet(url, fillAppHeaders());
         } catch (CarNetException e) {
             logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
         } catch (Exception e) {
+        }
 
+        if (json.isEmpty()) {
+            json = loadJson("tripData" + type + ".json");
+        }
+        if (json != null) {
+            return gson.fromJson(json, CarNetTripData.class);
         }
         return null;
     }
@@ -695,7 +698,7 @@ public class CarNetApi {
     public @Nullable String getVehicleUsers() throws CarNetException {
         try {
             Map<String, String> headers = fillActionHeaders();
-            String json = request(HttpMethod.GET, "usermanagement/users/v1/{0}/{1}/vehicles/{2}", "", headers, "",
+            String json = request(HttpMethod.GET, "usermanagement/users/v1/{0}/{1}/vehicles/{2}/", "", headers, "",
                     config.vehicle.vin, "");
             return json;
         } catch (CarNetException e) {
@@ -730,7 +733,7 @@ public class CarNetApi {
         queuePendingAction(json, CNAPI_SERVICE_CLIMATISATION, action);
     }
 
-    public void climaControl(boolean start) throws CarNetException {
+    public void controlClimater(boolean start) throws CarNetException {
         final String action = start ? "start" : "stop";
 
         String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>";
@@ -763,79 +766,77 @@ public class CarNetApi {
     }
 
     public @Nullable String getPois() {
-        try {
-            String json = httpGet("{0}/{1}/vehicles/{2}/pois");
-            return json;
-        } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
-        } catch (Exception e) {
-
-        }
-        return null;
+        return callApi("\"{0}/{1}/vehicles/{2}/pois", "");
     }
 
     public @Nullable String getUserInfo() {
-        try {
-            String json = httpGet("core/auth/v1/{0}/{1}/userInfo'");
-            return json;
-        } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
-        } catch (Exception e) {
+        return callApi("core/auth/v1/{0}/{1}/userInfo", "");
+    }
 
+    public @Nullable CarNetPairingInfo getPairingStatus() {
+        String json = callApi(CNAPI_URI_GET_USERINFO, "");
+        if (json != null) {
+            CNPairingInfo pi = gson.fromJson(json, CNPairingInfo.class);
+            return pi.pairingInfo;
         }
         return null;
     }
 
-    public @Nullable String getUserPairingStatus() {
-        try {
-            String json = httpGet("{0}/{1}/usermanagement/users/v1/vehicles/{2}/pairing");
-            return json;
-        } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
-        } catch (Exception e) {
-
-        }
-        return null;
-    }
-
-    public @Nullable String getVehicleManagementInfo() {
-        try {
-            String json = httpGet(CNAPI_URI_VEHICLE_MANAGEMENT);
-            return json;
-        } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
-        } catch (Exception e) {
-
+    public @Nullable CarNetVehicleData getVehicleManagementInfo() {
+        String json = callApi(CNAPI_URI_VEHICLE_MANAGEMENT, "");
+        if (json != null) {
+            CNVehicleData vd = gson.fromJson(json, CNVehicleData.class);
+            return vd.vehicleData;
         }
         return null;
     }
 
     public @Nullable String getRluActionHistory() {
-        return callApi(CNAPI_URL_RLU_ACTIONS);
+        return callApi(CNAPI_URL_RLU_ACTIONS, "rluActionHistory.json");
     }
 
     public @Nullable String getMyDestinationsFeed(String userId) {
-        return callApi("destinationfeedservice/mydestinations/v1/{0}/{1}/vehicles/{2}/users/{3}/");
+        return callApi("destinationfeedservice/mydestinations/v1/{0}/{1}/vehicles/{2}/users/{3}/destinations", "");
     }
 
     public @Nullable String getUserNews() {
-        return callApi("https://msg.volkswagen.de/api/news/myfeeds/v1/{0}/{1}/vehicles/{2}/users/{3}/");
+        return callApi("https://msg.volkswagen.de/api/news/myfeeds/v1/vehicles/{2}/users/{3}/", "");
     }
 
     public @Nullable String getTripStats(String tripType) {
-        return callApi("bs/tripstatistics/v1/{0}/{1}/vehicles/{2}/tripdata/" + tripType + "?newest");
+        String json = callApi("bs/tripstatistics/v1/{0}/{1}/vehicles/{2}/tripdata/" + tripType + "?newest", "");
+        return json;
     }
 
-    private @Nullable String callApi(String uri) {
+    private @Nullable String callApi(String uri, String testData) {
         try {
             return httpGet(uri);
         } catch (CarNetException e) {
             logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
         } catch (Exception e) {
+        }
+        return loadJson(testData);
 
+    }
+
+    private @Nullable String loadJson(String filename) {
+        if (filename.isEmpty()) {
+            return null;
+        }
+        try {
+            StringBuffer result = new StringBuffer();
+            String path = System.getProperty("user.dir") + "/userdata/";
+            File myObj = new File(path + filename);
+            Scanner myReader = new Scanner(myObj);
+            while (myReader.hasNextLine()) {
+                String line = myReader.nextLine();
+                result.append(line);
+            }
+            myReader.close();
+            return result.toString();
+        } catch (IOException e) {
         }
         return null;
-
     }
 
     public boolean checkRequestSuccessful(String url) {
@@ -901,8 +902,9 @@ public class CarNetApi {
         headers.put("ADRUM", "isAray:true");
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
 
-        String bearer = brandToken.authType + " " + brandToken.authVersion + " " + createBrandToken();
-        headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + bearer);
+        // String bearer = brandToken.authType + " " + brandToken.authVersion + " " + createBrandToken();
+        // headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + bearer);
+        headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + createBrandToken());
 
         return headers;
     }

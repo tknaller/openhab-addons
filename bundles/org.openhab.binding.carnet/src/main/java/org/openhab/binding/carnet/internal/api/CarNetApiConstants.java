@@ -50,7 +50,8 @@ public class CarNetApiConstants {
 
     // URIs: {0}=brand, {1} = VIN
     public static final String CNAPI_URI_GET_TOKEN = "core/auth/v1/{0}/{1}/token";
-    public static final String CNAPI_URI_VEHICLE_MANAGEMENT = "vehicleMgmt/vehicledata/v2/vehicles/{2}";
+    public static final String CNAPI_URI_GET_USERINFO = "usermanagement/users/v1/{0}/{1}/vehicles/{2}/pairing";
+    public static final String CNAPI_URI_VEHICLE_MANAGEMENT = "vehicleMgmt/vehicledata/v2/{0}/{1}/vehicles/{2}";
     public static final String CNAPI_URI_VEHICLE_LIST = "usermanagement/users/v1/{0}/{1}/vehicles";
     public static final String CNAPI_URI_VEHICLE_DETAILS = "promoter/portfolio/v1/{0}/{1}/vehicle//{2}/carportdata";
     public static final String CNAPI_URI_VEHICLE_DATA = "bs/vsr/v1/{0}/{1}/vehicles/{2}/requests";

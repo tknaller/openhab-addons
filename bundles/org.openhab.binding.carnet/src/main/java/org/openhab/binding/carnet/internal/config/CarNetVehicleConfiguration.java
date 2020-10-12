@@ -26,5 +26,7 @@ public class CarNetVehicleConfiguration {
     public String homeRegionUrl = "";
     public String userId = "";
 
+    public int numTripShort = 1; // number of entries from history
+    public int numTripLong = 1; // number of entries from history
     public int refreshInterval = 10 * 60;
 }

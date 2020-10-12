@@ -14,6 +14,8 @@ package org.openhab.binding.carnet.internal.api;
 
 import java.util.ArrayList;
 
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetChargerInfo.CarNetChargerStatus.CNCharger;
+
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -98,17 +100,6 @@ public class CarNetApiGSonDTO {
         public CNSecuritxPinAuth securityPinAuthentication = new CNSecuritxPinAuth();
     }
 
-    public static class CarNetVehicleList {
-        /*
-         * {"userVehicles":{"vehicle": ["WAUZZZF21LN046449"]}}
-         */
-        public static class CNVehicles {
-            public ArrayList<String> vehicle;
-        }
-
-        public CNVehicles userVehicles;
-    }
-
     public static class CarNetHomeRegion {
         /*
          * {
@@ -127,6 +118,78 @@ public class CarNetApiGSonDTO {
         }
 
         public CNHomeRegion homeRegion;
+    }
+
+    public static class CNPairingInfo {
+        /*
+         * {
+         * "pairingInfo":{
+         * "pairingStatus":"PAIRINGCOMPLETE",
+         * "xmlns":"http://www.vw.com/mbb/usermanagement",
+         * "userId":"dYeJ7CoMzqV0obHyRZJSyzkb9d11",
+         * "pairingCode":91288159,
+         * "vehicle":"WAUZZZF21LN046449"
+         * }
+         * }
+         */
+
+        public class CarNetPairingInfo {
+            public String pairingStatus;
+            public String xmlns;
+            public String userId;
+            public String pairingCode;
+            public String vin;
+        }
+
+        CarNetPairingInfo pairingInfo;
+    }
+
+    public static class CNVehicleData {
+        public class CarNetVehicleData {
+            public class CNVehicleDeviceList {
+                public class CNVecileDevice {
+                    public class CNEmbeddedSIM {
+                        public class CNSimIdentification {
+                            public String type;
+                            public String content;
+                        }
+
+                        CNSimIdentification identification;
+                    }
+
+                    public String deviceType;
+                    public String deviceId;
+                    public String ecuGeneration;
+                    public CNEmbeddedSIM embeddedSim;
+                    public String imei;
+                    public String mno;
+                }
+
+                public ArrayList<CNVecileDevice> vehicleDevice;
+            }
+
+            public String systemId;
+            public String requestId;
+            public String brand;
+            public String country;
+            public String vin;
+            public Boolean isConnect;
+            public Boolean isConnectSorglosReady;
+            public CNVehicleDeviceList vehicleDevices;
+        }
+
+        CarNetVehicleData vehicleData;
+    }
+
+    public static class CarNetVehicleList {
+        /*
+         * {"userVehicles":{"vehicle": ["XXXXXXXXXXX"]}}
+         */
+        public static class CNVehicles {
+            public ArrayList<String> vehicle;
+        }
+
+        public CNVehicles userVehicles;
     }
 
     public static class CarNetVehicleDetails {
@@ -251,10 +314,6 @@ public class CarNetApiGSonDTO {
         }
     }
 
-    public static class CarNetDestinations {
-        public String destinations;
-    }
-
     public static class CarNetHistory {
         public String destinations;
     }
@@ -348,4 +407,347 @@ public class CarNetApiGSonDTO {
     public static class CarNetServiceList {
         public CNServiceList operationList;
     }
-}
+
+    public static class CarNetDestinations {
+        public class CNDestinationAddress {
+            /*
+             * address":{
+             * "addressType":"32",
+             * "city":"Remagen",
+             * "country":"DE",
+             * "street":"Mühlenweg 1",
+             * "zipCode":"53424"
+             * },
+             */
+            public String addressType;
+            public String city;
+            public String country;
+            public String street;
+            public String zipCode;
+        }
+
+        public class CNDestinationGeo {
+            public Double latitude;
+            public Double longitude;
+        }
+
+        public class CNDestinationPOI {
+            public String lastName;
+            // "phoneData":[{"phoneType":"2"} ]}
+        }
+
+        public class CNDestination {
+            /*
+             * {
+             * "destinationName":null,
+             * "immediateDestination":false,
+             * "sendToVehicle":false,
+             * "id":"3853059352",
+             * "href":null,
+             * "address":{
+             * "addressType":"32",
+             * "city":"Remagen",
+             * "country":"DE",
+             * "street":"Mühlenweg 1,
+             * "zipCode":"53424"
+             * },
+             * "destinationSource":"Unknown",
+             * "geoCoordinate":{
+             * "latitude":"50.498084",
+             * "longitude":"12.145352"
+             * },
+             * "POIContact":{
+             * "lastName":"Hammerstraße 55",
+             * "phoneData":[
+             * {
+             * "phoneType":"2"
+             * }
+             * ]
+             * },
+             * "fetchStatus":"FetchDeactivated"
+             * },
+             *
+             */
+            public String destinationName = "";
+            public boolean immediateDestination;
+            public String id;
+            CNDestinationAddress address;
+            public String destinationSource;
+            CNDestinationGeo geoCoordinate;
+            CNDestinationPOI POIContact;
+            public String fetchStatus;
+        }
+
+        public class CNDestinationList {
+            public ArrayList<CNDestination> destination;
+        }
+
+        CNDestinationList destinations;
+    }
+
+    public static class CNContentString {
+        public String content;
+        public String timestamp;
+    }
+
+    public static class CNContentInt {
+        public String content;
+        public String timestamp;
+    }
+
+    public static class CNContentBool {
+        public String content;
+        public String timestamp;
+    }
+
+    public static class CarNetTripData {
+        public class CarNetTripDataList {
+            public class CarNetTripDataEntry {
+                /*
+                 * {
+                 * "tripType":"shortTerm",
+                 * "tripID":778996476,
+                 * "averageElectricEngineConsumption":284,
+                 * "averageFuelConsumption":0,
+                 * "averageSpeed":50,
+                 * "mileage":12,
+                 * "startMileage":4522,
+                 * "traveltime":14,
+                 * "timestamp":"2020-08-28T13:12:54Z",
+                 * "reportReason":"clamp15off",
+                 * "overallMileage":4534
+                 * },
+                 */
+                public String tripType;
+                public String tripID;
+                public Integer averageElectricEngineConsumption;
+                public Double averageFuelConsumption;
+                public Integer averageSpeed;
+                public Integer mileage;
+                public Integer startMileage;
+                public Double traveltime;
+                public String timestamp;
+                public String reportReason;
+                public Integer overallMileage;
+            }
+
+            public ArrayList<CarNetTripDataEntry> tripData;
+        }
+
+        public CarNetTripDataList tripDataList;
+    }
+
+    public static class CarNetChargerInfo {
+        public class CNCargerModeSel {
+            /*
+             * "modificationState":{
+             * "content":"canNotBeModified",
+             * "timestamp":"2020-10-08T07:29:56Z"
+             * },
+             * "modificationReason":{
+             * "content":"systemOff",
+             * "timestamp":"2020-10-08T07:29:56Z"
+             * },
+             * "value":{
+             * "content":"immediateCharging",
+             * "timestamp":"2020-10-08T07:29:56Z"
+             * }
+             */
+            CNContentString modificationState;
+            CNContentString modificationReason;
+            CNContentString value;
+        }
+
+        public class CNChargerSettings {
+            /*
+             * "settings":{
+             * "maxChargeCurrent":{
+             * "content":32,
+             * "timestamp":"2020-10-08T07:29:56Z"
+             * },
+             * "chargeModeSelection":{
+             * "modificationState":{
+             * "content":"canNotBeModified",
+             * "timestamp":"2020-10-08T07:29:56Z"
+             * },
+             * "modificationReason":{
+             * "content":"systemOff",
+             * "timestamp":"2020-10-08T07:29:56Z"
+             * },
+             * "value":{
+             * "content":"immediateCharging",
+             * "timestamp":"2020-10-08T07:29:56Z"
+             * }
+             * }
+             * },
+             */
+            CNContentInt maxChargeCurrent;
+            CNCargerModeSel chargeModeSelection;
+        }
+
+        public class CarNetChargerStatus {
+            public class CNChargerStatusData {
+                CNContentString chargingMode;
+                CNContentInt chargingStateErrorCode;
+                CNContentString chargingReason;
+                CNContentString externalPowerSupplyState;
+                CNContentString energyFlow;
+                CNContentString chargingState;
+
+            }
+
+            public class CNChargerRangeStatusData {
+                CNContentString engineTypeFirstEngine;
+                CNContentInt primaryEngineRange;
+                CNContentInt hybridRange;
+                CNContentString engineTypeSecondEngine;
+                CNContentInt secondaryEngineRange;
+            }
+
+            public class CNChargerLedStatusData {
+                CNContentString ledColor;
+                CNContentString ledState;
+            }
+
+            public class CNBatteryStatusData {
+                CNContentInt stateOfCharge;
+                CNContentInt remainingChargingTime;
+                CNContentString remainingChargingTimeTargetSOC;
+            }
+
+            public class CNPlugStatusData {
+                CNContentString plugState;
+                CNContentString lockState;
+            }
+
+            public class CNChargerStatus {
+                CNChargerStatusData chargingStatusData;
+                CNChargerRangeStatusData cruisingRangeStatusData;
+                CNChargerLedStatusData ledStatusData;
+                CNBatteryStatusData batteryStatusData;
+                CNPlugStatusData plugStatusData;
+            }
+
+            public class CNCharger {
+                CNChargerSettings settings;
+                CNChargerStatus status;
+            }
+        }
+
+        CNCharger charger;
+    }
+
+    public static class CarNetClimaterTimer {
+        public class CNTimerProfileEntry {
+            /*
+             * "timestamp":"2020-10-08T07:30:38Z",
+             * "profileName":"Timerladen1",
+             * "profileID":"1",
+             * "operationCharging":true,
+             * "operationClimatisation":false,
+             * "targetChargeLevel":"100",
+             * "nightRateActive":true,
+             * "nightRateTimeStart":"21:00",
+             * "nightRateTimeEnd":"21:00",
+             * "chargeMaxCurrent":"32",
+             * "heaterSource":"electric"
+             */
+            public String timestamp;
+            public String profileName;
+            public String profileID;
+            public Boolean operationCharging;
+            public Boolean operationClimatisation;
+            public String targetChargeLevel;
+            public Boolean nightRateActive;
+            public String nightRateTimeStart;
+            public String nightRateTimeEnd;
+            public String chargeMaxCurrent;
+            public String heaterSource;
+        }
+
+        public class CNTimerProfile {
+            public ArrayList<CNTimerProfileEntry> timerProfile;
+        }
+
+        public class CNTimerProfileList {
+            CNTimerProfile timerProfileList;
+        }
+
+        public class CNTimerEntry {
+            /*
+             * "timestamp":"2020-10-08T07:30:38Z",
+             * "timerID":"1",
+             * "profileID":"1",
+             * "timerProgrammedStatus":"notProgrammed",
+             * "timerFrequency":"single",
+             * "departureDateTime":"2020-10-08T10:00"
+             */
+            public String timestamp;
+            public String timerID;
+            public String timerProgrammedStatus;
+            public String timerFrequency;
+            public String departureDateTime;
+        }
+
+        public class CNTimerEntryList {
+            public ArrayList<CNTimerEntry> timer;
+        }
+
+        public class CNTimerList {
+            CNTimerEntryList timerList;
+        }
+
+        public class CNStatusTimerEntry {
+            CNContentString timerChargeScheduleStatus;
+            CNContentString timerClimateScheduleStatus;
+            CNContentString timerExpiredStatus;
+            CNContentString instrumentClusterTime;
+        }
+
+        public class CNStatusTimerList {
+            public ArrayList<CNStatusTimerEntry> timer;
+        }
+
+        public class CNStatusTimer {
+            public String timerID;
+        }
+
+        public class CNTimerAndProfileList {
+            public class CNZoneValue {
+                Boolean isEnabled;
+                String position;
+            }
+
+            public class CNZoneSettingEntry {
+                public String timestamp;
+                public CNZoneValue value;
+            }
+
+            public class CNZoneSettingList {
+                public ArrayList<CNZoneSettingEntry> zoneSetting;
+            }
+
+            public class CNZoneSettings {
+                CNZoneSettingList zoneSettings;
+            }
+
+            public class CNClimateElementSettings {
+                CNContentBool isClimatisationAtUnlock;
+                CNContentBool isMirrorHeatingEnabled;
+                CNZoneSettings zoneSettings;
+            }
+
+            public class CNBasicTimerSettings {
+                public String timestamp;
+                public String heaterSource;
+                public String chargeMinLimit;
+                CNClimateElementSettings climaterElementSettings;
+            }
+
+            CNTimerProfileList timerProfileList;
+            CNTimerList timerList;
+            CNBasicTimerSettings timerBasicSetting;
+            CNStatusTimer status;
+        }
+    }
+ }

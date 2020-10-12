@@ -17,8 +17,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.measure.Unit;
+import javax.measure.quantity.Dimensionless;
+import javax.measure.quantity.Length;
+import javax.measure.quantity.Power;
+import javax.measure.quantity.Temperature;
+import javax.measure.quantity.Time;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.smarthome.core.library.unit.MetricPrefix;
+import org.eclipse.smarthome.core.library.unit.SIUnits;
+import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
+
+import tec.uom.se.unit.Units;
 
 /**
  * The {@link CarNetBindingConstants} class defines common constants, which are
@@ -59,6 +71,20 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_LOCATTION_TIME = "lastUpdate";
     public static final String CHANNEL_LOCATTION_PARK = "parkingTime";
 
+    public static final String CHANNEL_GROUP_TRIP_PRE = "trip";
+    public static final String CHANNEL_TRIP_SHORT = "Short";
+    public static final String CHANNEL_TRIP_LONG = "Long";
+    public static final String CHANNEL_GROUP_STRIP = CHANNEL_GROUP_TRIP_PRE + CHANNEL_TRIP_SHORT;
+    public static final String CHANNEL_GROUP_LTRIP = CHANNEL_GROUP_TRIP_PRE + CHANNEL_TRIP_LONG;
+    public static final String CHANNEL_TRIP_TIME = "timestamp";
+    public static final String CHANNEL_TRIP_TRAVELTIME = "traveltime";
+    public static final String CHANNEL_TRIP_AVG_ELCON = "avgElectricConsumption";
+    public static final String CHANNEL_TRIP_AVG_FUELCON = "avgFuelConsumption";
+    public static final String CHANNEL_TRIP_AVG_SPEED = "avgSpeed";
+    public static final String CHANNEL_TRIP_MILAGE = "mileage";
+    public static final String CHANNEL_TRIP_START_MIL = "startMileage";
+    public static final String CHANNEL_TRIP_OVR_MILAGE = "overallMileage";
+
     // Other channels group in here
     public static final String CHANNEL_GROUP_STATUS = "status";
     public static final String CHANNEL_GROUP_RANGE = "range";
@@ -77,14 +103,20 @@ public class CarNetBindingConstants {
 
     public static final String ITEMT_STRING = "String";
     public static final String ITEMT_NUMBER = "Number";
+    public static final String ITEMT_PERCENT = "Number:Dimensionless";
     public static final String ITEMT_SWITCH = "Switch";
+    public static final String ITEMT_CONTACT = "Contact";
     public static final String ITEMT_LOCATION = "Location";
+    public static final String ITEMT_TIME = "Number:Time";
+    public static final String ITEMT_DATETIME = "DateTime";
     public static final String ITEMT_TEMP = "Number:Temperature";
     public static final String ITEMT_DISTANCE = "Number:Length";
     public static final String ITEMT_SPEED = "Number:Speed";
     public static final String ITEMT_VOLUME = "Number:Volume";
-    public static final String ITEMT_TIME = "Number:Time";
-    public static final String ITEMT_PERCENT = "Number:Dimensionless";
+    public static final String ITEMT_POWER = "Number:Power";
+    public static final String ITEMT_ENERGY = "Number:Energy";
+    public static final String ITEMT_VOLT = "Number:ElectricPotential";
+    public static final String ITEMT_AMP = "Number:ElectricPotential";
 
     public static final int API_TOKEN_REFRESH_INTERVAL_SEC = 5 * 60; // interval to check for valid token
     public static final int API_REQUEST_TIMEOUT = 60;
@@ -92,4 +124,11 @@ public class CarNetBindingConstants {
     public static final String API_STATUS_MSG_PREFIX = "api-status";
     public static final String API_STATUS_CLASS_SECURUTY = "VSR.security";
     public static final String API_STATUS_GW_ERROR = "gw.error";
+
+    public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
+    public static final Unit<Power> KWATT = MetricPrefix.KILO(SmartHomeUnits.WATT);
+    public static final Unit<Time> DAYS = Units.DAY;
+    public static final Unit<Dimensionless> PERCENT = SmartHomeUnits.PERCENT;
+    public static final Unit<Temperature> DKELVIN = MetricPrefix.DECI(Units.KELVIN);
+
 }

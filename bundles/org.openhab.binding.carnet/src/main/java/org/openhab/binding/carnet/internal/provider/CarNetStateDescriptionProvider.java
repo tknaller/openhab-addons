@@ -93,8 +93,10 @@ public class CarNetStateDescriptionProvider implements DynamicStateDescriptionPr
         if (channelDef == null) {
             return null;
         }
+
         StateDescriptionFragmentBuilder state = StateDescriptionFragmentBuilder.create()
                 .withReadOnly(channelDef.readOnly);
+        String itemType = channelDef.itemType;
         String min = getChannelAttribute(channelId, "min");
         String max = getChannelAttribute(channelId, "max");
         String step = getChannelAttribute(channelId, "step");
@@ -102,19 +104,18 @@ public class CarNetStateDescriptionProvider implements DynamicStateDescriptionPr
         if (pattern.isEmpty()) {
             switch (channelDef.itemType) {
                 case ITEMT_SWITCH:
+                case ITEMT_CONTACT:
                     break;
                 case ITEMT_STRING:
                     pattern = "%s";
                     break;
                 case ITEMT_NUMBER:
+                case ITEMT_PERCENT:
                 default:
-                    if (channelDef.unit != null) {
+                    if ((channelDef.unit != null) && itemType.contains("Number")) {
                         pattern = "%f %unit%";
                     }
             }
-        }
-        if (!pattern.isEmpty()) {
-            state = state.withPattern(pattern);
         }
         if (!min.isEmpty()) {
             state = state.withMinimum(new BigDecimal(Double.parseDouble(min)));
@@ -122,8 +123,11 @@ public class CarNetStateDescriptionProvider implements DynamicStateDescriptionPr
         if (!max.isEmpty()) {
             state = state.withMaximum(new BigDecimal(Double.parseDouble(max)));
         }
-        if (!min.isEmpty()) {
+        if (!step.isEmpty()) {
             state = state.withStep(new BigDecimal(Double.parseDouble(step)));
+        }
+        if (!pattern.isEmpty()) {
+            state = state.withPattern(pattern);
         }
         return state;
     }

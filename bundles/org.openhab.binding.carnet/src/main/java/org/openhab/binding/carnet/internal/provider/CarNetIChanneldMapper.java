@@ -15,19 +15,15 @@ package org.openhab.binding.carnet.internal.provider;
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import javax.measure.Unit;
-import javax.measure.quantity.Dimensionless;
-import javax.measure.quantity.Length;
-import javax.measure.quantity.Temperature;
-import javax.measure.quantity.Time;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.unit.ImperialUnits;
-import org.eclipse.smarthome.core.library.unit.MetricPrefix;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
@@ -35,10 +31,7 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleSta
 import org.openhab.binding.carnet.internal.handler.CustomUnits;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
-
-import tec.uom.se.unit.Units;
 
 /**
  * The {@link CarNetIChanneldMapper} maps status value IDs from the API to channel definitions.
@@ -50,11 +43,12 @@ import tec.uom.se.unit.Units;
 @NonNullByDefault
 @Component(service = CarNetIChanneldMapper.class)
 public class CarNetIChanneldMapper {
-    public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
-    public static final Unit<Time> DAYS = Units.DAY;
-    public static final Unit<Dimensionless> PERCENT = SmartHomeUnits.PERCENT;
-    public static final Unit<Temperature> DKELVIN = MetricPrefix.DECI(Units.KELVIN);
     private final CarNetTextResources resources;
+
+    @Activate
+    public CarNetIChanneldMapper(@Reference CarNetTextResources resources) {
+        this.resources = resources;
+    }
 
     private static Map<String, ChannelIdMapEntry> map = new LinkedHashMap<String, ChannelIdMapEntry>();
     static {
@@ -151,6 +145,22 @@ public class CarNetIChanneldMapper {
         add("UTC_TIME_STATUS", "0x0101010001");
     }
 
+    public static List<ChannelIdMapEntry> createTripChannels(List<ChannelIdMapEntry> ch, String type, int index) {
+        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_TIME, ITEMT_DATETIME, null, false, true));
+        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_AVG_ELCON, ITEMT_ENERGY,
+                SmartHomeUnits.KILOWATT_HOUR, false, true));
+        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_AVG_FUELCON, ITEMT_VOLUME, SmartHomeUnits.LITRE,
+                false, true));
+        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_AVG_SPEED, ITEMT_SPEED,
+                SIUnits.KILOMETRE_PER_HOUR, false, true));
+        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_MILAGE, ITEMT_DISTANCE, KILOMETRE, false, true));
+        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_START_MIL, ITEMT_DISTANCE, KILOMETRE, false,
+                true));
+        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_OVR_MILAGE, ITEMT_DISTANCE, KILOMETRE, false,
+                true));
+        return ch;
+    }
+
     public static class ChannelIdMapEntry {
         public String id = "";
         public String symbolicName = "";
@@ -187,11 +197,6 @@ public class CarNetIChanneldMapper {
             String value = resources.getText(key);
             return !value.equals(key) ? value : "";
         }
-    }
-
-    @Activate
-    public CarNetIChanneldMapper(@Reference CarNetTextResources resources) {
-        this.resources = resources;
     }
 
     public @Nullable ChannelIdMapEntry find(String id) {
@@ -248,11 +253,7 @@ public class CarNetIChanneldMapper {
         return definition;
     }
 
-    @Deactivate
-    public void deactivate() {
-    }
-
-    private static void add(String name, String id, String channelName, String itemType, String groupName,
+    private static ChannelIdMapEntry add(String name, String id, String channelName, String itemType, String groupName,
             @Nullable Unit<?> unit) {
         ChannelIdMapEntry entry = new ChannelIdMapEntry();
         entry.id = id;
@@ -261,25 +262,33 @@ public class CarNetIChanneldMapper {
         entry.channelName = channelName;
         entry.itemType = itemType;
         if (itemType.equals(ITEMT_PERCENT) && (unit == null)) {
-            unit = SmartHomeUnits.PERCENT;
+            entry.unit = SmartHomeUnits.PERCENT;
         }
         entry.unit = unit;
         map.put(id, entry);
+        return entry;
     }
 
-    private static void add(String name, String id, String channelName, String itemType, String groupName) {
-        add(name, id, channelName, itemType, groupName, null);
+    private static ChannelIdMapEntry add(String name, String id, String channelName, String itemType,
+            String groupName) {
+        return add(name, id, channelName, itemType, groupName, null);
     }
 
-    private static void add(String name, String id, String channelName, String itemType) {
-        add(name, id, channelName, itemType, CHANNEL_GROUP_STATUS, null);
+    private static ChannelIdMapEntry add(String name, String id, String channelName, String itemType) {
+        return add(name, id, channelName, itemType, CHANNEL_GROUP_STATUS, null);
     }
 
-    private static void add(String name, String id) {
-        add(name, id, "", "", CHANNEL_GROUP_STATUS, null);
+    private static ChannelIdMapEntry add(String name, String id) {
+        return add(name, id, "", "", CHANNEL_GROUP_STATUS, null);
+    }
+
+    private static ChannelIdMapEntry add(String group, String channel, String itemType, @Nullable Unit<?> unit,
+            boolean advanced, boolean readOnly) {
+        return add(group + "#" + channel, "", channel, itemType, group, unit);
     }
 
     private static String gs(@Nullable String s) {
         return s != null ? s : "";
     }
+
 }

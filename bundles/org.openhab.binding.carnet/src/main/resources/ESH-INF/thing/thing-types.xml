@@ -16,6 +16,10 @@
 			<channel-group id="location" typeId="location" />
 			<channel-group id="maintenance" typeId="maintenance" />
 			<channel-group id="range" typeId="range" />
+			<channel-group id="tripShort1" typeId="tripShort" />
+			<channel-group id="tripShort2" typeId="tripShort" />
+			<channel-group id="tripLong1" typeId="tripLong" />
+			<channel-group id="tripLong2" typeId="tripLong" />
 			<channel-group id="doors" typeId="doors" />
 			<channel-group id="windows" typeId="windows" />
 			<channel-group id="tires" typeId="tires" />
@@ -28,7 +32,6 @@
 		<label>@text/thing-type.carnet.vehicle.group.general.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.general.description</description>
 		<channels>
-			<channel id="vin" typeId="vin" />
 			<channel id="vehicleLocked" typeId="vehicleLocked" />
 			<channel id="maintenanceRequired" typeId="maintenanceRequired" />
 			<channel id="windowsClosed" typeId="windowsClosed" />
@@ -84,13 +87,16 @@
 		<description>@text/thing-type.carnet.vehicle.group.tires.description</description>
 	</channel-group-type>
 
+	<channel-group-type id="tripShort">
+		<label>@text/thing-type.carnet.vehicle.group.tripShort.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.tripShort.description</description>
+	</channel-group-type>
+	<channel-group-type id="tripLong">
+		<label>@text/thing-type.carnet.vehicle.group.tripLong.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.tripLong.description</description>
+	</channel-group-type>
+
 	<!-- Group general -->
-	<channel-type id="vin">
-		<item-type>String</item-type>
-		<label>@text/channel-type.carnet.vin.label</label>
-		<description>@text/channel-type.carnet.vin.description</description>
-		<state readOnly="true" />
-	</channel-type>
 	<channel-type id="vehicleLocked">
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.vehicleLocked.label</label>

@@ -13,10 +13,10 @@
 package org.openhab.binding.carnet.internal.handler;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
+import static org.openhab.binding.carnet.internal.CarNetUtils.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +37,8 @@ import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.PointType;
 import org.eclipse.smarthome.core.library.types.QuantityType;
 import org.eclipse.smarthome.core.library.types.StringType;
+import org.eclipse.smarthome.core.library.unit.SIUnits;
+import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -59,7 +61,12 @@ import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO.CNErrorMessage2Details;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNPairingInfo.CarNetPairingInfo;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData.CarNetVehicleData;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetChargerInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceList;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData.CarNetTripDataList.CarNetTripDataEntry;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData;
@@ -81,6 +88,8 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDeviceListener {
+    private static int POLL_INTERVAL = 3; // poll cycle evey 5sec
+
     private final Logger logger = LoggerFactory.getLogger(CarNetVehicleHandler.class);
     private final CarNetTextResources resources;
     private final CarNetIChanneldMapper idMapper;
@@ -90,6 +99,11 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private CarNetApi api;
     private @Nullable CarNetAccountHandler accountHandler;
     private @Nullable ScheduledFuture<?> pollingJob;
+    private int updateCounter = 0;
+    private int skipCount = 1;
+    private boolean forceUpdate;
+    private boolean channelsCreated = false;
+    private boolean testData = true;
 
     private CarNetVehicleConfiguration config = new CarNetVehicleConfiguration();
 
@@ -118,16 +132,11 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             return;
         }
         accountHandler = handler;
-        accountHandler.registerListener(this);
-
         scheduler.schedule(() -> {
-            if (accountHandler != null) {
-                if (accountHandler.getThing().getStatus() == ThingStatus.ONLINE) {
-                    initializeThing();
-                }
-                setupPollingJob();
-            }
-        }, 30, TimeUnit.SECONDS);
+            accountHandler.registerListener(this);
+            // forceUpdate = true;
+            setupPollingJob();
+        }, 1, TimeUnit.SECONDS);
     }
 
     /**
@@ -135,13 +144,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
      */
     @Override
     public void stateChanged(ThingStatus status, ThingStatusDetail detail, String message) {
-        ThingStatus thingStatus = getThing().getStatus();
-        if ((status == ThingStatus.ONLINE) && (thingStatus != ThingStatus.ONLINE)) {
-            initializeThing();
-        }
-        if (thingStatus != status) {
-            updateStatus(status, detail, message);
-        }
+        forceUpdate = true;
     }
 
     @Override
@@ -155,14 +158,14 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         try {
             switch (channelId) {
                 case CHANNEL_CONTROL_UPDATE:
-                    updateVehicleStatus();
+                    forceUpdate = true;
                     updateState(channelUID.getId(), OnOffType.OFF);
                     break;
                 case CHANNEL_CONTROL_LOCK:
                     api.lockDoor((OnOffType) command == OnOffType.ON);
                     break;
                 case CHANNEL_CONTROL_CLIMA:
-                    api.climaControl((OnOffType) command == OnOffType.ON);
+                    api.controlClimater((OnOffType) command == OnOffType.ON);
                     break;
                 case CHANNEL_CONTROL_WINHEAT:
                     api.controlWindowHeating((OnOffType) command == OnOffType.ON);
@@ -195,6 +198,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         channelData.clear(); // clear any cached channels
         config = getConfigAs(CarNetVehicleConfiguration.class);
         Map<String, String> properties = getThing().getProperties();
+        skipCount = Math.max(config.refreshInterval / POLL_INTERVAL, 2);
+
         String vin = "";
         if (properties.containsKey(PROPERTY_VIN)) {
             vin = properties.get(PROPERTY_VIN);
@@ -209,78 +214,81 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         boolean successful = true;
         String error = "";
         try {
-            updateState(CHANNEL_GROUP_GENERAL + "#" + CHANNEL_GENERAL_VIN, new StringType(vin));
             api.setConfig(config);
             String url = api.getHomeReguionUrl();
             config.homeRegionUrl = url != null ? url : "";
+            CarNetVehicleData vmi = api.getVehicleManagementInfo();
+            if ((vmi != null) && !vmi.isConnect) {
+                logger.info("{}: CarConnect might not be enabled!", thingId);
+            }
             CarNetServiceList sl = api.getServices();
-            config.userId = sl.operationList.userId != null ? sl.operationList.userId : "";
-            logger.debug("{}: Active userId = {}, role = {} (securityLevel {}), status = {}", config.vin, config.userId,
-                    sl.operationList.role, sl.operationList.securityLevel, sl.operationList.status);
+            String ui = api.getUserInfo();
+            CarNetPairingInfo pi = api.getPairingStatus();
+            String pc = "";
+            if (pi != null) {
+                config.userId = pi.userId;
+                pc = pi.pairingCode;
+            } else {
+                config.userId = gs(sl.operationList.userId);
+            }
+            logger.debug("{}: Active userId = {}, role = {} (securityLevel {}), status = {}, Pairing Code {}", thingId,
+                    config.userId, sl.operationList.role, sl.operationList.securityLevel, sl.operationList.status, pc);
             api.setConfig(config);
 
-            // Try to query status information from vehicle
-            Map<String, ChannelIdMapEntry> channels = new HashMap<String, ChannelIdMapEntry>();
-            logger.debug("{}: Get Vehicle Status", vin);
-            CarNetVehicleStatus status = api.getVehicleStatus();
-            for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
-                for (CNStatusField field : data.fields) {
-                    try {
-                        ChannelIdMapEntry definition = idMapper.find(field.id);
-                        if (definition != null) {
-                            logger.info("{}: {}={}{} (channel {}#{})", thingId, definition.symbolicName,
-                                    gs(field.value), gs(field.unit), definition.groupName, definition.channelName);
-                            if (!definition.channelName.isEmpty()) {
-                                if (!definition.channelName.startsWith(CHANNEL_GROUP_TIRES)
-                                        || !field.value.contains("1")) {
-                                    if (!channels.containsKey(definition.id)) {
-                                        channels.put(definition.id, definition);
+            if (!channelsCreated) {
+                // Try to query status information from vehicle
+                List<ChannelIdMapEntry> channels = new ArrayList<>();
+                logger.debug("{}: Get Vehicle Status", vin);
+                CarNetVehicleStatus status = api.getVehicleStatus();
+                for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
+                    for (CNStatusField field : data.fields) {
+                        try {
+                            ChannelIdMapEntry definition = idMapper.find(field.id);
+                            if (definition != null) {
+                                logger.info("{}: {}={}{} (channel {}#{})", thingId, definition.symbolicName,
+                                        gs(field.value), gs(field.unit), definition.groupName, definition.channelName);
+                                if (!definition.channelName.isEmpty()) {
+                                    if (!definition.channelName.startsWith(CHANNEL_GROUP_TIRES)
+                                            || !field.value.contains("1")) {
+                                        channels.add(definition);
                                     }
                                 }
+                            } else {
+                                logger.debug("{}: Unknown data field  {}.{}, value={}{}", vin, data.id, field.id,
+                                        field.value, gs(field.unit));
                             }
-                        } else {
-                            logger.debug("{}: Unknown data field  {}.{}, value={}{}", vin, data.id, field.id,
-                                    field.value, gs(field.unit));
-                        }
-                    } catch (RuntimeException e) {
+                        } catch (RuntimeException e) {
 
+                        }
                     }
                 }
+
+                // Add trip data channels
+                updateTripData(channels);
+
+                // Create channels
+                createChannels(channels);
             }
 
-            Collection<ChannelIdMapEntry> channelsCol = channels.values();
-            createChannels(new ArrayList<ChannelIdMapEntry>(channelsCol));
-
-            // api.getVehicleUsers();
-
-            updateVehicleStatus();
-
-            // Get available services
-            // updateClimater();
-            String vmi = api.getVehicleManagementInfo();
-            String vd = api.getVehicleData();
-            String r = api.getVehicleRights();
-            String vu = api.getVehicleUsers();
-            String ui = api.getUserInfo();
-            String ps = api.getUserPairingStatus();
-            String t = api.getClimaterTimer();
-            String cs = api.getClimaStatus();
-            String ch = api.getChargerStatus();
-            String h = api.getHistory();
-            String std = api.getTripData("shortTerm");
-            String ltd = api.getTripData("longTerm");
-            String ts = api.getTripStats("shortTerm");
-            String d = api.getDestinations();
-            String df = api.getMyDestinationsFeed(config.userId);
-            String poi = api.getPois();
-            String rlu = api.getRluActionHistory();
-            String un = api.getUserNews();
-            logger.debug(
-                    "{}: Additional Data\nHome Registration URL: {}\nVehicle Users:{}\nVehicle Data: {}\nVehicle rights: {}\nHistory:{}\nTimer: {}\nClima Status: {}\nCharger Status: {}\nTrip Data short-term: {}\nTrip Data long-term: {}\nDestinations: {}\nPOIs: {}\nUser Info: {}\nUser Pairing Status: {}\nVehicle Management Info: {}\nRLU Action List: {}\nMyDestinationsFeed: {}\nUser News: {}\nTrip Stats short: {}",
-                    config.vin, config.homeRegionUrl, vu, vd, r, h, t, cs, ch, std, ltd, d, poi, ui, ps, vmi, rlu, df,
-                    un, ts);
-            logger.debug("\n------\n{}: End of Additional Data", config.vin);
-
+            if (testData) {
+                // Get available services
+                String r = api.getVehicleRights();
+                String vu = api.getVehicleUsers();
+                String t = api.getClimaterTimer();
+                String cs = api.getClimaStatus();
+                String h = api.getHistory();
+                String ts = api.getTripStats("shortTerm");
+                String d = api.getDestinations();
+                String df = api.getMyDestinationsFeed(config.userId);
+                String poi = api.getPois();
+                String rlu = api.getRluActionHistory();
+                String un = api.getUserNews();
+                logger.debug(
+                        "{}: Additional Data\nHome Registration URL: {}\nVehicle Users:{}\nVehicle rights: {}\nHistory:{}\nTimer: {}\nClima Status: {}\nDestinations: {}\nPOIs: {}nVehicle Management Info: {}\nRLU Action List: {}\nMyDestinationsFeed: {}\nUser News: {}\nTrip Stats short: {}",
+                        thingId, config.homeRegionUrl, vu, r, h, t, cs, d, poi, vmi, rlu, df, un, ts);
+                logger.debug("\n------\n{}: End of Additional Data", thingId);
+                testData = false;
+            }
         } catch (CarNetException e) {
             CarNetApiErrorDTO res = e.getApiResult().getApiError();
             if (res.description.contains("disabled ")) {
@@ -364,7 +372,9 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         return "";
     }
 
-    private void createChannels(List<ChannelIdMapEntry> channels) {
+    private boolean createChannels(List<ChannelIdMapEntry> channels) {
+        boolean created = false;
+
         ThingBuilder updatedThing = editThing();
         for (ChannelIdMapEntry channelDef : channels) {
             String channelId = channelDef.channelName;
@@ -373,7 +383,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 groupId = CHANNEL_GROUP_STATUS; // default group
             }
             ChannelTypeUID channelTypeUID = new ChannelTypeUID(BINDING_ID, channelId);
-
             if (getThing().getChannel(groupId + "#" + channelId) == null) {
                 // the channel does not exist yet, so let's add it
                 String itemType = channelDef.itemType.isEmpty() ? ITEMT_NUMBER : channelDef.itemType;
@@ -388,10 +397,12 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                         .withType(channelTypeUID).withLabel(label).withDescription(description)
                         .withKind(ChannelKind.STATE).build();
                 updatedThing.withChannel(channel);
+                created = true;
             }
         }
 
         updateThing(updatedThing.build());
+        return created;
     }
 
     private String getChannelAttribute(String channelId, String attribute) {
@@ -409,7 +420,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         boolean tiresOk = true; // tire if all tire pressures are ok
 
         CarNetVehicleStatus status = api.getVehicleStatus();
-        logger.debug("{}: Vehicle Status:\n{}", config.vin, status);
+        logger.debug("{}: Vehicle Status:\n{}", thingId, status);
         for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
             for (CNStatusField field : data.fields) {
                 ChannelIdMapEntry definition = idMapper.find(field.id);
@@ -428,6 +439,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                                     updateState(channel.getUID(), new StringType(gs(field.value)));
                                     break;
                                 case ITEMT_NUMBER:
+                                case ITEMT_PERCENT:
                                 default:
                                     updateNumberChannel(channel, definition, field);
                             }
@@ -458,6 +470,14 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 windowsClosed ? OnOffType.ON : OnOffType.OFF);
 
         updateVehicleLocation();
+        updateChargerStatus();
+        updateTripData(null);
+
+        if (!channelsCreated) {
+            // vehicle update might have created new channels, update all
+            forceUpdate = true;
+        }
+        channelsCreated = true;
     }
 
     private boolean updateClimater() {
@@ -587,6 +607,66 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
     }
 
+    private void updateChargerStatus() {
+        try {
+            CarNetChargerInfo status = api.getChargerStatus();
+        } catch (CarNetException e) {
+            // Service not available?
+        }
+    }
+
+    private void updateTripData(@Nullable List<ChannelIdMapEntry> channels) {
+        updateTripData(channels, "shortTerm");
+        updateTripData(channels, "longTerm");
+    }
+
+    private boolean updateTripData(@Nullable List<ChannelIdMapEntry> channels, String type) {
+        try {
+            CarNetTripData std = api.getTripData(type);
+            if (std != null) {
+                boolean shortTerm = type.contains("short");
+                int i = std.tripDataList.tripData.size() - 1; // latest first
+                int l = 1;
+                while ((i > 0) && (l <= config.numTripShort)) {
+                    if (!channelsCreated && (channels != null)) {
+                        CarNetIChanneldMapper.createTripChannels(channels,
+                                shortTerm ? CHANNEL_TRIP_SHORT : CHANNEL_TRIP_LONG, l);
+                        return false;
+                    }
+                    String group = (shortTerm ? CHANNEL_GROUP_STRIP : CHANNEL_GROUP_LTRIP) + l + "#";
+                    CarNetTripDataEntry entry = std.tripDataList.tripData.get(i);
+                    if (entry != null) {
+                        updateState(group + CHANNEL_TRIP_TIME, new DateTimeType(getString(entry.timestamp)));
+                        updateState(group + CHANNEL_TRIP_AVG_FUELCON,
+                                new QuantityType<>(getDouble(entry.averageFuelConsumption), SmartHomeUnits.LITRE));
+                        updateState(group + CHANNEL_TRIP_AVG_ELCON,
+                                new QuantityType<>(getInteger(entry.averageElectricEngineConsumption) * 100 / 1000,
+                                        SmartHomeUnits.KILOWATT_HOUR)); // convert kw per km to kw/h per 100kkm
+                        updateState(group + CHANNEL_TRIP_AVG_SPEED,
+                                new QuantityType<>(getInteger(entry.averageSpeed), SIUnits.KILOMETRE_PER_HOUR));
+                        updateState(group + CHANNEL_TRIP_START_MIL,
+                                new QuantityType<>(getInteger(entry.startMileage), KILOMETRE));
+                        updateState(group + CHANNEL_TRIP_MILAGE,
+                                new QuantityType<>(getInteger(entry.mileage), KILOMETRE));
+                        updateState(group + CHANNEL_TRIP_OVR_MILAGE,
+                                new QuantityType<>(getInteger(entry.overallMileage), KILOMETRE));
+                    }
+                    i--;
+                    l++;
+                }
+            }
+            return true;
+        } catch (
+
+        CarNetException e) {
+        }
+        try {
+            CarNetTripData ltd = api.getTripData("longTerm");
+        } catch (CarNetException e) {
+        }
+        return false;
+    }
+
     /**
      * Sets up a polling job (using the scheduler) with the given interval.
      *
@@ -596,23 +676,32 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private void setupPollingJob() {
         cancelPollingJob();
         logger.trace("Setting up polling job with an interval of {} seconds", config.refreshInterval);
-        pollingJob = scheduler.scheduleWithFixedDelay(() -> {
-            if ((accountHandler != null) && (accountHandler.getThing().getStatus() == ThingStatus.ONLINE)) {
-                String error = "";
-                try {
-                    updateVehicleStatus();
-                } catch (CarNetException e) {
-                    error = getError(e);
-                } catch (RuntimeException e) {
-                    error = "General Error: " + gs(e.getMessage());
-                    logger.warn("{}: {}", thingId, error, e);
-                }
 
-                if (!error.isEmpty()) {
-                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
+        pollingJob = scheduler.scheduleWithFixedDelay(() -> {
+            if (forceUpdate || (++updateCounter % skipCount == 0)) {
+                if ((accountHandler != null) && (accountHandler.getThing().getStatus() == ThingStatus.ONLINE)) {
+                    String error = "";
+                    try {
+                        ThingStatus s = getThing().getStatus();
+                        if ((s == ThingStatus.UNKNOWN) || (s == ThingStatus.OFFLINE)) {
+                            initializeThing();
+                        }
+                        updateVehicleStatus();
+                    } catch (CarNetException e) {
+                        error = getError(e);
+                    } catch (RuntimeException e) {
+                        error = "General Error: " + gs(e.getMessage());
+                        logger.warn("{}: {}", thingId, error, e);
+                    }
+
+                    if (!error.isEmpty()) {
+                        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
+                    }
                 }
             }
-        }, 1, config.refreshInterval, TimeUnit.SECONDS);
+
+            forceUpdate = false;
+        }, 1, POLL_INTERVAL, TimeUnit.SECONDS);
     }
 
     /**
