@@ -27,6 +27,8 @@ import org.eclipse.smarthome.core.library.unit.ImperialUnits;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData.CNStatusField;
 import org.openhab.binding.carnet.internal.handler.CustomUnits;
 import org.osgi.service.component.annotations.Activate;
@@ -145,7 +147,7 @@ public class CarNetIChanneldMapper {
         add("UTC_TIME_STATUS", "0x0101010001");
     }
 
-    public static List<ChannelIdMapEntry> createTripChannels(List<ChannelIdMapEntry> ch, String type, int index) {
+    public static void createTripChannels(List<ChannelIdMapEntry> ch, String type, int index) {
         ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_TIME, ITEMT_DATETIME, null, false, true));
         ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_AVG_ELCON, ITEMT_ENERGY,
                 SmartHomeUnits.KILOWATT_HOUR, false, true));
@@ -158,7 +160,30 @@ public class CarNetIChanneldMapper {
                 true));
         ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_OVR_MILAGE, ITEMT_DISTANCE, KILOMETRE, false,
                 true));
-        return ch;
+    }
+
+    public static void createClimaterChannels(List<ChannelIdMapEntry> ch, CarNetClimaterStatus cs) {
+        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_TARGET_TEMP, ITEMT_TEMP, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_HEAT_SOURCE, ITEMT_STRING, null, true, true));
+        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_GEN_STATE, ITEMT_STRING, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_FL_STATE, ITEMT_SWITCH, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_FR_STATE, ITEMT_SWITCH, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_RL_STATE, ITEMT_SWITCH, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_RR_STATE, ITEMT_SWITCH, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_MIRROR_HEAT, ITEMT_SWITCH, null, false, true));
+    }
+
+    public static void createChargerChannels(List<ChannelIdMapEntry> ch, CarNetChargerStatus cs) {
+        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CURRENT, ITEMT_NUMBER, null, true, true));
+        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_STATUS, ITEMT_STRING, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_ERROR, ITEMT_NUMBER, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PWR_STATE, ITEMT_STRING, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CHG_STATE, ITEMT_STRING, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_FLOW, ITEMT_STRING, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_BAT_STATE, ITEMT_PERCENT, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_REMAINING, ITEMT_NUMBER, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PLUG_STATE, ITEMT_STRING, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_LOCK_STATE, ITEMT_STRING, null, false, true));
     }
 
     public static class ChannelIdMapEntry {

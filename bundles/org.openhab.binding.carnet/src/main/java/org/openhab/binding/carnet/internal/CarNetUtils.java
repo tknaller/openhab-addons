@@ -22,7 +22,6 @@ import java.time.ZonedDateTime;
 import javax.measure.Unit;
 
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.smarthome.core.common.AbstractUID;
 import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
@@ -34,14 +33,14 @@ import org.eclipse.smarthome.core.types.UnDefType;
 
 /**
  * Helperfunctions
- * 
+ *
  * @author Markus Michels - Initial Contribution
  *
  */
 public class CarNetUtils {
 
     public static String mkChannelId(String group, String channel) {
-        return group + AbstractUID.SEPARATOR + channel;
+        return group + "#" + channel;
     }
 
     public static String getString(@Nullable String value) {

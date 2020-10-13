@@ -14,12 +14,14 @@
 			<channel-group id="control" typeId="control" />
 			<channel-group id="status" typeId="status" />
 			<channel-group id="location" typeId="location" />
-			<channel-group id="maintenance" typeId="maintenance" />
+			<channel-group id="charger" typeId="charger" />
 			<channel-group id="range" typeId="range" />
+			<channel-group id="climater" typeId="climater" />
 			<channel-group id="tripShort1" typeId="tripShort" />
 			<channel-group id="tripShort2" typeId="tripShort" />
 			<channel-group id="tripLong1" typeId="tripLong" />
 			<channel-group id="tripLong2" typeId="tripLong" />
+			<channel-group id="maintenance" typeId="maintenance" />
 			<channel-group id="doors" typeId="doors" />
 			<channel-group id="windows" typeId="windows" />
 			<channel-group id="tires" typeId="tires" />
@@ -66,6 +68,7 @@
 			<channel id="parkingTime" typeId="parkingTime" />
 		</channels>
 	</channel-group-type>
+
 	<channel-group-type id="range">
 		<label>@text/thing-type.carnet.vehicle.group.range.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.range.description</description>
@@ -94,6 +97,14 @@
 	<channel-group-type id="tripLong">
 		<label>@text/thing-type.carnet.vehicle.group.tripLong.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.tripLong.description</description>
+	</channel-group-type>
+	<channel-group-type id="climater">
+		<label>@text/thing-type.carnet.vehicle.group.climater.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.climater.description</description>
+	</channel-group-type>
+	<channel-group-type id="charger">
+		<label>@text/thing-type.carnet.vehicle.group.charger.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.charger.description</description>
 	</channel-group-type>
 
 	<!-- Group general -->

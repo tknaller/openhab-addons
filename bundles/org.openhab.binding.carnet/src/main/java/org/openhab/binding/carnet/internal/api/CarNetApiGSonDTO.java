@@ -14,8 +14,6 @@ package org.openhab.binding.carnet.internal.api;
 
 import java.util.ArrayList;
 
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetChargerInfo.CarNetChargerStatus.CNCharger;
-
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -486,18 +484,23 @@ public class CarNetApiGSonDTO {
     }
 
     public static class CNContentString {
-        public String content;
         public String timestamp;
+        public String content;
     }
 
     public static class CNContentInt {
-        public String content;
         public String timestamp;
+        public Integer content;
+    }
+
+    public static class CNContentDouble {
+        public String timestamp;
+        public Double content;
     }
 
     public static class CNContentBool {
-        public String content;
         public String timestamp;
+        public Boolean content;
     }
 
     public static class CarNetTripData {
@@ -537,121 +540,70 @@ public class CarNetApiGSonDTO {
         public CarNetTripDataList tripDataList;
     }
 
-    public static class CarNetChargerInfo {
-        public class CNCargerModeSel {
-            /*
-             * "modificationState":{
-             * "content":"canNotBeModified",
-             * "timestamp":"2020-10-08T07:29:56Z"
-             * },
-             * "modificationReason":{
-             * "content":"systemOff",
-             * "timestamp":"2020-10-08T07:29:56Z"
-             * },
-             * "value":{
-             * "content":"immediateCharging",
-             * "timestamp":"2020-10-08T07:29:56Z"
-             * }
-             */
-            CNContentString modificationState;
-            CNContentString modificationReason;
-            CNContentString value;
-        }
-
-        public class CNChargerSettings {
-            /*
-             * "settings":{
-             * "maxChargeCurrent":{
-             * "content":32,
-             * "timestamp":"2020-10-08T07:29:56Z"
-             * },
-             * "chargeModeSelection":{
-             * "modificationState":{
-             * "content":"canNotBeModified",
-             * "timestamp":"2020-10-08T07:29:56Z"
-             * },
-             * "modificationReason":{
-             * "content":"systemOff",
-             * "timestamp":"2020-10-08T07:29:56Z"
-             * },
-             * "value":{
-             * "content":"immediateCharging",
-             * "timestamp":"2020-10-08T07:29:56Z"
-             * }
-             * }
-             * },
-             */
-            CNContentInt maxChargeCurrent;
-            CNCargerModeSel chargeModeSelection;
-        }
-
+    public static class CNChargerInfo {
         public class CarNetChargerStatus {
-            public class CNChargerStatusData {
-                CNContentString chargingMode;
-                CNContentInt chargingStateErrorCode;
-                CNContentString chargingReason;
-                CNContentString externalPowerSupplyState;
-                CNContentString energyFlow;
-                CNContentString chargingState;
+            public class CNChargerSettings {
+                public class CNCargerModeSel {
+                    public CNContentString modificationState;
+                    public CNContentString modificationReason;
+                    public CNContentString value;
+                }
 
-            }
-
-            public class CNChargerRangeStatusData {
-                CNContentString engineTypeFirstEngine;
-                CNContentInt primaryEngineRange;
-                CNContentInt hybridRange;
-                CNContentString engineTypeSecondEngine;
-                CNContentInt secondaryEngineRange;
-            }
-
-            public class CNChargerLedStatusData {
-                CNContentString ledColor;
-                CNContentString ledState;
-            }
-
-            public class CNBatteryStatusData {
-                CNContentInt stateOfCharge;
-                CNContentInt remainingChargingTime;
-                CNContentString remainingChargingTimeTargetSOC;
-            }
-
-            public class CNPlugStatusData {
-                CNContentString plugState;
-                CNContentString lockState;
+                public CNContentInt maxChargeCurrent;
+                public CNCargerModeSel chargeModeSelection;
             }
 
             public class CNChargerStatus {
-                CNChargerStatusData chargingStatusData;
-                CNChargerRangeStatusData cruisingRangeStatusData;
-                CNChargerLedStatusData ledStatusData;
-                CNBatteryStatusData batteryStatusData;
-                CNPlugStatusData plugStatusData;
+                public class CarNetChargerStatusData {
+                    public CNContentString chargingMode;
+                    public CNContentInt chargingStateErrorCode;
+                    public CNContentString chargingReason;
+                    public CNContentString externalPowerSupplyState;
+                    public CNContentString energyFlow;
+                    public CNContentString chargingState;
+
+                }
+
+                public class CNChargerRangeStatusData {
+                    public CNContentString engineTypeFirstEngine;
+                    public CNContentInt primaryEngineRange;
+                    public CNContentInt hybridRange;
+                    public CNContentString engineTypeSecondEngine;
+                    public CNContentInt secondaryEngineRange;
+                }
+
+                public class CNChargerLedStatusData {
+                    public CNContentString ledColor;
+                    public CNContentString ledState;
+                }
+
+                public class CNBatteryStatusData {
+                    public CNContentInt stateOfCharge;
+                    public CNContentInt remainingChargingTime;
+                    public CNContentString remainingChargingTimeTargetSOC;
+                }
+
+                public class CNPlugStatusData {
+                    public CNContentString plugState;
+                    public CNContentString lockState;
+                }
+
+                public CarNetChargerStatusData chargingStatusData;
+                public CNChargerRangeStatusData cruisingRangeStatusData;
+                public CNChargerLedStatusData ledStatusData;
+                public CNBatteryStatusData batteryStatusData;
+                public CNPlugStatusData plugStatusData;
             }
 
-            public class CNCharger {
-                CNChargerSettings settings;
-                CNChargerStatus status;
-            }
+            public CNChargerSettings settings;
+            public CNChargerStatus status;
         }
 
-        CNCharger charger;
+        CarNetChargerStatus charger;
     }
 
     public static class CarNetClimaterTimer {
         public class CNTimerProfileEntry {
-            /*
-             * "timestamp":"2020-10-08T07:30:38Z",
-             * "profileName":"Timerladen1",
-             * "profileID":"1",
-             * "operationCharging":true,
-             * "operationClimatisation":false,
-             * "targetChargeLevel":"100",
-             * "nightRateActive":true,
-             * "nightRateTimeStart":"21:00",
-             * "nightRateTimeEnd":"21:00",
-             * "chargeMaxCurrent":"32",
-             * "heaterSource":"electric"
-             */
             public String timestamp;
             public String profileName;
             public String profileID;
@@ -750,4 +702,85 @@ public class CarNetApiGSonDTO {
             CNStatusTimer status;
         }
     }
- }
+
+    public static class CNClimater {
+        public class CarNetClimaterStatus {
+            public class CNClimaterSettings {
+                public class CNClimaterElementSettings {
+                    public class CNClimaterZoneSettingsList {
+                        public class CNClimaterZoneSetting {
+                            public class CNClZoneSetValue {
+                                public Boolean isEnabled;
+                                public String position;
+                            }
+
+                            public String timestamp;
+                            public CNClZoneSetValue value;
+                        }
+
+                        public CNContentBool isClimatisationAtUnlock;
+                        public CNContentBool isMirrorHeatingEnabled;
+                        public ArrayList<CNClimaterZoneSetting> zoneSetting;
+                    }
+
+                    CNClimaterElementSettings zoneSettings;
+                }
+
+                public CNContentDouble targetTemperature;
+                public CNContentBool climatisationWithoutHVpower;
+                public CNContentString heaterSource;
+            }
+
+            public class CNClimaterStatus {
+                public class CarNetClimaterStatusData {
+                    public class CarNetClimaterZoneState {
+                        public class CNClimaterZonState {
+                            public Boolean isActive;
+                            public String position;
+                        }
+
+                        public String timestamp;
+                        public CNClimaterZonState value;
+                    }
+
+                    public class CNClimaterElementState {
+                        public class CarNetClimaterZoneStateList {
+                            public ArrayList<CarNetClimaterZoneState> zoneState;
+                        }
+
+                        public CNContentBool isMirrorHeatingActive;
+                        public CNContentBool extCondAvailableFL;
+                        public CNContentBool extCondAvailableFR;
+                        public CNContentBool extCondAvailableRL;
+                        public CNContentBool extCondAvailableRR;
+                        public CarNetClimaterZoneStateList zoneStates;
+                    }
+
+                    public CNContentString climatisationState;
+                    public CNContentInt climatisationStateErrorCode;
+                    public CNContentInt remainingClimatisationTime;
+                    public CNContentString climatisationReason;
+                    public CNClimaterElementState climatisationElementStates;
+                }
+
+                public class CNTemperatureStatusData {
+                    public CNContentInt outdoorTemperature;
+                }
+
+                public class CNParkingClockStatusData {
+                    CNContentString vehicleParkingClock;
+                }
+
+                public CarNetClimaterStatusData climatisationStatusData;
+                public CNTemperatureStatusData temperatureStatusData;
+                public CNParkingClockStatusData vehicleParkingClockStatusData;
+            }
+
+            public CNClimaterSettings settings;
+            public CNClimaterStatus status;
+        }
+
+        CarNetClimaterStatus climater;
+    }
+
+}

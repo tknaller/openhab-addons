@@ -18,6 +18,7 @@ import static org.openhab.binding.carnet.internal.CarNetUtils.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -61,9 +62,14 @@ import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO.CNErrorMessage2Details;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus.CNChargerStatus.CarNetChargerStatusData;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus.CNClimaterStatus.CarNetClimaterStatusData;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus.CNClimaterStatus.CarNetClimaterStatusData.CNClimaterElementState.CarNetClimaterZoneStateList;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus.CNClimaterStatus.CarNetClimaterStatusData.CarNetClimaterZoneState;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNPairingInfo.CarNetPairingInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData.CarNetVehicleData;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetChargerInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData.CarNetTripDataList.CarNetTripDataEntry;
@@ -237,7 +243,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
             if (!channelsCreated) {
                 // Try to query status information from vehicle
-                List<ChannelIdMapEntry> channels = new ArrayList<>();
+                Map<String, ChannelIdMapEntry> channels = new LinkedHashMap<>();
                 logger.debug("{}: Get Vehicle Status", vin);
                 CarNetVehicleStatus status = api.getVehicleStatus();
                 for (CNStatusData data : status.storedVehicleDataResponse.vehicleData.data) {
@@ -250,7 +256,9 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                                 if (!definition.channelName.isEmpty()) {
                                     if (!definition.channelName.startsWith(CHANNEL_GROUP_TIRES)
                                             || !field.value.contains("1")) {
-                                        channels.add(definition);
+                                        if (!channels.containsKey(definition.id)) {
+                                            channels.put(definition.id, definition);
+                                        }
                                     }
                                 }
                             } else {
@@ -263,11 +271,14 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     }
                 }
 
-                // Add trip data channels
-                updateTripData(channels);
+                // Add additional channels
+                ArrayList<ChannelIdMapEntry> channelList = new ArrayList<>(channels.values());
+                updateClimaterStatus(channelList);
+                updateChargerStatus(channelList);
+                updateTripData(channelList);
 
                 // Create channels
-                createChannels(channels);
+                createChannels(channelList);
             }
 
             if (testData) {
@@ -275,7 +286,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 String r = api.getVehicleRights();
                 String vu = api.getVehicleUsers();
                 String t = api.getClimaterTimer();
-                String cs = api.getClimaStatus();
                 String h = api.getHistory();
                 String ts = api.getTripStats("shortTerm");
                 String d = api.getDestinations();
@@ -284,8 +294,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 String rlu = api.getRluActionHistory();
                 String un = api.getUserNews();
                 logger.debug(
-                        "{}: Additional Data\nHome Registration URL: {}\nVehicle Users:{}\nVehicle rights: {}\nHistory:{}\nTimer: {}\nClima Status: {}\nDestinations: {}\nPOIs: {}nVehicle Management Info: {}\nRLU Action List: {}\nMyDestinationsFeed: {}\nUser News: {}\nTrip Stats short: {}",
-                        thingId, config.homeRegionUrl, vu, r, h, t, cs, d, poi, vmi, rlu, df, un, ts);
+                        "{}: Additional Data\nHome Registration URL: {}\nVehicle Users:{}\nVehicle rights: {}\nHistory:{}\nTimer: {}\nnDestinations: {}\nPOIs: {}\nVehicle Management Info: {}\nRLU Action List: {}\nMyDestinationsFeed: {}\nUser News: {}\nTrip Stats short: {}",
+                        thingId, config.homeRegionUrl, vu, r, h, t, d, poi, vmi, rlu, df, un, ts);
                 logger.debug("\n------\n{}: End of Additional Data", thingId);
                 testData = false;
             }
@@ -386,7 +396,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             if (getThing().getChannel(groupId + "#" + channelId) == null) {
                 // the channel does not exist yet, so let's add it
                 String itemType = channelDef.itemType.isEmpty() ? ITEMT_NUMBER : channelDef.itemType;
-                logger.debug("{}: Auto-creating channel {}, type {}", thingId, channelId, itemType);
+                logger.debug("{}: Auto-creating channel {}#{}, type {}", thingId, groupId, channelId, itemType);
                 String label = getChannelAttribute(channelId, "label");
                 String description = getChannelAttribute(channelId, "description");
                 if (label.isEmpty() || channelDef.itemType.isEmpty()) {
@@ -470,7 +480,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 windowsClosed ? OnOffType.ON : OnOffType.OFF);
 
         updateVehicleLocation();
-        updateChargerStatus();
+        updateChargerStatus(null);
+        updateClimaterStatus(null);
         updateTripData(null);
 
         if (!channelsCreated) {
@@ -478,10 +489,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             forceUpdate = true;
         }
         channelsCreated = true;
-    }
-
-    private boolean updateClimater() {
-        return false;
     }
 
     private boolean checkMaintenance(CNStatusField field, ChannelIdMapEntry definition) {
@@ -607,12 +614,74 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
     }
 
-    private void updateChargerStatus() {
-        try {
-            CarNetChargerInfo status = api.getChargerStatus();
-        } catch (CarNetException e) {
-            // Service not available?
+    private boolean updateClimaterStatus(@Nullable List<ChannelIdMapEntry> channels) throws CarNetException {
+        CarNetClimaterStatus cs = api.getClimaterStatus();
+        if (cs == null) {
+            if (channels != null) {
+                logger.debug("{}: Climater service is not available, channel creation skipped", thingId);
+            }
+            return false;
         }
+        if (channels != null) {
+            // initially create channels only
+            CarNetIChanneldMapper.createClimaterChannels(channels, cs);
+            return false;
+        }
+
+        String group = CHANNEL_GROUP_CLIMATER + "#";
+        CarNetClimaterStatusData sd = cs.status.climatisationStatusData;
+        updateState(group + CHANNEL_CLIMATER_TARGET_TEMP,
+                new QuantityType<>(getDouble(cs.settings.targetTemperature.content), SIUnits.CELSIUS));
+        updateState(group + CHANNEL_CLIMATER_HEAT_SOURCE, getStringType(cs.settings.heaterSource.content));
+        updateState(group + CHANNEL_CLIMATER_GEN_STATE, getStringType(sd.climatisationState.content));
+        updateZoneStates(sd.climatisationElementStates.zoneStates);
+        updateState(group + CHANNEL_CLIMATER_MIRROR_HEAT,
+                getOnOff(sd.climatisationElementStates.isMirrorHeatingActive.content));
+        return false;
+    }
+
+    private boolean updateZoneStates(@Nullable CarNetClimaterZoneStateList zoneList) {
+        if (zoneList != null) {
+            for (CarNetClimaterZoneState zs : zoneList.zoneState) {
+                updateState(mkChannelId(CHANNEL_GROUP_CLIMATER, getString(zs.value.position)),
+                        getOnOff(zs.value.isActive));
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private boolean updateChargerStatus(@Nullable List<ChannelIdMapEntry> channels) throws CarNetException {
+        CarNetChargerStatus cs = api.getChargerStatus();
+        if (cs == null) {
+            if (channels != null) {
+                logger.debug("{}: Charger service is not available, channel creation skipped", thingId);
+            }
+            return false;
+        }
+        if (channels != null) {
+            // initially create channels only
+            CarNetIChanneldMapper.createChargerChannels(channels, cs);
+            return false;
+        }
+
+        String group = CHANNEL_GROUP_CHARGER + "#";
+        CarNetChargerStatusData sd = cs.status.chargingStatusData;
+        updateState(group + CHANNEL_CHARGER_CURRENT,
+                new QuantityType(getInteger(cs.settings.maxChargeCurrent.content), SmartHomeUnits.AMPERE));
+        updateState(group + CHANNEL_CHARGER_STATUS, getStringType(sd.chargingState.content));
+        updateState(group + CHANNEL_CHARGER_ERROR, getDecimal(sd.chargingStateErrorCode.content));
+        updateState(group + CHANNEL_CHARGER_PWR_STATE, getStringType(sd.externalPowerSupplyState.content));
+        updateState(group + CHANNEL_CHARGER_CHG_STATE, getStringType(sd.chargingState.content));
+        updateState(group + CHANNEL_CHARGER_FLOW, getStringType(sd.energyFlow.content));
+        updateState(group + CHANNEL_CHARGER_BAT_STATE, new QuantityType<>(
+                getInteger(cs.status.batteryStatusData.stateOfCharge.content), SmartHomeUnits.PERCENT));
+        updateState(group + CHANNEL_CHARGER_REMAINING,
+                getDecimal(cs.status.batteryStatusData.remainingChargingTime.content));
+        updateState(group + CHANNEL_CHARGER_PLUG_STATE, getStringType(cs.status.plugStatusData.plugState.content));
+        updateState(group + CHANNEL_CHARGER_LOCK_STATE, getStringType(cs.status.plugStatusData.lockState.content));
+
+        return false;
     }
 
     private void updateTripData(@Nullable List<ChannelIdMapEntry> channels) {
@@ -654,14 +723,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     i--;
                     l++;
                 }
+                return true;
             }
-            return true;
-        } catch (
-
-        CarNetException e) {
-        }
-        try {
-            CarNetTripData ltd = api.getTripData("longTerm");
         } catch (CarNetException e) {
         }
         return false;

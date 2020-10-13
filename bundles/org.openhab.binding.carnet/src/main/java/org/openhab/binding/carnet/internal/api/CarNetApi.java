@@ -56,12 +56,15 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.UrlEncoded;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNApiToken;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNPairingInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNPairingInfo.CarNetPairingInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData.CarNetVehicleData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetActionResponse;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetChargerInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetDestinations;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetHomeRegion;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthInfo;
@@ -578,32 +581,35 @@ public class CarNetApi {
         return null;
     }
 
-    public @Nullable String getClimaStatus() throws CarNetException {
+    public @Nullable CarNetClimaterStatus getClimaterStatus() throws CarNetException {
         try {
             // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS, fillMmiHeaders());
-            String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS);
-            return json;
+            String json = callApi(CNAPI_VWURL_CLIMATE_STATUS, "climaterStatus");
+            if (json != null) {
+                CNClimater cs = gson.fromJson(json, CNClimater.class);
+                return cs.climater;
+            }
         } catch (Exception e) {
-            return null;
-        }
-    }
-
-    public @Nullable String getClimaterTimer() throws CarNetException {
-        try {
-            String json = httpGet(CNAPI_URI_CLIMATER_TIMER);
-            return json;
-        } catch (CarNetException e) {
             logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
-        } catch (Exception e) {
-
         }
         return null;
     }
 
-    public @Nullable CarNetChargerInfo getChargerStatus() throws CarNetException {
-        String json = callApi(CNAPI_URI_CHARGER_STATUS, "chargerStatus.json");
+    public @Nullable String getClimaterTimer() throws CarNetException {
+        try {
+            String json = callApi(CNAPI_URI_CLIMATER_TIMER, "climaterTimer");
+            return json;
+        } catch (Exception e) {
+            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+        }
+        return null;
+    }
+
+    public @Nullable CarNetChargerStatus getChargerStatus() throws CarNetException {
+        String json = callApi(CNAPI_URI_CHARGER_STATUS, "chargerStatus");
         if (json != null) {
-            return gson.fromJson(json, CarNetChargerInfo.class);
+            CNChargerInfo ci = gson.fromJson(json, CNChargerInfo.class);
+            return ci.charger;
         }
         return null;
     }
@@ -622,7 +628,7 @@ public class CarNetApi {
         }
 
         if (json.isEmpty()) {
-            json = loadJson("tripData" + type + ".json");
+            json = loadJson("tripData" + type);
         }
         if (json != null) {
             return gson.fromJson(json, CarNetTripData.class);
@@ -792,7 +798,7 @@ public class CarNetApi {
     }
 
     public @Nullable String getRluActionHistory() {
-        return callApi(CNAPI_URL_RLU_ACTIONS, "rluActionHistory.json");
+        return callApi(CNAPI_URL_RLU_ACTIONS, "rluActionHistory");
     }
 
     public @Nullable String getMyDestinationsFeed(String userId) {
@@ -826,7 +832,7 @@ public class CarNetApi {
         try {
             StringBuffer result = new StringBuffer();
             String path = System.getProperty("user.dir") + "/userdata/";
-            File myObj = new File(path + filename);
+            File myObj = new File(path + filename + ".json");
             Scanner myReader = new Scanner(myObj);
             while (myReader.hasNextLine()) {
                 String line = myReader.nextLine();

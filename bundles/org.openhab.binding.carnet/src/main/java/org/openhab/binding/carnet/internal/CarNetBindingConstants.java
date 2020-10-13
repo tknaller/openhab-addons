@@ -71,6 +71,16 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_LOCATTION_TIME = "lastUpdate";
     public static final String CHANNEL_LOCATTION_PARK = "parkingTime";
 
+    public static final String CHANNEL_GROUP_CLIMATER = "climater";
+    public static final String CHANNEL_CLIMATER_TARGET_TEMP = "targetTemperature";
+    public static final String CHANNEL_CLIMATER_HEAT_SOURCE = "heaterSource";
+    public static final String CHANNEL_CLIMATER_GEN_STATE = "climatisationState";
+    public static final String CHANNEL_CLIMATER_FL_STATE = "frontLeft";
+    public static final String CHANNEL_CLIMATER_FR_STATE = "frontRight";
+    public static final String CHANNEL_CLIMATER_RL_STATE = "rearLeft";
+    public static final String CHANNEL_CLIMATER_RR_STATE = "rearRight";
+    public static final String CHANNEL_CLIMATER_MIRROR_HEAT = "mirrorHeat";
+
     public static final String CHANNEL_GROUP_TRIP_PRE = "trip";
     public static final String CHANNEL_TRIP_SHORT = "Short";
     public static final String CHANNEL_TRIP_LONG = "Long";
@@ -84,6 +94,18 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_TRIP_MILAGE = "mileage";
     public static final String CHANNEL_TRIP_START_MIL = "startMileage";
     public static final String CHANNEL_TRIP_OVR_MILAGE = "overallMileage";
+
+    public static final String CHANNEL_GROUP_CHARGER = "charger";
+    public static final String CHANNEL_CHARGER_CURRENT = "maxCurrent";
+    public static final String CHANNEL_CHARGER_STATUS = "chargingStatus";
+    public static final String CHANNEL_CHARGER_ERROR = "errorCode";
+    public static final String CHANNEL_CHARGER_PWR_STATE = "powerState";
+    public static final String CHANNEL_CHARGER_FLOW = "energyFlow";
+    public static final String CHANNEL_CHARGER_CHG_STATE = "chargingState";
+    public static final String CHANNEL_CHARGER_BAT_STATE = "batteryState";
+    public static final String CHANNEL_CHARGER_REMAINING = "remainingTime";
+    public static final String CHANNEL_CHARGER_PLUG_STATE = "plugState";
+    public static final String CHANNEL_CHARGER_LOCK_STATE = "lockState";
 
     // Other channels group in here
     public static final String CHANNEL_GROUP_STATUS = "status";
