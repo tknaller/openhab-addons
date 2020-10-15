@@ -23,15 +23,27 @@ import com.google.gson.annotations.SerializedName;
  */
 public class CarNetApiGSonDTO {
 
-    public static class CNApiToken {
-        /*
-         * {
-         * "access_token": "64217P2jTNpckrCed7o8b5OJWAvTOGuWz8dperT4zY6KkDzREv67",
-         * "token_type":"AudiAuth",
-         * "expires_in":3600
-         * }
-         */
+    public static class CNContentString {
+        public String timestamp;
+        public String content;
+    }
 
+    public static class CNContentInt {
+        public String timestamp;
+        public Integer content;
+    }
+
+    public static class CNContentDouble {
+        public String timestamp;
+        public Double content;
+    }
+
+    public static class CNContentBool {
+        public String timestamp;
+        public Boolean content;
+    }
+
+    public static class CNApiToken {
         @SerializedName("token_type")
         public String authType;
         @SerializedName("access_token")
@@ -50,17 +62,6 @@ public class CarNetApiGSonDTO {
     }
 
     public static class CarNetSecurityPinAuthInfo {
-        /*
-         * {
-         * "securityPinAuthInfo":{
-         * "securityToken":
-         * "CP8RgXJMs+ctnhROMFWmaplkknKFgMChqTuwiFd0bgqS9XySPwt22a8qP0S1HZbH8Qd3bjq/LkmSxZqz+XVUZzqbmsMv/BiMA07UwXPKtGbF9XiZPS0GKAsNdTHIRzfy2F+rC5w75Fc1X1/DCVBmyEb3iAhHLSZIKJOpFzoSLLJIiYzk4EHJ/2o1Kq8l4vea2b9Nx3pkgk0YGrPDRWlUdUflhXdQhubM28pfkc2tcddDZC1tbjA8Pe/GkSC7rHyyRs1v7o1QzporTl1L8xJPbAoBQDv1jBr06d9a1qf6UPu2Lj+OODWE+qAXfvqueWSFyW8cpyZxIQ+2zCBJCGRDCJ6oK7xOQGtV18lMCRrcl4B2tGvvvkT7jQ899FIr/2blu71KFvXWIgFIOW0sa47PV1P0apHl4wcJr87iwcPNNvAr8SJaxIEl55hvKhcfHQ6ouUJriDN2kqodwgAg79qGwHJoabpkeKJuA6Tq1Gyw82UM7DDD3qalahpR6DTL8bY9YcsHkAywqWqISIBcXepiEaaaOXtTFyID7fiAaruQv1oJwFSwPyUIae5G/UNzkAeaghBWpPis73ZKUxiEOXXHpA==",
-         * "securityPinTransmission":{
-         * "hashProcedureVersion":2,
-         * "challenge":"FF5CB5D49FC09393743FB10B33EFBCF0152BEE11774922E7656819498BA1C07C"},
-         * "remainingTries":3}
-         * }
-         */
         public static class CNSecurityPinAuthInfo {
             public class CNSecurityPinTransmission {
                 public Integer hashProcedureVersion;
@@ -76,15 +77,6 @@ public class CarNetApiGSonDTO {
     }
 
     public static class CarNetSecurityPinAuthentication {
-        /*
-         * "securityPinAuthentication": {
-         * "securityPin": {
-         * "challenge": challenge,
-         * "securityPinHash": securityPinHash,
-         * },
-         * "securityToken": secToken,
-         * }
-         */
         public static class CNSecuritxPinAuth {
             public class CNSecurityPin {
                 public String challenge;
@@ -99,13 +91,6 @@ public class CarNetApiGSonDTO {
     }
 
     public static class CarNetHomeRegion {
-        /*
-         * {
-         * "homeRegion":{
-         * "baseUri":{"systemId":"ICTO-10487", "content":"https://mal-1a.prd.ece.vwg-connect.com/api"}
-         * }
-         * }
-         */
         public class CNHomeRegion {
             public class CNBaseUri {
                 public String systemId;
@@ -119,18 +104,6 @@ public class CarNetApiGSonDTO {
     }
 
     public static class CNPairingInfo {
-        /*
-         * {
-         * "pairingInfo":{
-         * "pairingStatus":"PAIRINGCOMPLETE",
-         * "xmlns":"http://www.vw.com/mbb/usermanagement",
-         * "userId":"dYeJ7CoMzqV0obHyRZJSyzkb9d11",
-         * "pairingCode":91288159,
-         * "vehicle":"WAUZZZF21LN046449"
-         * }
-         * }
-         */
-
         public class CarNetPairingInfo {
             public String pairingStatus;
             public String xmlns;
@@ -180,9 +153,6 @@ public class CarNetApiGSonDTO {
     }
 
     public static class CarNetVehicleList {
-        /*
-         * {"userVehicles":{"vehicle": ["XXXXXXXXXXX"]}}
-         */
         public static class CNVehicles {
             public ArrayList<String> vehicle;
         }
@@ -191,14 +161,6 @@ public class CarNetApiGSonDTO {
     }
 
     public static class CarNetVehicleDetails {
-        /*
-         * {
-         * "carportData":{"systemId":"msg","requestId":"MSG-ivwb2347-1582070213967-85252-ADE",
-         * "brand":"Audi","country":"DE","vin":"WAUZZZF21LN046449","modelCode":"4A5BGA",
-         * "modelName":"A6 Avant qTDI3.0 V6210 A8",
-         * "modelYear":2020,"color":"LX7J","countryCode":"DE","engine":"DDV","mmi":"7UG","transmission":"SQN"}
-         * }
-         */
         public static class CNVehicleDetails {
             public String systemId;
             public String requestId;
@@ -223,21 +185,6 @@ public class CarNetApiGSonDTO {
         public static class CNStoredVehicleDataResponse {
             public static class CNVehicleData {
                 public static class CNStatusData {
-                    /*
-                     * "id":"0x0101010001",
-                     * "field": [
-                     * {
-                     * "id":"0x0101010001",
-                     * "tsCarSentUtc":"2020-02-20T19:05:18Z",
-                     * "tsCarSent":"2020-02-20T20:05:45",
-                     * "tsCarCaptured":"2020-02-20T20:05:45","
-                     * tsTssReceivedUtc":"2020-02-20T19:09:57Z",
-                     * "milCarCaptured":3944,
-                     * "milCarSent":3944,
-                     * "value":"echo"
-                     * }
-                     * ]
-                     */
                     public static class CNStatusField {
                         public String id;
                         public String tsCarSentUtc;
@@ -267,15 +214,6 @@ public class CarNetApiGSonDTO {
     }
 
     public static class CarNetVehiclePosition {
-        /*
-         * {
-         * "findCarResponse":
-         * { "Position":{"timestampCarSent":"0002-11-28T00:00:00","timestampTssReceived":"2020-02-21T20:11:10Z",
-         * "carCoordinate":{"latitude":49529343,"longitude":-1568820},
-         * "timestampCarSentUTC":"2020-02-21T20:11:00Z","timestampCarCaptured":"0002-11-28T00:00:00"},
-         * "parkingTimeUTC":"2020-02-21T20:08:52Z"}
-         * }
-         */
         public static class CNFindCarResponse {
             public static class CNPosition {
                 public static class CNCarCoordinates {
@@ -318,7 +256,6 @@ public class CarNetApiGSonDTO {
 
     public static class CarNetActionResponse {
         public class CNRluActionResponse {
-            // {"rluActionResponse":{"requestId":29543257,"vin":"11111111111"}}
             String requestId;
             String vin;
         }
@@ -329,94 +266,58 @@ public class CarNetApiGSonDTO {
     }
 
     public static class CarNetRluHistory {
-        public class CNRluLockEntry {
-            // "valid":true,
-            // "locked":true,
-            // "open":false,
-            // "safe":false
-            public boolean valid;
-            public boolean locked;
-            public boolean open;
-            public Boolean safe = false; // maybe empty
-        }
-
-        public class CNRluLockStatus {
-            CNRluLockEntry driverDoor;
-            CNRluLockEntry coDriverDoor;
-            CNRluLockEntry driverRearDoor;
-            CNRluLockEntry coDriverRearDoor;
-            CNRluLockEntry frontLid;
-            CNRluLockEntry boot;
-            CNRluLockEntry flap;
-        }
-
-        public class CarNetRluLockAction {
-            // "operation":"lock",
-            // "timestamp":"2020-07-27T08:15:03Z",
-            // "channel":"app",
-            // "rluResult":"1",
-            // "lockStatus":{list of items
-            public String lock;
-            public String timestamp;
-            public String channel;
-            public String rluResult;
-            CNRluLockStatus lockStatus;
-        }
 
         public class CarNetRluLockActionList {
-            // "action":[CarNetRluLockActionList]
+            public class CarNetRluLockAction {
+                public class CNRluLockStatus {
+                    public class CNRluLockEntry {
+                        public boolean valid;
+                        public boolean locked;
+                        public boolean open;
+                        public Boolean safe = false; // maybe empty
+                    }
+
+                    CNRluLockEntry driverDoor;
+                    CNRluLockEntry coDriverDoor;
+                    CNRluLockEntry driverRearDoor;
+                    CNRluLockEntry coDriverRearDoor;
+                    CNRluLockEntry frontLid;
+                    CNRluLockEntry boot;
+                    CNRluLockEntry flap;
+                }
+
+                public String lock;
+                public String timestamp;
+                public String channel;
+                public String rluResult;
+                CNRluLockStatus lockStatus;
+            }
+
             public ArrayList<CarNetRluLockAction> action;
 
         }
 
-        // "vin":"XXXXXXXXXX",
-        // "steeringWheelSide":"left",
-        // "doorModel":"four",
-        // "actions":{}
         public String vin;
         public String steeringWheelSide;
         public String doorModel;
         public CarNetRluLockActionList actions;
     }
 
-    public static class CNServiceList {
-        // "vin":"XXXXXXXXXX",
-        // "channelClient":"APP",
-        // "userId":"YkvDWM0RUch5GHQjTzNyyYO3N841",
-        // "role":"PRIMARY_USER",
-        // "securityLevel":"HG_2c",
-        // "status":"ENABLED",
-        // "vehicleLifeCycleStatus":{
-        // "content":"DELIVERED",
-        // "garage":false
-        // },
-        // "serviceInfo[];"
-        // "privacyGroupStates":{
-        // "privacyGroupState":[]
-        // }
-        public String vin;
-        public String channelClient;
-        public String userId;
-        public String role;
-        public String securityLevel;
-        public String status;
-    }
-
     public static class CarNetServiceList {
+        public class CNServiceList {
+            public String vin;
+            public String channelClient;
+            public String userId;
+            public String role;
+            public String securityLevel;
+            public String status;
+        }
+
         public CNServiceList operationList;
     }
 
     public static class CarNetDestinations {
         public class CNDestinationAddress {
-            /*
-             * address":{
-             * "addressType":"32",
-             * "city":"Remagen",
-             * "country":"DE",
-             * "street":"Mühlenweg 1",
-             * "zipCode":"53424"
-             * },
-             */
             public String addressType;
             public String city;
             public String country;
@@ -435,37 +336,6 @@ public class CarNetApiGSonDTO {
         }
 
         public class CNDestination {
-            /*
-             * {
-             * "destinationName":null,
-             * "immediateDestination":false,
-             * "sendToVehicle":false,
-             * "id":"3853059352",
-             * "href":null,
-             * "address":{
-             * "addressType":"32",
-             * "city":"Remagen",
-             * "country":"DE",
-             * "street":"Mühlenweg 1,
-             * "zipCode":"53424"
-             * },
-             * "destinationSource":"Unknown",
-             * "geoCoordinate":{
-             * "latitude":"50.498084",
-             * "longitude":"12.145352"
-             * },
-             * "POIContact":{
-             * "lastName":"Hammerstraße 55",
-             * "phoneData":[
-             * {
-             * "phoneType":"2"
-             * }
-             * ]
-             * },
-             * "fetchStatus":"FetchDeactivated"
-             * },
-             *
-             */
             public String destinationName = "";
             public boolean immediateDestination;
             public String id;
@@ -483,44 +353,9 @@ public class CarNetApiGSonDTO {
         CNDestinationList destinations;
     }
 
-    public static class CNContentString {
-        public String timestamp;
-        public String content;
-    }
-
-    public static class CNContentInt {
-        public String timestamp;
-        public Integer content;
-    }
-
-    public static class CNContentDouble {
-        public String timestamp;
-        public Double content;
-    }
-
-    public static class CNContentBool {
-        public String timestamp;
-        public Boolean content;
-    }
-
     public static class CarNetTripData {
         public class CarNetTripDataList {
             public class CarNetTripDataEntry {
-                /*
-                 * {
-                 * "tripType":"shortTerm",
-                 * "tripID":778996476,
-                 * "averageElectricEngineConsumption":284,
-                 * "averageFuelConsumption":0,
-                 * "averageSpeed":50,
-                 * "mileage":12,
-                 * "startMileage":4522,
-                 * "traveltime":14,
-                 * "timestamp":"2020-08-28T13:12:54Z",
-                 * "reportReason":"clamp15off",
-                 * "overallMileage":4534
-                 * },
-                 */
                 public String tripType;
                 public String tripID;
                 public Integer averageElectricEngineConsumption;
@@ -603,83 +438,71 @@ public class CarNetApiGSonDTO {
     }
 
     public static class CarNetClimaterTimer {
-        public class CNTimerProfileEntry {
-            public String timestamp;
-            public String profileName;
-            public String profileID;
-            public Boolean operationCharging;
-            public Boolean operationClimatisation;
-            public String targetChargeLevel;
-            public Boolean nightRateActive;
-            public String nightRateTimeStart;
-            public String nightRateTimeEnd;
-            public String chargeMaxCurrent;
-            public String heaterSource;
-        }
-
-        public class CNTimerProfile {
-            public ArrayList<CNTimerProfileEntry> timerProfile;
-        }
-
         public class CNTimerProfileList {
+            public class CNTimerProfile {
+                public class CNTimerProfileEntry {
+                    public String timestamp;
+                    public String profileName;
+                    public String profileID;
+                    public Boolean operationCharging;
+                    public Boolean operationClimatisation;
+                    public String targetChargeLevel;
+                    public Boolean nightRateActive;
+                    public String nightRateTimeStart;
+                    public String nightRateTimeEnd;
+                    public String chargeMaxCurrent;
+                    public String heaterSource;
+                }
+
+                public ArrayList<CNTimerProfileEntry> timerProfile;
+            }
+
             CNTimerProfile timerProfileList;
         }
 
-        public class CNTimerEntry {
-            /*
-             * "timestamp":"2020-10-08T07:30:38Z",
-             * "timerID":"1",
-             * "profileID":"1",
-             * "timerProgrammedStatus":"notProgrammed",
-             * "timerFrequency":"single",
-             * "departureDateTime":"2020-10-08T10:00"
-             */
-            public String timestamp;
-            public String timerID;
-            public String timerProgrammedStatus;
-            public String timerFrequency;
-            public String departureDateTime;
-        }
-
-        public class CNTimerEntryList {
-            public ArrayList<CNTimerEntry> timer;
-        }
-
         public class CNTimerList {
+            public class CNTimerEntryList {
+                public class CNTimerEntry {
+                    public String timestamp;
+                    public String timerID;
+                    public String timerProgrammedStatus;
+                    public String timerFrequency;
+                    public String departureDateTime;
+                }
+
+                public ArrayList<CNTimerEntry> timer;
+            }
+
             CNTimerEntryList timerList;
         }
 
-        public class CNStatusTimerEntry {
-            CNContentString timerChargeScheduleStatus;
-            CNContentString timerClimateScheduleStatus;
-            CNContentString timerExpiredStatus;
-            CNContentString instrumentClusterTime;
-        }
-
         public class CNStatusTimerList {
+            public class CNStatusTimerEntry {
+                CNContentString timerChargeScheduleStatus;
+                CNContentString timerClimateScheduleStatus;
+                CNContentString timerExpiredStatus;
+                CNContentString instrumentClusterTime;
+            }
+
             public ArrayList<CNStatusTimerEntry> timer;
         }
 
-        public class CNStatusTimer {
-            public String timerID;
-        }
-
         public class CNTimerAndProfileList {
-            public class CNZoneValue {
-                Boolean isEnabled;
-                String position;
-            }
-
-            public class CNZoneSettingEntry {
-                public String timestamp;
-                public CNZoneValue value;
-            }
-
-            public class CNZoneSettingList {
-                public ArrayList<CNZoneSettingEntry> zoneSetting;
-            }
-
             public class CNZoneSettings {
+                public class CNZoneSettingList {
+                    public class CNZoneSettingEntry {
+                        public class CNZoneValue {
+                            Boolean isEnabled;
+                            String position;
+                        }
+
+                        public String timestamp;
+                        public CNZoneValue value;
+                    }
+
+                    public ArrayList<CNZoneSettingEntry> zoneSetting;
+                }
+
                 CNZoneSettingList zoneSettings;
             }
 
@@ -694,6 +517,10 @@ public class CarNetApiGSonDTO {
                 public String heaterSource;
                 public String chargeMinLimit;
                 CNClimateElementSettings climaterElementSettings;
+            }
+
+            public class CNStatusTimer {
+                public String timerID;
             }
 
             CNTimerProfileList timerProfileList;

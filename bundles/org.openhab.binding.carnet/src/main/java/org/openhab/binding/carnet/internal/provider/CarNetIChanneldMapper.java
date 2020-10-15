@@ -163,7 +163,9 @@ public class CarNetIChanneldMapper {
     }
 
     public static void createClimaterChannels(List<ChannelIdMapEntry> ch, CarNetClimaterStatus cs) {
-        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_TARGET_TEMP, ITEMT_TEMP, null, false, true));
+        ch.add(add(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CLIMATER, ITEMT_SWITCH, null, false, false));
+        ch.add(add(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_WINHEAT, ITEMT_SWITCH, null, false, false));
+        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_TARGET_TEMP, ITEMT_TEMP, null, false, false));
         ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_HEAT_SOURCE, ITEMT_STRING, null, true, true));
         ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_GEN_STATE, ITEMT_STRING, null, false, true));
         ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_FL_STATE, ITEMT_SWITCH, null, false, true));
@@ -174,6 +176,8 @@ public class CarNetIChanneldMapper {
     }
 
     public static void createChargerChannels(List<ChannelIdMapEntry> ch, CarNetChargerStatus cs) {
+        ch.add(add(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CHARGER, ITEMT_SWITCH, null, false, false));
+        ch.add(add(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_PREHEAT, ITEMT_SWITCH, null, false, false));
         ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CURRENT, ITEMT_NUMBER, null, true, true));
         ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_STATUS, ITEMT_STRING, null, false, true));
         ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_ERROR, ITEMT_NUMBER, null, false, true));

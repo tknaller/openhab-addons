@@ -170,7 +170,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 case CHANNEL_CONTROL_LOCK:
                     api.lockDoor((OnOffType) command == OnOffType.ON);
                     break;
-                case CHANNEL_CONTROL_CLIMA:
+                case CHANNEL_CONTROL_CLIMATER:
                     api.controlClimater((OnOffType) command == OnOffType.ON);
                     break;
                 case CHANNEL_CONTROL_WINHEAT:
@@ -185,7 +185,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         } catch (CarNetException e) {
             error = getError(e);
         } catch (RuntimeException e) {
-            error = "General Error: " + gs(e.getMessage());
+            error = "General Error: " + getString(e.getMessage());
             logger.warn("{}: {}", thingId, error, e);
         }
 
@@ -235,7 +235,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 config.userId = pi.userId;
                 pc = pi.pairingCode;
             } else {
-                config.userId = gs(sl.operationList.userId);
+                config.userId = getString(sl.operationList.userId);
             }
             logger.debug("{}: Active userId = {}, role = {} (securityLevel {}), status = {}, Pairing Code {}", thingId,
                     config.userId, sl.operationList.role, sl.operationList.securityLevel, sl.operationList.status, pc);
@@ -252,7 +252,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                             ChannelIdMapEntry definition = idMapper.find(field.id);
                             if (definition != null) {
                                 logger.info("{}: {}={}{} (channel {}#{})", thingId, definition.symbolicName,
-                                        gs(field.value), gs(field.unit), definition.groupName, definition.channelName);
+                                        getString(field.value), getString(field.unit), definition.groupName,
+                                        definition.channelName);
                                 if (!definition.channelName.isEmpty()) {
                                     if (!definition.channelName.startsWith(CHANNEL_GROUP_TIRES)
                                             || !field.value.contains("1")) {
@@ -263,7 +264,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                                 }
                             } else {
                                 logger.debug("{}: Unknown data field  {}.{}, value={}{}", vin, data.id, field.id,
-                                        field.value, gs(field.unit));
+                                        field.value, getString(field.unit));
                             }
                         } catch (RuntimeException e) {
 
@@ -312,7 +313,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 error = getError(e);
             }
         } catch (RuntimeException e) {
-            error = "General Error: " + gs(e.getMessage());
+            error = "General Error: " + getString(e.getMessage());
             logger.warn("{}: {}", thingId, error, e);
         }
 
@@ -335,6 +336,12 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     }
 
     private String getError(CarNetException e) {
+        CarNetApiResult res = e.getApiResult();
+        if (res.httpCode == HttpStatus.FORBIDDEN_403) {
+            logger.debug("{}: API Service is not available!", thingId);
+            return "";
+        }
+
         CarNetApiErrorDTO error = e.getApiResult().getApiError();
         if (!error.isError()) {
             logger.info("{}: API Call failed", thingId);
@@ -366,7 +373,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private String getReason(CarNetApiErrorDTO error) {
         CNErrorMessage2Details details = error.details;
         if (details != null) {
-            return gs(details.reason);
+            return getString(details.reason);
         }
         return "";
     }
@@ -435,18 +442,19 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             for (CNStatusField field : data.fields) {
                 ChannelIdMapEntry definition = idMapper.find(field.id);
                 if (definition != null) {
-                    logger.debug("{}: {}={}{} (channel {}#{})", thingId, definition.symbolicName, gs(field.value),
-                            gs(field.unit), gs(definition.groupName), gs(definition.channelName));
+                    logger.debug("{}: {}={}{} (channel {}#{})", thingId, definition.symbolicName,
+                            getString(field.value), getString(field.unit), getString(definition.groupName),
+                            getString(definition.channelName));
                     if (!definition.channelName.isEmpty()) {
                         Channel channel = getThing().getChannel(definition.groupName + "#" + definition.channelName);
                         if (channel != null) {
-                            logger.debug("Updading channel {} with value {}", channel.getUID(), gs(field.value));
+                            logger.debug("Updading channel {} with value {}", channel.getUID(), getString(field.value));
                             switch (definition.itemType) {
                                 case ITEMT_SWITCH:
                                     updateSwitchChannel(channel, definition, field);
                                     break;
                                 case ITEMT_STRING:
-                                    updateState(channel.getUID(), new StringType(gs(field.value)));
+                                    updateState(channel.getUID(), new StringType(getString(field.value)));
                                     break;
                                 case ITEMT_NUMBER:
                                 case ITEMT_PERCENT:
@@ -533,7 +541,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
     private void updateNumberChannel(Channel channel, ChannelIdMapEntry definition, CNStatusField field) {
         State state = UnDefType.UNDEF;
-        String val = gs(field.value);
+        String val = getString(field.value);
         if (!val.isEmpty()) {
             if (definition.unit != null) {
                 Unit<?> toUnit = definition.unit;
@@ -561,7 +569,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     }
 
     private void updateSwitchChannel(Channel channel, ChannelIdMapEntry definition, CNStatusField field) {
-        int value = Integer.parseInt(gs(field.value));
+        int value = Integer.parseInt(getString(field.value));
         boolean on;
         if (definition.symbolicName.toUpperCase().contains("STATE2_")) {
             on = value == 2; // 3=open, 2=closed
@@ -667,20 +675,21 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
         String group = CHANNEL_GROUP_CHARGER + "#";
         CarNetChargerStatusData sd = cs.status.chargingStatusData;
-        updateState(group + CHANNEL_CHARGER_CURRENT,
-                new QuantityType(getInteger(cs.settings.maxChargeCurrent.content), SmartHomeUnits.AMPERE));
-        updateState(group + CHANNEL_CHARGER_STATUS, getStringType(sd.chargingState.content));
-        updateState(group + CHANNEL_CHARGER_ERROR, getDecimal(sd.chargingStateErrorCode.content));
-        updateState(group + CHANNEL_CHARGER_PWR_STATE, getStringType(sd.externalPowerSupplyState.content));
-        updateState(group + CHANNEL_CHARGER_CHG_STATE, getStringType(sd.chargingState.content));
-        updateState(group + CHANNEL_CHARGER_FLOW, getStringType(sd.energyFlow.content));
-        updateState(group + CHANNEL_CHARGER_BAT_STATE, new QuantityType<>(
-                getInteger(cs.status.batteryStatusData.stateOfCharge.content), SmartHomeUnits.PERCENT));
-        updateState(group + CHANNEL_CHARGER_REMAINING,
-                getDecimal(cs.status.batteryStatusData.remainingChargingTime.content));
-        updateState(group + CHANNEL_CHARGER_PLUG_STATE, getStringType(cs.status.plugStatusData.plugState.content));
-        updateState(group + CHANNEL_CHARGER_LOCK_STATE, getStringType(cs.status.plugStatusData.lockState.content));
-
+        if (sd != null) {
+            updateState(group + CHANNEL_CHARGER_CURRENT,
+                    new QuantityType(getInteger(cs.settings.maxChargeCurrent.content), SmartHomeUnits.AMPERE));
+            updateState(group + CHANNEL_CHARGER_STATUS, getStringType(sd.chargingState.content));
+            updateState(group + CHANNEL_CHARGER_ERROR, getDecimal(sd.chargingStateErrorCode.content));
+            updateState(group + CHANNEL_CHARGER_PWR_STATE, getStringType(sd.externalPowerSupplyState.content));
+            updateState(group + CHANNEL_CHARGER_CHG_STATE, getStringType(sd.chargingState.content));
+            updateState(group + CHANNEL_CHARGER_FLOW, getStringType(sd.energyFlow.content));
+            updateState(group + CHANNEL_CHARGER_BAT_STATE, new QuantityType<>(
+                    getInteger(cs.status.batteryStatusData.stateOfCharge.content), SmartHomeUnits.PERCENT));
+            updateState(group + CHANNEL_CHARGER_REMAINING,
+                    getDecimal(cs.status.batteryStatusData.remainingChargingTime.content));
+            updateState(group + CHANNEL_CHARGER_PLUG_STATE, getStringType(cs.status.plugStatusData.plugState.content));
+            updateState(group + CHANNEL_CHARGER_LOCK_STATE, getStringType(cs.status.plugStatusData.lockState.content));
+        }
         return false;
     }
 
@@ -753,7 +762,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     } catch (CarNetException e) {
                         error = getError(e);
                     } catch (RuntimeException e) {
-                        error = "General Error: " + gs(e.getMessage());
+                        error = "General Error: " + getString(e.getMessage());
                         logger.warn("{}: {}", thingId, error, e);
                     }
 
@@ -774,10 +783,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         if (pollingJob != null) {
             pollingJob.cancel(false);
         }
-    }
-
-    private String gs(@Nullable String s) {
-        return s != null ? s : "";
     }
 
     @Override
