@@ -233,7 +233,7 @@ public class ShellyUtils {
     }
 
     public static String buildWhiteGroupName(ShellyDeviceProfile profile, Integer channelId) {
-        return profile.isBulb || profile.isDuo && !profile.inColor ? CHANNEL_GROUP_WHITE_CONTROL
+        return profile.isBulb || profile.isDuo ? CHANNEL_GROUP_WHITE_CONTROL
                 : CHANNEL_GROUP_LIGHT_CHANNEL + channelId.toString();
     }
 

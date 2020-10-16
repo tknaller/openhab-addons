@@ -57,8 +57,9 @@ import org.openhab.binding.shelly.internal.coap.ShellyCoapServer;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.discovery.ShellyThingCreator;
+import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
+import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.openhab.binding.shelly.internal.util.ShellyChannelCache;
-import org.openhab.binding.shelly.internal.util.ShellyTranslationProvider;
 import org.openhab.binding.shelly.internal.util.ShellyVersionDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +73,7 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceListener {
     protected final Logger logger = LoggerFactory.getLogger(ShellyBaseHandler.class);
-    protected final ShellyChannelDefinitionsDTO channelDefinitions;
+    protected final ShellyChannelDefinitions channelDefinitions;
 
     public String thingName = "";
     public String thingType = "";
@@ -127,7 +128,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
 
         this.messages = translationProvider;
         this.cache = new ShellyChannelCache(this);
-        this.channelDefinitions = new ShellyChannelDefinitionsDTO(messages);
+        this.channelDefinitions = new ShellyChannelDefinitions(messages);
         this.bindingConfig = bindingConfig;
 
         this.localIP = localIP;
@@ -864,7 +865,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
                     ShellyInputState state = status.inputs.get(index);
                     updated |= updateChannel(groupName, CHANNEL_INPUT, getOnOff(state.input));
                 } else {
-                    logger.debug("{}: Unable to update input, index is out of range ({}/{}", thingName, index,
+                    logger.debug("{}: Unable to update input, index is out of range ({}/{})", thingName, index,
                             status.inputs.size());
                 }
             }
