@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.shelly.internal.handler;
+package org.openhab.binding.shelly.internal.provider;
 
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
@@ -19,9 +19,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import javax.measure.Unit;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -35,7 +39,9 @@ import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsSt
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusRelay;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusSensor;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
-import org.openhab.binding.shelly.internal.util.ShellyTranslationProvider;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * The {@link ShellyCHANNEL_DEFINITIONSDTO} defines channel information for dynamically created channels. Those will be
@@ -44,9 +50,27 @@ import org.openhab.binding.shelly.internal.util.ShellyTranslationProvider;
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class ShellyChannelDefinitionsDTO {
+@Component(service = ShellyChannelDefinitions.class)
+public class ShellyChannelDefinitions {
 
-    private static final ChannelMap CHANNEL_DEFINITIONS = new ChannelMap();
+    public static final String ITEMT_STRING = "String";
+    public static final String ITEMT_NUMBER = "Number";
+    public static final String ITEMT_SWITCH = "Switch";
+    public static final String ITEMT_CONTACT = "Contact";
+    public static final String ITEMT_LOCATION = "Location";
+    public static final String ITEMT_DATETIME = "DateTime";
+    public static final String ITEMT_TEMP = "Number:Temperature";
+    public static final String ITEMT_LUX = "Number:Illuminance";
+    public static final String ITEMT_POWER = "Number:Power";
+    public static final String ITEMT_ENERGY = "Number:Energy";
+    public static final String ITEMT_VOLT = "Number:ElectricPotential";
+    public static final String ITEMT_AMP = "Number:ElectricPotential";
+    public static final String ITEMT_ANGLE = "Number:Angle";
+    public static final String ITEMT_DISTANCE = "Number:Length";
+    public static final String ITEMT_SPEED = "Number:Speed";
+    public static final String ITEMT_VOLUME = "Number:Volume";
+    public static final String ITEMT_TIME = "Number:Time";
+    public static final String ITEMT_PERCENT = "Number:Dimensionless";
 
     // shortcuts to avoid line breaks (make code more readable)
     private static final String CHGR_DEVST = CHANNEL_GROUP_DEV_STATUS;
@@ -57,103 +81,91 @@ public class ShellyChannelDefinitionsDTO {
     private static final String CHGR_SENSOR = CHANNEL_GROUP_SENSOR;
     private static final String CHGR_BAT = CHANNEL_GROUP_BATTERY;
 
-    public static final String ITEM_TYPE_NUMBER = "Number";
-    public static final String ITEM_TYPE_STRING = "String";
-    public static final String ITEM_TYPE_SWITCH = "Switch";
-    public static final String ITEM_TYPE_CONTACT = "Contact";
-    public static final String ITEM_TYPE_DATETIME = "DateTime";
-    public static final String ITEM_TYPE_TEMP = "Number:Temperature";
-    public static final String ITEM_TYPE_LUX = "Number:Illuminance";
-    public static final String ITEM_TYPE_POWER = "Number:Power";
-    public static final String ITEM_TYPE_ENERGY = "Number:Energy";
-    public static final String ITEM_TYPE_VOLT = "Number:ElectricPotential";
-    public static final String ITEM_TYPE_AMP = "Number:ElectricPotential";
-    public static final String ITEM_TYPE_PERCENT = "Number:Dimensionless";
-    public static final String ITEM_TYPE_ANGLE = "Number:Angle";
+    public static final String PREFIX_GROUP = "group-type." + BINDING_ID + ".";
+    public static final String PREFIX_CHANNEL = "channel-type." + BINDING_ID + ".";
 
-    public static final String PREFIX_GROUP = "definitions.shelly.group.";
-    public static final String PREFIX_CHANNEL = "channel-type.shelly.";
-    public static final String SUFFIX_LABEL = ".label";
-    public static final String SUFFIX_DESCR = ".description";
+    private static final ChannelMap CHANNEL_DEFINITIONS = new ChannelMap();
 
-    public ShellyChannelDefinitionsDTO(ShellyTranslationProvider m) {
+    @Activate
+    public ShellyChannelDefinitions(@Reference ShellyTranslationProvider translationProvider) {
+        ShellyTranslationProvider m = translationProvider;
+
         // Device: Internal Temp
         CHANNEL_DEFINITIONS
                 // Device
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_NAME, "deviceName", ITEM_TYPE_STRING))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ITEMP, "deviceTemp", ITEM_TYPE_TEMP))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_WAKEUP, "sensorWakeup", ITEM_TYPE_STRING))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCUWATTS, "meterAccuWatts", ITEM_TYPE_POWER))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCUTOTAL, "meterAccuTotal", ITEM_TYPE_POWER))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCURETURNED, "meterAccuReturned", ITEM_TYPE_POWER))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_CHARGER, "charger", ITEM_TYPE_SWITCH))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_LED_STATUS_DISABLE, "ledStatusDisable", ITEM_TYPE_SWITCH))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_LED_POWER_DISABLE, "ledPowerDisable", ITEM_TYPE_SWITCH))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_SELFTTEST, "selfTest", ITEM_TYPE_STRING))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_UPTIME, "uptime", ITEM_TYPE_NUMBER))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_HEARTBEAT, "heartBeat", ITEM_TYPE_DATETIME))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_UPDATE, "updateAvailable", ITEM_TYPE_SWITCH))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_NAME, "deviceName", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ITEMP, "deviceTemp", ITEMT_TEMP))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_WAKEUP, "sensorWakeup", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCUWATTS, "meterAccuWatts", ITEMT_POWER))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCUTOTAL, "meterAccuTotal", ITEMT_POWER))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCURETURNED, "meterAccuReturned", ITEMT_POWER))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_CHARGER, "charger", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_LED_STATUS_DISABLE, "ledStatusDisable", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_LED_POWER_DISABLE, "ledPowerDisable", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_SELFTTEST, "selfTest", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_UPTIME, "uptime", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_HEARTBEAT, "heartBeat", ITEMT_DATETIME))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_UPDATE, "updateAvailable", ITEMT_SWITCH))
 
                 // Relay
-                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_OUTPUT_NAME, "outputName", ITEM_TYPE_STRING))
+                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_OUTPUT_NAME, "outputName", ITEMT_STRING))
 
                 // Roller
-                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE, "rollerState", ITEM_TYPE_STRING))
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE, "rollerState", ITEMT_STRING))
 
                 // RGBW2
-                .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_INPUT, "inputState", ITEM_TYPE_SWITCH))
+                .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
 
                 // Power Meter
-                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_CURRENTWATTS, "meterWatts", ITEM_TYPE_POWER))
-                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_TOTALKWH, "meterTotal", ITEM_TYPE_ENERGY))
-                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_LASTMIN1, "lastPower1", ITEM_TYPE_ENERGY))
-                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_LAST_UPDATE, "lastUpdate", ITEM_TYPE_DATETIME))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_CURRENTWATTS, "meterWatts", ITEMT_POWER))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_TOTALKWH, "meterTotal", ITEMT_ENERGY))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_LASTMIN1, "lastPower1", ITEMT_ENERGY))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_LAST_UPDATE, "lastUpdate", ITEMT_DATETIME))
 
                 // EMeter
-                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_TOTALRET, "meterReturned", ITEM_TYPE_ENERGY))
-                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_REACTWATTS, "meterReactive", ITEM_TYPE_POWER))
-                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_VOLTAGE, "meterVoltage", ITEM_TYPE_VOLT))
-                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_CURRENT, "meterCurrent", ITEM_TYPE_AMP))
-                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_PFACTOR, "meterPowerFactor", ITEM_TYPE_NUMBER))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_TOTALRET, "meterReturned", ITEMT_ENERGY))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_REACTWATTS, "meterReactive", ITEMT_POWER))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_VOLTAGE, "meterVoltage", ITEMT_VOLT))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_CURRENT, "meterCurrent", ITEMT_AMP))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_PFACTOR, "meterPowerFactor", ITEMT_NUMBER))
 
                 // Sensors
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_TEMP, "sensorTemp", ITEM_TYPE_TEMP))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_HUM, "sensorHumidity", ITEM_TYPE_PERCENT))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_LUX, "sensorLux", ITEM_TYPE_LUX))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_ILLUM, "sensorIllumination", ITEM_TYPE_STRING))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_CONTACT, "sensorContact", ITEM_TYPE_CONTACT))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_SSTATE, "sensorState", ITEM_TYPE_STRING))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_VIBRATION, "sensorVibration", ITEM_TYPE_SWITCH))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_TILT, "sensorTilt", ITEM_TYPE_ANGLE))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_MOTION, "sensorMotion", ITEM_TYPE_SWITCH))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_FLOOD, "sensorFlood", ITEM_TYPE_SWITCH))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_SMOKE, "sensorSmoke", ITEM_TYPE_SWITCH))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_PPM, "sensorPPM", ITEM_TYPE_NUMBER))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_VALVE, "sensorValve", ITEM_TYPE_STRING))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_ALARM_STATE, "alarmState", ITEM_TYPE_STRING))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_ERROR, "sensorError", ITEM_TYPE_STRING))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_LAST_UPDATE, "lastUpdate", ITEM_TYPE_DATETIME))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_TEMP, "sensorTemp", ITEMT_TEMP))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_HUM, "sensorHumidity", ITEMT_PERCENT))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_LUX, "sensorLux", ITEMT_LUX))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_ILLUM, "sensorIllumination", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_CONTACT, "sensorContact", ITEMT_CONTACT))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_SSTATE, "sensorState", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_VIBRATION, "sensorVibration", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_TILT, "sensorTilt", ITEMT_ANGLE))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_MOTION, "sensorMotion", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_FLOOD, "sensorFlood", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_SMOKE, "sensorSmoke", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_PPM, "sensorPPM", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_VALVE, "sensorValve", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_ALARM_STATE, "alarmState", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_ERROR, "sensorError", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_LAST_UPDATE, "lastUpdate", ITEMT_DATETIME))
 
                 // Button/ix3
-                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_INPUT, "inputState", ITEM_TYPE_SWITCH))
-                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_STATUS_EVENTTYPE, "eventType", ITEM_TYPE_STRING))
-                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_STATUS_EVENTCOUNT, "eventCount", ITEM_TYPE_NUMBER))
-                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_BUTTON_TRIGGER, "system.button", ITEM_TYPE_STRING))
-                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_LAST_UPDATE, "lastUpdate", ITEM_TYPE_DATETIME))
+                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_STATUS_EVENTTYPE, "eventType", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_STATUS_EVENTCOUNT, "eventCount", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_BUTTON_TRIGGER, "system.button", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_LAST_UPDATE, "lastUpdate", ITEMT_DATETIME))
 
                 // Addon with external sensors
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_ESENDOR_TEMP1, "sensorExtTemp", ITEM_TYPE_TEMP))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_ESENDOR_TEMP2, "sensorExtTemp", ITEM_TYPE_TEMP))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_ESENDOR_TEMP3, "sensorExtTemp", ITEM_TYPE_TEMP))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_ESENDOR_HUMIDITY, "sensorExtHum", ITEM_TYPE_PERCENT))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_ESENDOR_TEMP1, "sensorExtTemp", ITEMT_TEMP))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_ESENDOR_TEMP2, "sensorExtTemp", ITEMT_TEMP))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_ESENDOR_TEMP3, "sensorExtTemp", ITEMT_TEMP))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_ESENDOR_HUMIDITY, "sensorExtHum", ITEMT_PERCENT))
 
                 // Battery
-                .add(new ShellyChannel(m, CHGR_BAT, CHANNEL_SENSOR_BAT_LEVEL, "system:battery-level",
-                        ITEM_TYPE_PERCENT))
-                .add(new ShellyChannel(m, CHGR_BAT, CHANNEL_SENSOR_BAT_LOW, "system:low-battery", ITEM_TYPE_SWITCH));
+                .add(new ShellyChannel(m, CHGR_BAT, CHANNEL_SENSOR_BAT_LEVEL, "system:battery-level", ITEMT_PERCENT))
+                .add(new ShellyChannel(m, CHGR_BAT, CHANNEL_SENSOR_BAT_LOW, "system:low-battery", ITEMT_SWITCH));
     }
 
-    public static ShellyChannel getDefinition(String channelName) throws IllegalArgumentException {
+    public static @Nullable ShellyChannel getDefinition(String channelName) throws IllegalArgumentException {
         String group = substringBefore(channelName, "#");
         String channel = substringAfter(channelName, "#");
         if (group.contains(CHANNEL_GROUP_METER)) {
@@ -314,10 +326,10 @@ public class ShellyChannelDefinitionsDTO {
     private static void addChannel(Thing thing, Map<String, Channel> newChannels, boolean supported, String group,
             String channelName) throws IllegalArgumentException {
         if (supported) {
-            final String channelId = group + "#" + channelName;
-            final ShellyChannel channelDef = getDefinition(channelId);
-            final ChannelUID channelUID = new ChannelUID(thing.getUID(), channelId);
-            final ChannelTypeUID channelTypeUID = channelDef.typeId.contains("system:")
+            String channelId = group + "#" + channelName;
+            ShellyChannel channelDef = getDefinition(channelId);
+            ChannelUID channelUID = new ChannelUID(thing.getUID(), channelId);
+            ChannelTypeUID channelTypeUID = channelDef.typeId.contains("system:")
                     ? new ChannelTypeUID(channelDef.typeId)
                     : new ChannelTypeUID(BINDING_ID, channelDef.typeId);
             Channel channel = ChannelBuilder.create(channelUID, channelDef.itemType).withType(channelTypeUID).build();
@@ -338,6 +350,11 @@ public class ShellyChannelDefinitionsDTO {
         public String typeId = "";
         public String category = "";
         public Set<String> tags = new HashSet<>();
+        public @Nullable Unit<?> unit;
+        public Optional<Integer> min = Optional.empty();
+        public Optional<Integer> max = Optional.empty();
+        public Optional<Integer> step = Optional.empty();
+        public Optional<String> pattern = Optional.empty();
 
         public ShellyChannel(ShellyTranslationProvider messages, String group, String channel, String typeId,
                 String itemType, String... category) {
@@ -347,14 +364,72 @@ public class ShellyChannelDefinitionsDTO {
             this.itemType = itemType;
             this.typeId = typeId;
 
-            groupLabel = getText(PREFIX_GROUP + group + SUFFIX_LABEL);
-            groupDescription = getText(PREFIX_GROUP + group + SUFFIX_DESCR);
-            label = getText(PREFIX_CHANNEL + channel + SUFFIX_LABEL);
-            description = getText(PREFIX_CHANNEL + channel + SUFFIX_DESCR);
+            groupLabel = getText(PREFIX_GROUP + group + ".label");
+            groupDescription = getText(PREFIX_GROUP + group + ".description");
+            label = getText(PREFIX_CHANNEL + channel + ".label");
+            description = getText(PREFIX_CHANNEL + channel + ".description");
         }
 
         public String getChanneId() {
             return group + "#" + channel;
+        }
+
+        public String getGroupLabel() {
+            return getGroupAttribute("group");
+        }
+
+        public String getGroupDescription() {
+            return getGroupAttribute("group");
+        }
+
+        public String getLabel() {
+            return getChannelAttribute("label");
+        }
+
+        public String getDescription() {
+            return getChannelAttribute("description");
+        }
+
+        public boolean getAdvanced() {
+            String attr = getChannelAttribute("advanced");
+            return attr.isEmpty() ? false : Boolean.valueOf(attr);
+        }
+
+        public boolean getReadyOnly() {
+            String attr = getChannelAttribute("advanced");
+            return attr.isEmpty() ? false : Boolean.valueOf(attr);
+        }
+
+        public String getCategory() {
+            return getChannelAttribute("category");
+        }
+
+        public String getMin() {
+            return getChannelAttribute("min");
+        }
+
+        public String getMax() {
+            return getChannelAttribute("max");
+        }
+
+        public String getStep() {
+            return getChannelAttribute("step");
+        }
+
+        public String getPattern() {
+            return getChannelAttribute("pattern");
+        }
+
+        public String getGroupAttribute(String attribute) {
+            String key = PREFIX_GROUP + group + "." + attribute;
+            String value = messages.getText(key);
+            return value != null && !value.equals(key) ? value : "";
+        }
+
+        public String getChannelAttribute(String attribute) {
+            String key = PREFIX_CHANNEL + channel + "." + attribute;
+            String value = messages.getText(key);
+            return value != null && !value.equals(key) ? value : "";
         }
 
         private String getText(String key) {
