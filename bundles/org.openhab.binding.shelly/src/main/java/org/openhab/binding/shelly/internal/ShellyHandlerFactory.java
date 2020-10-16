@@ -21,8 +21,6 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ConcurrentHashSet;
-import org.eclipse.smarthome.core.i18n.LocaleProvider;
-import org.eclipse.smarthome.core.i18n.TranslationProvider;
 import org.eclipse.smarthome.core.net.HttpServiceUtil;
 import org.eclipse.smarthome.core.net.NetworkAddressService;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -37,7 +35,7 @@ import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyLightHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyProtectedHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyRelayHandler;
-import org.openhab.binding.shelly.internal.util.ShellyTranslationProvider;
+import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.openhab.binding.shelly.internal.util.ShellyUtils;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -75,12 +73,11 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
      */
     @Activate
     public ShellyHandlerFactory(@Reference NetworkAddressService networkAddressService,
-            @Reference LocaleProvider localeProvider, @Reference TranslationProvider i18nProvider,
-            @Reference HttpClientFactory httpClientFactory, ComponentContext componentContext,
-            Map<String, Object> configProperties) {
+            @Reference ShellyTranslationProvider translationProvider, @Reference HttpClientFactory httpClientFactory,
+            ComponentContext componentContext, Map<String, Object> configProperties) {
         logger.debug("Activate Shelly HandlerFactory");
         super.activate(componentContext);
-        messages = new ShellyTranslationProvider(bundleContext.getBundle(), i18nProvider, localeProvider);
+        messages = translationProvider;
         // Save bindingConfig & pass it to all registered listeners
         bindingConfig.updateFromProperties(configProperties);
 
@@ -166,5 +163,9 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
                 return;
             }
         }
+    }
+
+    public ShellyBindingConfiguration getBindingConfig() {
+        return bindingConfig;
     }
 }

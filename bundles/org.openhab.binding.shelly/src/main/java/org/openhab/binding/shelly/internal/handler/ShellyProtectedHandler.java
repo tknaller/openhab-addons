@@ -17,7 +17,7 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapServer;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
-import org.openhab.binding.shelly.internal.util.ShellyTranslationProvider;
+import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

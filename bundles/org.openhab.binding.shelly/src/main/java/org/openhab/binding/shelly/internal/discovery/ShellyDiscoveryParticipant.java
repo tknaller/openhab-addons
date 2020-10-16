@@ -30,7 +30,6 @@ import org.eclipse.smarthome.config.discovery.DiscoveryResult;
 import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
 import org.eclipse.smarthome.config.discovery.mdns.MDNSDiscoveryParticipant;
 import org.eclipse.smarthome.core.i18n.LocaleProvider;
-import org.eclipse.smarthome.core.i18n.TranslationProvider;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.io.net.http.HttpClientFactory;
@@ -41,7 +40,7 @@ import org.openhab.binding.shelly.internal.api.ShellyHttpApi;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
-import org.openhab.binding.shelly.internal.util.ShellyTranslationProvider;
+import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.ComponentContext;
@@ -75,11 +74,10 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
     @Activate
     public ShellyDiscoveryParticipant(@Reference ConfigurationAdmin configurationAdmin,
             @Reference HttpClientFactory httpClientFactory, @Reference LocaleProvider localeProvider,
-            @Reference TranslationProvider i18nProvider, ComponentContext componentContext) {
+            @Reference ShellyTranslationProvider translationProvider, ComponentContext componentContext) {
         logger.debug("Activating ShellyDiscovery service");
         this.configurationAdmin = configurationAdmin;
-        this.messages = new ShellyTranslationProvider(componentContext.getBundleContext().getBundle(), i18nProvider,
-                localeProvider);
+        this.messages = translationProvider;
         this.httpClient = httpClientFactory.getCommonHttpClient();
         bindingConfig.updateFromProperties(componentContext.getProperties());
     }

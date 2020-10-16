@@ -42,7 +42,8 @@ import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyShortStatu
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusRelay;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapServer;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
-import org.openhab.binding.shelly.internal.util.ShellyTranslationProvider;
+import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
+import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -275,13 +276,13 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
      */
     private void createRelayChannels(ShellyStatusRelay relay, int idx) {
         if (!areChannelsCreated()) {
-            updateChannelDefinitions(ShellyChannelDefinitionsDTO.createRelayChannels(getThing(), profile, relay, idx));
+            updateChannelDefinitions(ShellyChannelDefinitions.createRelayChannels(getThing(), profile, relay, idx));
         }
     }
 
     private void createRollerChannels(ShellyControlRoller roller) {
         if (!areChannelsCreated()) {
-            updateChannelDefinitions(ShellyChannelDefinitionsDTO.createRollerChannels(getThing(), roller));
+            updateChannelDefinitions(ShellyChannelDefinitions.createRollerChannels(getThing(), roller));
         }
     }
 

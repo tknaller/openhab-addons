@@ -39,7 +39,7 @@ import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusLigh
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapServer;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
-import org.openhab.binding.shelly.internal.util.ShellyTranslationProvider;
+import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -353,7 +353,11 @@ public class ShellyLightHandler extends ShellyBaseHandler {
             updated |= updateChannel(controlGroup, CHANNEL_LIGHT_POWER, col.power);
             updated |= updateChannel(controlGroup, CHANNEL_TIMER_AUTOON, getDecimal(light.autoOn));
             updated |= updateChannel(controlGroup, CHANNEL_TIMER_AUTOOFF, getDecimal(light.autoOff));
-            updated |= updateInputs(controlGroup, genericStatus, lightId);
+
+            if ((profile.settings.inputs != null) && (lightId < profile.settings.inputs.size())) {
+                updated |= updateInputs(controlGroup, genericStatus, lightId);
+            }
+
             if (getBool(light.overpower)) {
                 postEvent(ALARM_TYPE_OVERPOWER, false);
             }
