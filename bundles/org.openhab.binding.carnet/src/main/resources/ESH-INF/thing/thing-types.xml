@@ -102,6 +102,10 @@
 		<label>@text/thing-type.carnet.vehicle.group.tripLong.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.tripLong.description</description>
 	</channel-group-type>
+	<channel-group-type id="rluHistory">
+		<label>@text/thing-type.carnet.vehicle.group.rluHistory.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.rluHistory.description</description>
+	</channel-group-type>
 
 	<!-- Group general -->
 	<channel-type id="vehicleLocked">
@@ -144,7 +148,7 @@
 		<description>@text/channel-type.carnet.position.description</description>
 	</channel-type>
 	<channel-type id="storedPosition">
-		<item-type>Stored Position</item-type>
+		<item-type>Location</item-type>
 		<label>@text/channel-type.carnet.storedPosition.label</label>
 		<description>@text/channel-type.carnet.storedPosition.description</description>
 	</channel-type>

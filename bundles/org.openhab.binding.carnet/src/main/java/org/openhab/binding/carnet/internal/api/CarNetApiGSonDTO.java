@@ -23,26 +23,6 @@ import com.google.gson.annotations.SerializedName;
  */
 public class CarNetApiGSonDTO {
 
-    public static class CNContentString {
-        public String timestamp;
-        public String content;
-    }
-
-    public static class CNContentInt {
-        public String timestamp;
-        public Integer content;
-    }
-
-    public static class CNContentDouble {
-        public String timestamp;
-        public Double content;
-    }
-
-    public static class CNContentBool {
-        public String timestamp;
-        public Boolean content;
-    }
-
     public static class CNApiToken {
         @SerializedName("token_type")
         public String authType;
@@ -88,6 +68,26 @@ public class CarNetApiGSonDTO {
         }
 
         public CNSecuritxPinAuth securityPinAuthentication = new CNSecuritxPinAuth();
+    }
+
+    public static class CNContentString {
+        public String timestamp;
+        public String content;
+    }
+
+    public static class CNContentInt {
+        public String timestamp;
+        public Integer content;
+    }
+
+    public static class CNContentDouble {
+        public String timestamp;
+        public Double content;
+    }
+
+    public static class CNContentBool {
+        public String timestamp;
+        public Boolean content;
     }
 
     public static class CarNetHomeRegion {
@@ -265,55 +265,103 @@ public class CarNetApiGSonDTO {
         CNRluActionResponse rluActionResponse;
     }
 
-    public static class CarNetRluHistory {
+    public static class CNEluActionHistory {
+        public class CarNetRluHistory {
+            public class CarNetRluLockActionList {
+                public class CarNetRluLockAction {
+                    public class CNRluLockStatus {
+                        public class CNRluLockEntry {
+                            public Boolean valid;
+                            public Boolean locked;
+                            public Boolean open;
+                            public Boolean safe; // maybe empty
+                        }
 
-        public class CarNetRluLockActionList {
-            public class CarNetRluLockAction {
-                public class CNRluLockStatus {
-                    public class CNRluLockEntry {
-                        public boolean valid;
-                        public boolean locked;
-                        public boolean open;
-                        public Boolean safe = false; // maybe empty
+                        CNRluLockEntry driverDoor;
+                        CNRluLockEntry coDriverDoor;
+                        CNRluLockEntry driverRearDoor;
+                        CNRluLockEntry coDriverRearDoor;
+                        CNRluLockEntry frontLid;
+                        CNRluLockEntry boot;
+                        CNRluLockEntry flap;
                     }
 
-                    CNRluLockEntry driverDoor;
-                    CNRluLockEntry coDriverDoor;
-                    CNRluLockEntry driverRearDoor;
-                    CNRluLockEntry coDriverRearDoor;
-                    CNRluLockEntry frontLid;
-                    CNRluLockEntry boot;
-                    CNRluLockEntry flap;
+                    public String lock;
+                    public String timestamp;
+                    public String channel;
+                    public String rluResult;
+                    CNRluLockStatus lockStatus;
                 }
 
-                public String lock;
-                public String timestamp;
-                public String channel;
-                public String rluResult;
-                CNRluLockStatus lockStatus;
+                public ArrayList<CarNetRluLockAction> action;
+
             }
 
-            public ArrayList<CarNetRluLockAction> action;
-
+            public String vin;
+            public String steeringWheelSide;
+            public String doorModel;
+            public CarNetRluLockActionList actions;
         }
 
-        public String vin;
-        public String steeringWheelSide;
-        public String doorModel;
-        public CarNetRluLockActionList actions;
+        public CarNetRluHistory actionsResponse;
     }
 
-    public static class CarNetServiceList {
-        public class CNServiceList {
+    public static class CNOperationList {
+        public class CarNetOperationList {
             public String vin;
             public String channelClient;
             public String userId;
             public String role;
             public String securityLevel;
             public String status;
+
+            public class CarNetServiceInfo {
+                public class CNServiceStatus {
+                    public String status;
+                }
+
+                public class CNServiceOperation {
+                    public String id;
+                    public String version;
+                    public String permission;
+                    public String requiredRole;
+                    public String requiredSecurityLevel;
+                }
+
+                public class CNServiceUrl {
+                    public String content;
+                }
+
+                public class CNComulativeLicense {
+                    public String status;
+                }
+
+                public String serviceId;
+                public String serviceType;
+                public CNServiceStatus serviceStatus;
+                public Boolean licenseRequired;
+                public CNComulativeLicense cumulatedLicense;
+                public Boolean primaryUserRequired;
+                public String serviceEol;
+                public Boolean rolesAndRightsRequired;
+                public CNServiceUrl invocationUrl;
+                public ArrayList<CNServiceOperation> operation;
+            }
+
+            public ArrayList<CarNetServiceInfo> serviceInfo;
         }
 
-        public CNServiceList operationList;
+        public CarNetOperationList operationList;
+    }
+
+    public static class CarNetServiceAvailability {
+        public boolean statusData = true;
+        public boolean rlu = true;
+        public boolean clima = true;
+        public boolean charger = true;
+        public boolean carFinder = true;
+        public boolean tripData = true;
+        public boolean destinations = true;
     }
 
     public static class CarNetDestinations {
@@ -337,7 +385,7 @@ public class CarNetApiGSonDTO {
 
         public class CNDestination {
             public String destinationName = "";
-            public boolean immediateDestination;
+            public Boolean immediateDestination;
             public String id;
             CNDestinationAddress address;
             public String destinationSource;

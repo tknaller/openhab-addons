@@ -60,6 +60,9 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNOperationList;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNOperationList.CarNetOperationList;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNOperationList.CarNetOperationList.CarNetServiceInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNPairingInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNPairingInfo.CarNetPairingInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData;
@@ -69,7 +72,7 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetDestinatio
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetHomeRegion;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthentication;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceList;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceAvailability;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
@@ -687,18 +690,59 @@ public class CarNetApi {
         return null;
     }
 
-    public CarNetServiceList getServices() throws CarNetException {
-        String url = CNAPI_VWURL_OPERATIONS + config.vehicle.vin;
-        Map<String, String> headers = fillActionHeaders("", createVwToken());
-        String json = httpGet(url, headers);
+    public @Nullable CarNetOperationList getOperationList() {
         try {
-            logger.debug("Dave service list to {}/carnetServices.json", System.getProperty("user.dir"));
-            FileWriter myWriter = new FileWriter("carnetServices.json");
-            myWriter.write(json);
-            myWriter.close();
-        } catch (IOException e) {
+            // String url = CNAPI_VWURL_OPERATIONS + config.vehicle.vin;
+            Map<String, String> headers = fillActionHeaders("", createVwToken());
+            String json = httpGet(CNAPI_VWURL_OPERATIONS, headers);
+            if (logger.isDebugEnabled()) {
+                try {
+                    logger.debug("Dave service list to {}/carnetServices.json", System.getProperty("user.dir"));
+                    FileWriter myWriter = new FileWriter("carnetServices.json");
+                    myWriter.write(json);
+                    myWriter.close();
+                } catch (IOException e) {
+                }
+            }
+
+            CNOperationList operationList = gson.fromJson(json, CNOperationList.class);
+            return operationList.operationList;
+        } catch (CarNetException e) {
+
         }
-        return gson.fromJson(json, CarNetServiceList.class);
+        return null;
+    }
+
+    public CarNetServiceAvailability getServiceAvailability(CarNetOperationList operation) throws CarNetException {
+        CarNetServiceAvailability serviceStatus = new CarNetServiceAvailability();
+        for (CarNetServiceInfo si : operation.serviceInfo) {
+            // Check service enabled status, maybe we need also to check serviceEol
+            boolean enabled = si.serviceStatus.status.equalsIgnoreCase("Enabled")
+                    && (!si.licenseRequired || si.cumulatedLicense.status.equalsIgnoreCase("ACTIVATED"));
+            switch (si.serviceId) {
+                case CNAPI_SERVICE_VEHICLE_STATUS:
+                    serviceStatus.statusData = enabled;
+                    break;
+                case CNAPI_SERVICE_REMOTELOCK:
+                    serviceStatus.rlu = enabled;
+                case CNAPI_SERVICE_CLIMATER:
+                    serviceStatus.clima = enabled;
+                    break;
+                case CNAPI_SERVICE_CHARGER:
+                    serviceStatus.charger = enabled;
+                    break;
+                case CNAPI_SERVICE_CARFINDER:
+                    serviceStatus.carFinder = enabled;
+                    break;
+                case CNAPI_SERVICE_DESTINATIONS:
+                    serviceStatus.destinations = enabled;
+                    break;
+                case CNAPI_SERVICE_TRIPDATA:
+                    serviceStatus.tripData = enabled;
+                    break;
+            }
+        }
+        return serviceStatus;
     }
 
     public @Nullable String getVehicleUsers() throws CarNetException {

@@ -78,7 +78,7 @@ public class CarNetApiConstants {
     public static final String CNAPI_URL_GET_CHALLENGE = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/vehicles/";
     public static final String CNAPI_URL_ACK_CHALLENGE = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/security-pin-auth-completed";
     public static final String CNAPI_VWURL_HOMEREGION = "https://mal-1a.prd.ece.vwg-connect.com/api/cs/vds/v1/vehicles/{2}/homeRegion";
-    public static final String CNAPI_VWURL_OPERATIONS = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/operationlist/v3/vehicles/";
+    public static final String CNAPI_VWURL_OPERATIONS = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/operationlist/v3/vehicles/{2}";
 
     public static final String CNAPI_OAUTH_BASE_URL = "https://identity.vwgroup.io";
     public static final String CNAPI_OAUTH_AUTHORIZE_URL = CNAPI_OAUTH_BASE_URL + "/oidc/v1/authorize";
@@ -95,8 +95,15 @@ public class CarNetApiConstants {
     public static final String CNAPI_URL_GO_GET_TOKEN = "https://id.audi.com/v1/token";
     public static final String CNAPI_URL_DEF_GET_TOKEN = "https://tokenrefreshservice.apps.emea.vwapps.io/refreshTokens";
 
-    public static final String CNAPI_URL_RLU_ACTIONS = "bs/rlu/v1/{0}/{1}/vehicles/{2}/actions";
+    public static final String CNAPI_SERVICE_VEHICLE_STATUS = "statusreport_v1";
     public static final String CNAPI_SERVICE_REMOTELOCK = "rlu_v1";
+    public static final String CNAPI_SERVICE_CLIMATER = "rclima_v1";
+    public static final String CNAPI_SERVICE_CHARGER = "rbatterycharge_v1";
+    public static final String CNAPI_SERVICE_CARFINDER = "carfinder_v1";
+    public static final String CNAPI_SERVICE_DESTINATIONS = "zieleinspeisung_v1";
+    public static final String CNAPI_SERVICE_TRIPDATA = "trip_statistic_v1";
+
+    public static final String CNAPI_URL_RLU_ACTIONS = "bs/rlu/v1/{0}/{1}/vehicles/{2}/actions";
     public static final String CNAPI_RLU_LOCK = "LOCK";
     public static final String CNAPI_RLU_UNLOCK = "UNLOCK";
     public static final String CNAPI_SERVICE_CLIMATISATION = "climatisation";
@@ -106,4 +113,5 @@ public class CarNetApiConstants {
     public static final String CNAPI_SERVICE_TRIPSTATS = "tripstatistics";
     public static final String CNAPI_TRIP_SHORT_TERM = "shortTerm";
     public static final String CNAPI_TRIP_LONG_TERM = "longTerm";
+
 }
