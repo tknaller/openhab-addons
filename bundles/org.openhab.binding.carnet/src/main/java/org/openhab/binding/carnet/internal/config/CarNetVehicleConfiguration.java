@@ -28,5 +28,6 @@ public class CarNetVehicleConfiguration {
 
     public int numTripShort = 1; // number of entries from history
     public int numTripLong = 1; // number of entries from history
+    public int numActions = 1; // number of entries from history
     public int refreshInterval = 10 * 60;
 }

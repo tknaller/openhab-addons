@@ -99,7 +99,6 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
                 stateChanged(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.toString());
             }
         });
-
     }
 
     @SuppressWarnings("null")
@@ -164,7 +163,6 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         if (command == RefreshType.REFRESH) {
             return;
         }
-
     }
 
     /**

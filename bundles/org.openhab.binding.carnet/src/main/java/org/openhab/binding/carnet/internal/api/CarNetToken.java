@@ -36,7 +36,6 @@ public class CarNetToken {
     private Date creationTime = new Date();
 
     public CarNetToken() {
-
     }
 
     public CarNetToken(CNApiToken token) {

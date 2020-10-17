@@ -113,5 +113,4 @@ public class CarNetApiConstants {
     public static final String CNAPI_SERVICE_TRIPSTATS = "tripstatistics";
     public static final String CNAPI_TRIP_SHORT_TERM = "shortTerm";
     public static final String CNAPI_TRIP_LONG_TERM = "longTerm";
-
 }

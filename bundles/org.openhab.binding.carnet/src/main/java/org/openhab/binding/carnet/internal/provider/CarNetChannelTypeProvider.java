@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupType;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupTypeUID;
@@ -38,6 +40,7 @@ import org.osgi.service.component.annotations.Reference;
  *
  * @author Markus Eckhardt - Initial contribution
  */
+@NonNullByDefault
 @Component(service = { ChannelTypeProvider.class, CarNetChannelTypeProvider.class })
 public class CarNetChannelTypeProvider implements ChannelTypeProvider {
     private final CarNetTextResources resources;
@@ -53,20 +56,20 @@ public class CarNetChannelTypeProvider implements ChannelTypeProvider {
     }
 
     @Override
-    public Collection<ChannelType> getChannelTypes(Locale locale) {
+    public Collection<ChannelType> getChannelTypes(@Nullable Locale locale) {
         return channelTypes;
     }
 
     @Override
-    public ChannelType getChannelType(ChannelTypeUID channelTypeUID, Locale locale) {
+    public @Nullable ChannelType getChannelType(ChannelTypeUID channelTypeUID, @Nullable Locale locale) {
         String channelId = channelTypeUID.getId();
         ChannelIdMapEntry channelDef = channelIdMapper.find(channelId);
         if ((channelDef != null) && !channelDef.channelName.isEmpty()) {
-            String category = channelDef.getChannelAttribute(resources, "category");
+            String category = channelDef.getChannelAttribute("category");
             String group = channelDef.getGroup();
-            String label = channelDef.getLabel(resources);
-            String description = channelDef.getDescription(resources);
-            String attr = channelDef.getAdvanced(resources);
+            String label = channelDef.getLabel();
+            String description = channelDef.getDescription();
+            String attr = channelDef.getAdvanced();
             boolean advanced = group.equals(CHANNEL_GROUP_STATUS) || group.equals(CHANNEL_GROUP_RANGE)
                     || group.equals(CHANNEL_GROUP_WINDOWS) || group.equals(CHANNEL_GROUP_DOORS)
                     || group.equals(CHANNEL_GROUP_TIRES);
@@ -88,7 +91,8 @@ public class CarNetChannelTypeProvider implements ChannelTypeProvider {
     }
 
     @Override
-    public ChannelGroupType getChannelGroupType(ChannelGroupTypeUID channelGroupTypeUID, Locale locale) {
+    public @Nullable ChannelGroupType getChannelGroupType(ChannelGroupTypeUID channelGroupTypeUID,
+            @Nullable Locale locale) {
         for (ChannelGroupType channelGroupType : channelGroupTypes) {
             if (channelGroupType.getUID().equals(channelGroupTypeUID)) {
                 return channelGroupType;
@@ -98,7 +102,7 @@ public class CarNetChannelTypeProvider implements ChannelTypeProvider {
     }
 
     @Override
-    public Collection<ChannelGroupType> getChannelGroupTypes(Locale locale) {
+    public Collection<ChannelGroupType> getChannelGroupTypes(@Nullable Locale locale) {
         return channelGroupTypes;
     }
 

@@ -13,9 +13,9 @@
 package org.openhab.binding.carnet.internal.provider;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
+import static org.openhab.binding.carnet.internal.CarNetUtils.mkChannelId;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -27,8 +27,6 @@ import org.eclipse.smarthome.core.library.unit.ImperialUnits;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData.CNStatusField;
 import org.openhab.binding.carnet.internal.handler.CustomUnits;
 import org.osgi.service.component.annotations.Activate;
@@ -45,15 +43,13 @@ import org.osgi.service.component.annotations.Reference;
 @NonNullByDefault
 @Component(service = CarNetIChanneldMapper.class)
 public class CarNetIChanneldMapper {
+    private final Map<String, ChannelIdMapEntry> map = new LinkedHashMap<>();
     private final CarNetTextResources resources;
 
     @Activate
     public CarNetIChanneldMapper(@Reference CarNetTextResources resources) {
         this.resources = resources;
-    }
 
-    private static Map<String, ChannelIdMapEntry> map = new LinkedHashMap<String, ChannelIdMapEntry>();
-    static {
         // Status
         add("KILOMETER_STATUS", "0x0101010002", "kilometerStatus", ITEMT_DISTANCE, CHANNEL_GROUP_GENERAL, KILOMETRE);
         add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_TEMP, CHANNEL_GROUP_GENERAL, SIUnits.CELSIUS);
@@ -147,50 +143,9 @@ public class CarNetIChanneldMapper {
         add("UTC_TIME_STATUS", "0x0101010001");
     }
 
-    public static void createTripChannels(List<ChannelIdMapEntry> ch, String type, int index) {
-        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_TIME, ITEMT_DATETIME, null, false, true));
-        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_AVG_ELCON, ITEMT_ENERGY,
-                SmartHomeUnits.KILOWATT_HOUR, false, true));
-        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_AVG_FUELCON, ITEMT_VOLUME, SmartHomeUnits.LITRE,
-                false, true));
-        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_AVG_SPEED, ITEMT_SPEED,
-                SIUnits.KILOMETRE_PER_HOUR, false, true));
-        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_MILAGE, ITEMT_DISTANCE, KILOMETRE, false, true));
-        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_START_MIL, ITEMT_DISTANCE, KILOMETRE, false,
-                true));
-        ch.add(add(CHANNEL_GROUP_TRIP_PRE + type + index, CHANNEL_TRIP_OVR_MILAGE, ITEMT_DISTANCE, KILOMETRE, false,
-                true));
-    }
+    public class ChannelIdMapEntry {
+        private final CarNetTextResources resources;
 
-    public static void createClimaterChannels(List<ChannelIdMapEntry> ch, CarNetClimaterStatus cs) {
-        ch.add(add(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CLIMATER, ITEMT_SWITCH, null, false, false));
-        ch.add(add(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_WINHEAT, ITEMT_SWITCH, null, false, false));
-        ch.add(add(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_PREHEAT, ITEMT_SWITCH, null, false, false));
-        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_TARGET_TEMP, ITEMT_TEMP, null, false, false));
-        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_HEAT_SOURCE, ITEMT_STRING, null, true, true));
-        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_GEN_STATE, ITEMT_STRING, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_FL_STATE, ITEMT_SWITCH, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_FR_STATE, ITEMT_SWITCH, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_RL_STATE, ITEMT_SWITCH, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_RR_STATE, ITEMT_SWITCH, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_MIRROR_HEAT, ITEMT_SWITCH, null, false, true));
-    }
-
-    public static void createChargerChannels(List<ChannelIdMapEntry> ch, CarNetChargerStatus cs) {
-        ch.add(add(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CHARGER, ITEMT_SWITCH, null, false, false));
-        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CURRENT, ITEMT_NUMBER, null, true, true));
-        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_STATUS, ITEMT_STRING, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_ERROR, ITEMT_NUMBER, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PWR_STATE, ITEMT_STRING, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CHG_STATE, ITEMT_STRING, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_FLOW, ITEMT_STRING, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_BAT_STATE, ITEMT_PERCENT, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_REMAINING, ITEMT_NUMBER, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PLUG_STATE, ITEMT_STRING, null, false, true));
-        ch.add(add(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_LOCK_STATE, ITEMT_STRING, null, false, true));
-    }
-
-    public static class ChannelIdMapEntry {
         public String id = "";
         public String symbolicName = "";
         public String channelName = "";
@@ -205,23 +160,27 @@ public class CarNetIChanneldMapper {
         public Optional<Integer> step = Optional.empty();
         public Optional<String> pattern = Optional.empty();
 
+        public ChannelIdMapEntry(CarNetTextResources resources) {
+            this.resources = resources;
+        }
+
         public String getGroup() {
             return !groupName.isEmpty() ? groupName : CHANNEL_GROUP_STATUS;
         }
 
-        public String getLabel(CarNetTextResources resources) {
-            return getChannelAttribute(resources, "label");
+        public String getLabel() {
+            return getChannelAttribute("label");
         }
 
-        public String getDescription(CarNetTextResources resources) {
-            return getChannelAttribute(resources, "description");
+        public String getDescription() {
+            return getChannelAttribute("description");
         }
 
-        public String getAdvanced(CarNetTextResources resources) {
-            return getChannelAttribute(resources, "advanced");
+        public String getAdvanced() {
+            return getChannelAttribute("advanced");
         }
 
-        public String getChannelAttribute(CarNetTextResources resources, String attribute) {
+        public String getChannelAttribute(String attribute) {
             String key = "channel-type.carnet." + channelName + "." + attribute;
             String value = resources.getText(key);
             return !value.equals(key) ? value : "";
@@ -282,42 +241,42 @@ public class CarNetIChanneldMapper {
         return definition;
     }
 
-    private static ChannelIdMapEntry add(String name, String id, String channelName, String itemType, String groupName,
+    public ChannelIdMapEntry add(String name, String id, String channel, String itemType, String group,
             @Nullable Unit<?> unit) {
-        ChannelIdMapEntry entry = new ChannelIdMapEntry();
+        ChannelIdMapEntry entry = new ChannelIdMapEntry(resources);
         entry.id = id;
         entry.symbolicName = name;
-        entry.groupName = groupName;
-        entry.channelName = channelName;
+        entry.groupName = group;
+        entry.channelName = channel;
         entry.itemType = itemType;
         if (itemType.equals(ITEMT_PERCENT) && (unit == null)) {
             entry.unit = SmartHomeUnits.PERCENT;
         }
         entry.unit = unit;
-        map.put(id, entry);
+        if (!map.containsKey(id)) {
+            map.put(id, entry);
+        }
         return entry;
     }
 
-    private static ChannelIdMapEntry add(String name, String id, String channelName, String itemType,
-            String groupName) {
+    public ChannelIdMapEntry add(String name, String id, String channelName, String itemType, String groupName) {
         return add(name, id, channelName, itemType, groupName, null);
     }
 
-    private static ChannelIdMapEntry add(String name, String id, String channelName, String itemType) {
+    public ChannelIdMapEntry add(String name, String id, String channelName, String itemType) {
         return add(name, id, channelName, itemType, CHANNEL_GROUP_STATUS, null);
     }
 
-    private static ChannelIdMapEntry add(String name, String id) {
+    public ChannelIdMapEntry add(String name, String id) {
         return add(name, id, "", "", CHANNEL_GROUP_STATUS, null);
     }
 
-    private static ChannelIdMapEntry add(String group, String channel, String itemType, @Nullable Unit<?> unit,
+    public ChannelIdMapEntry add(String group, String channel, String itemType, @Nullable Unit<?> unit,
             boolean advanced, boolean readOnly) {
-        return add(group + "#" + channel, "", channel, itemType, group, unit);
+        return add(mkChannelId(group, channel), channel, channel, itemType, group, unit);
     }
 
     private static String gs(@Nullable String s) {
         return s != null ? s : "";
     }
-
 }

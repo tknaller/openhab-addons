@@ -21,6 +21,7 @@ import java.time.ZonedDateTime;
 
 import javax.measure.Unit;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.DecimalType;
@@ -37,8 +38,8 @@ import org.eclipse.smarthome.core.types.UnDefType;
  * @author Markus Michels - Initial Contribution
  *
  */
+@NonNullByDefault
 public class CarNetUtils {
-
     public static String mkChannelId(String group, String channel) {
         return group + "#" + channel;
     }
@@ -131,21 +132,5 @@ public class CarNetUtils {
             // Unable to convert device's timezone, use system one
             return getTimestamp();
         }
-    }
-
-    public static DecimalType mapSignalStrength(int dbm) {
-        int strength = -1;
-        if (dbm > -60) {
-            strength = 4;
-        } else if (dbm > -70) {
-            strength = 3;
-        } else if (dbm > -80) {
-            strength = 2;
-        } else if (dbm > -90) {
-            strength = 1;
-        } else {
-            strength = 0;
-        }
-        return new DecimalType(strength);
     }
 }

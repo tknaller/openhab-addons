@@ -286,7 +286,7 @@ public class CarNetApiGSonDTO {
                         CNRluLockEntry flap;
                     }
 
-                    public String lock;
+                    public String operation;
                     public String timestamp;
                     public String channel;
                     public String rluResult;
@@ -294,7 +294,6 @@ public class CarNetApiGSonDTO {
                 }
 
                 public ArrayList<CarNetRluLockAction> action;
-
             }
 
             public String vin;
@@ -444,7 +443,6 @@ public class CarNetApiGSonDTO {
                     public CNContentString externalPowerSupplyState;
                     public CNContentString energyFlow;
                     public CNContentString chargingState;
-
                 }
 
                 public class CNChargerRangeStatusData {
@@ -657,5 +655,4 @@ public class CarNetApiGSonDTO {
 
         CarNetClimaterStatus climater;
     }
-
 }

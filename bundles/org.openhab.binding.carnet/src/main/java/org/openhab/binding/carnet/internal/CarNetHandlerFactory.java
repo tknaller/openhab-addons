@@ -65,8 +65,8 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     private CarNetApi api = new CarNetApi();
 
     @Activate
-    public CarNetHandlerFactory(@Reference CarNetTextResources resources, @Reference CarNetIChanneldMapper channelIdMapper,
-            @Reference HttpClientFactory httpClientFactory) {
+    public CarNetHandlerFactory(@Reference CarNetTextResources resources,
+            @Reference CarNetIChanneldMapper channelIdMapper, @Reference HttpClientFactory httpClientFactory) {
         this.resources = resources;
         this.channelIdMapper = channelIdMapper;
         try {

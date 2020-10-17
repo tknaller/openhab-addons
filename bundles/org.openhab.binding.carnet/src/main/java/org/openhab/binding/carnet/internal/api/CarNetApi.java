@@ -60,6 +60,8 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHistory;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHistory.CarNetRluHistory;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNOperationList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNOperationList.CarNetOperationList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNOperationList.CarNetOperationList.CarNetServiceInfo;
@@ -99,6 +101,7 @@ public class CarNetApi {
         CarNetVehicleConfiguration vehicle = new CarNetVehicleConfiguration();
     }
 
+    @NonNullByDefault
     private class CarNetPendingRequest {
         public String vin = "";
         public String service = "";
@@ -841,8 +844,13 @@ public class CarNetApi {
         return null;
     }
 
-    public @Nullable String getRluActionHistory() {
-        return callApi(CNAPI_URL_RLU_ACTIONS, "rluActionHistory");
+    public @Nullable CarNetRluHistory getRluActionHistory() {
+        String json = callApi(CNAPI_URL_RLU_ACTIONS, "rluActionHistory");
+        if (json != null) {
+            CNEluActionHistory ah = gson.fromJson(json, CNEluActionHistory.class);
+            return ah.actionsResponse;
+        }
+        return null;
     }
 
     public @Nullable String getMyDestinationsFeed(String userId) {
@@ -866,7 +874,6 @@ public class CarNetApi {
         } catch (Exception e) {
         }
         return loadJson(testData);
-
     }
 
     private @Nullable String loadJson(String filename) {
@@ -907,7 +914,6 @@ public class CarNetApi {
         CarNetPendingRequest rsp = new CarNetPendingRequest(service, action, in);
         logger.debug("{}: Request for {}.{} accepted, requestId={}", rsp.vin, service, action, rsp.requestId);
         pendingRequest.put(rsp.requestId, rsp);
-
     }
 
     private Map<String, String> fillBrandHeaders() throws CarNetException {
@@ -1246,7 +1252,6 @@ public class CarNetApi {
             redirect = "vwconnect%3A%2F%2Fde.volkswagen.vwconnect%2Foauth2redirect%2Fidentitykit";
             responseType = "code";
         }
-
     }
 
     private boolean isBrandAudi(String brand) {

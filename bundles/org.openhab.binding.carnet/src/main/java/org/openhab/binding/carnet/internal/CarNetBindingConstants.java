@@ -115,6 +115,11 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_GROUP_DOORS = "doors";
     public static final String CHANNEL_GROUP_TIRES = "tires";
 
+    public static final String CHANNEL_GROUP_RLUHIST = "rluHistory";
+    public static final String CHANNEL_RLUHIST_TS = "rluTimestamp";
+    public static final String CHANNEL_RLUHIST_OP = "rluOperation";
+    public static final String CHANNEL_RLUHIST_RES = "rluResult";
+
     public static final String PROPERTY_VIN = "vin";
     public static final String PROPERTY_BRAND = "brand";
     public static final String PROPERTY_MODEL = "model";
@@ -152,5 +157,4 @@ public class CarNetBindingConstants {
     public static final Unit<Time> DAYS = Units.DAY;
     public static final Unit<Dimensionless> PERCENT = SmartHomeUnits.PERCENT;
     public static final Unit<Temperature> DKELVIN = MetricPrefix.DECI(Units.KELVIN);
-
 }

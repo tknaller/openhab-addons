@@ -55,7 +55,6 @@ public class CarNetDiscoveryService extends AbstractDiscoveryService implements 
         Validate.notNull(bridgeHandler);
         this.accountHandler = bridgeHandler;
         this.bridgeUID = bridgeHandler.getThing().getUID();
-
     }
 
     @Override
@@ -101,6 +100,5 @@ public class CarNetDiscoveryService extends AbstractDiscoveryService implements 
 
     @Override
     public void stateChanged(ThingStatus status, ThingStatusDetail detail, String message) {
-
     }
 }

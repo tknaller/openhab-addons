@@ -52,5 +52,4 @@ public class CarNetVehicleInformation {
     public String getId() {
         return vin;
     }
-
 }

@@ -4,40 +4,45 @@
 	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
-	<!-- Sample Thing Type -->
 	<thing-type id="vehicle">
 		<label>@text/thing-type.carnet.vehicle.label</label>
 		<description>@text/thing-type.carnet.vehicle.description</description>
 
 		<channel-groups>
-			<channel-group id="general" typeId="general" />
-			<channel-group id="control" typeId="control" />
-			<channel-group id="status" typeId="status" />
-			<channel-group id="location" typeId="location" />
-			<channel-group id="charger" typeId="charger" />
-			<channel-group id="range" typeId="range" />
-			<channel-group id="climater" typeId="climater" />
-			<channel-group id="tripShort1" typeId="tripShort" />
-			<channel-group id="tripShort2" typeId="tripShort" />
-			<channel-group id="tripLong1" typeId="tripLong" />
-			<channel-group id="tripLong2" typeId="tripLong" />
-			<channel-group id="maintenance" typeId="maintenance" />
-			<channel-group id="doors" typeId="doors" />
-			<channel-group id="windows" typeId="windows" />
-			<channel-group id="tires" typeId="tires" />
+			<channel-group id="general" typeId="general"/>
+			<channel-group id="control" typeId="control"/>
+			<channel-group id="rluHistory1" typeId="rluHistory"/>
+			<channel-group id="rluHistory2" typeId="rluHistory"/>
+			<channel-group id="rluHistory3" typeId="rluHistory"/>
+			<channel-group id="status" typeId="status"/>
+			<channel-group id="location" typeId="location"/>
+			<channel-group id="charger" typeId="charger"/>
+			<channel-group id="range" typeId="range"/>
+			<channel-group id="climater" typeId="climater"/>
+			<channel-group id="tripShort1" typeId="tripShort"/>
+			<channel-group id="tripShort2" typeId="tripShort"/>
+			<channel-group id="tripShort3" typeId="tripShort"/>
+			<channel-group id="tripLong1" typeId="tripLong"/>
+			<channel-group id="tripLong2" typeId="tripLong"/>
+			<channel-group id="tripLong3" typeId="tripLong"/>
+			<channel-group id="maintenance" typeId="maintenance"/>
+			<channel-group id="doors" typeId="doors"/>
+			<channel-group id="windows" typeId="windows"/>
+			<channel-group id="tires" typeId="tires"/>
 		</channel-groups>
 
-		<config-description-ref uri="thing-type:carnet:vehicle" />
+		<representation-property>vin</representation-property>
+		<config-description-ref uri="thing-type:carnet:vehicle"/>
 	</thing-type>
 
 	<channel-group-type id="general">
 		<label>@text/thing-type.carnet.vehicle.group.general.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.general.description</description>
 		<channels>
-			<channel id="vehicleLocked" typeId="vehicleLocked" />
-			<channel id="maintenanceRequired" typeId="maintenanceRequired" />
-			<channel id="windowsClosed" typeId="windowsClosed" />
-			<channel id="tiresOk" typeId="tiresOk" />
+			<channel id="vehicleLocked" typeId="vehicleLocked"/>
+			<channel id="maintenanceRequired" typeId="maintenanceRequired"/>
+			<channel id="windowsClosed" typeId="windowsClosed"/>
+			<channel id="tiresOk" typeId="tiresOk"/>
 		</channels>
 	</channel-group-type>
 
@@ -45,8 +50,7 @@
 		<label>@text/thing-type.carnet.vehicle.group.control.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.control.description</description>
 		<channels>
-			<channel id="lock" typeId="lock" />
-			<channel id="update" typeId="update" />
+			<channel id="update" typeId="update"/>
 		</channels>
 	</channel-group-type>
 
@@ -58,10 +62,10 @@
 		<label>@text/thing-type.carnet.vehicle.group.location.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.location.description</description>
 		<channels>
-			<channel id="position" typeId="position" />
-			<channel id="storedPosition" typeId="storedPosition" />
-			<channel id="lastUpdate" typeId="lastUpdate" />
-			<channel id="parkingTime" typeId="parkingTime" />
+			<channel id="position" typeId="position"/>
+			<channel id="storedPosition" typeId="storedPosition"/>
+			<channel id="lastUpdate" typeId="lastUpdate"/>
+			<channel id="parkingTime" typeId="parkingTime"/>
 		</channels>
 	</channel-group-type>
 
@@ -130,11 +134,6 @@
 	</channel-type>
 
 	<!-- Group control -->
-	<channel-type id="lock">
-		<item-type>Switch</item-type>
-		<label>@text/channel-type.carnet.lock.label</label>
-		<description>@text/channel-type.carnet.lock.description</description>
-	</channel-type>
 	<channel-type id="update">
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.update.label</label>
