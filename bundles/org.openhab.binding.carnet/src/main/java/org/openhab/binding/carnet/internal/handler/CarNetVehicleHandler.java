@@ -194,6 +194,24 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
             api.setConfig(config);
 
+            if (testData) {
+                // Get available services
+                String r = api.getVehicleRights();
+                String vu = api.getVehicleUsers();
+                String t = api.getClimaterTimer();
+                String h = api.getHistory();
+                String ts = api.getTripStats("shortTerm");
+                String d = api.getDestinations();
+                String df = api.getMyDestinationsFeed(config.userId);
+                String poi = api.getPois();
+                String un = api.getUserNews();
+                logger.debug(
+                        "{}: Additional Data\nVehicle Users:{}\nVehicle rights: {}\nHistory:{}\nTimer: {}\nnDestinations: {}\nPOIs: {}\nMyDestinationsFeed: {}\nUser News: {}\nTrip Stats short: {}",
+                        thingId, vu, r, h, t, d, poi, df, un, ts);
+                logger.debug("\n------\n{}: End of Additional Data", thingId);
+                testData = false;
+            }
+
             // Create services
             services.clear();
             addService(serviceAvailability.statusData, CNAPI_SERVICE_VEHICLE_STATUS,
@@ -216,23 +234,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 channelsCreated = true;
             }
 
-            if (testData) {
-                // Get available services
-                String r = api.getVehicleRights();
-                String vu = api.getVehicleUsers();
-                String t = api.getClimaterTimer();
-                String h = api.getHistory();
-                String ts = api.getTripStats("shortTerm");
-                String d = api.getDestinations();
-                String df = api.getMyDestinationsFeed(config.userId);
-                String poi = api.getPois();
-                String un = api.getUserNews();
-                logger.debug(
-                        "{}: Additional Data\nVehicle Users:{}\nVehicle rights: {}\nHistory:{}\nTimer: {}\nnDestinations: {}\nPOIs: {}\nMyDestinationsFeed: {}\nUser News: {}\nTrip Stats short: {}",
-                        thingId, vu, r, h, t, d, poi, df, un, ts);
-                logger.debug("\n------\n{}: End of Additional Data", thingId);
-                testData = false;
-            }
         } catch (CarNetException e) {
             CarNetApiErrorDTO res = e.getApiResult().getApiError();
             if (res.description.contains("disabled ")) {

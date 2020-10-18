@@ -133,8 +133,8 @@ public class CarNetApi {
     private HttpClient httpClient = new HttpClient();
     private CombinedConfig config = new CombinedConfig();
 
+    private CarNetToken idToken = new CarNetToken();
     private CarNetToken brandToken = new CarNetToken();
-    // private CarNetToken idToken = new CarNetToken();
     private CarNetToken vwToken = new CarNetToken();
     private CopyOnWriteArrayList<CarNetToken> securityTokens = new CopyOnWriteArrayList<CarNetToken>();
     private Map<String, CarNetPendingRequest> pendingRequest = new ConcurrentHashMap<>();
@@ -363,13 +363,24 @@ public class CarNetApi {
             data.put("redirect_uri", "myaudi:///");
             data.put("response_type", "token id_token");
             String json = httpPost(CNAPI_AUDI_TOKEN_URL, headers, data, "", false);
-            logger.trace("{}: OAuth successful", config.vehicle.vin);
 
             // process token
             CNApiToken token = gson.fromJson(json, CNApiToken.class);
             if ((token.accessToken == null) || token.accessToken.isEmpty()) {
                 throw new CarNetException("Authentication failed: Unable to get access token!");
             }
+            idToken = new CarNetToken(token);
+            logger.debug("{}: OAuth successful", config.vehicle.vin);
+
+            logger.debug("{}: Get Audi Token", config.vehicle.vin);
+            data.clear();
+            data.put("config", "myaudi");
+            data.put("grant_type", "id_token");
+            data.put("stage", "live");
+            data.put("token", token.accessToken);
+            json = httpPost("https://app-api.live-my.audi.com/azs/v1/token", headers, data, "", true);
+            token = gson.fromJson(json, CNApiToken.class);
+
             brandToken = new CarNetToken(token);
             return brandToken.accessToken;
         } catch (UnsupportedEncodingException e) {
@@ -393,12 +404,17 @@ public class CarNetApi {
         headers.put(CNAPI_HEADER_VERS, "3.14.0");
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
         headers.put(CNAPI_HEADER_CLIENTID, "77869e21-e30a-4a92-b016-48ab7d3db1d8");
+        // https://github.com/TA2k/ioBroker.vw-connect/blob/master/main.js
+        // VW: clientId = "9496332b-ea03-4091-a224-8c746b885068%40apps_vw-dilab_com";
+        // VW: xclientId = "38761134-34d0-41f3-9a73-c4be88d7d337";
+        // VW: xappversion = "5.1.2";
+        // VW: xappname = "eRemote";
         headers.put(CNAPI_HEADER_HOST, "mbboauth-1d.prd.ece.vwg-connect.com");
         headers.put(HttpHeader.ACCEPT.toString(), "*/*");
         Map<String, String> data = new TreeMap<>();
         data.put("grant_type", "id_token");
         // data.put("token", idToken.idToken);
-        data.put("token", brandToken.idToken);
+        data.put("token", idToken.idToken);
         data.put("scope", "sc2:fal");
 
         String json = httpPost(CNAPI_URL_GET_SEC_TOKEN, headers, data, "", false);
@@ -572,24 +588,12 @@ public class CarNetApi {
     }
 
     public @Nullable String getHistory() throws CarNetException {
-        try {
-            String json = httpGet(CNAPI_URI_HISTORY);
-            // String json = httpGet(CNAPI_URI_HISTORY, fillMmiHeaders());
-            // CarNetHistory history = gson.fromJson(json, CarNetHistory.class);
-            // Validate.notNull(history, "Unable to get vehicle history!");
-            // return history;
-            return json;
-        } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
-        } catch (Exception e) {
-
-        }
-        return null;
+        String json = callApi(CNAPI_URI_HISTORY, "getHistory");
+        return json;
     }
 
     public @Nullable CarNetClimaterStatus getClimaterStatus() throws CarNetException {
         try {
-            // String json = httpGet(CNAPI_VWURL_CLIMATE_STATUS, fillMmiHeaders());
             String json = callApi(CNAPI_VWURL_CLIMATE_STATUS, "climaterStatus");
             if (json != null) {
                 CNClimater cs = gson.fromJson(json, CNClimater.class);
@@ -624,8 +628,6 @@ public class CarNetApi {
         String json = "";
         try {
             String action = "list";
-            // Map<String, String> headers = fillActionHeaders("", createVwToken());
-
             String url = CNAPI_VWURL_TRIP_DATA.replace("{3}", type).replace("{4}", action);
             json = httpGet(url, fillAppHeaders());
         } catch (CarNetException e) {
@@ -674,7 +676,6 @@ public class CarNetApi {
         try {
             String url = "https://customer-profile.apps.emea.vwapps.io/v1/customers/"
                     + UrlEncoded.encodeString(config.account.user) + "/personalData";
-            // Map<String, String> headers = fillActionHeaders("", createBrandToken());
             Map<String, String> headers = new HashMap<>();
             headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
             headers.put(CNAPI_HEADER_APP, xappName);
@@ -819,7 +820,7 @@ public class CarNetApi {
     }
 
     public @Nullable String getPois() {
-        return callApi("\"{0}/{1}/vehicles/{2}/pois", "");
+        return callApi("{0}/{1}/vehicles/{2}/pois", "");
     }
 
     public @Nullable String getUserInfo() {
@@ -870,7 +871,8 @@ public class CarNetApi {
         try {
             return httpGet(uri);
         } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
+            CarNetApiResult res = e.getApiResult();
+            logger.debug("{}: API call failed: HTTP {}, {}", config.vehicle.vin, res.httpCode, e.toString());
         } catch (Exception e) {
         }
         return loadJson(testData);
