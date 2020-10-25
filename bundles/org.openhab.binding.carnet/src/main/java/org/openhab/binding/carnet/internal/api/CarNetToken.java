@@ -12,7 +12,6 @@
  */
 package org.openhab.binding.carnet.internal.api;
 
-import java.text.MessageFormat;
 import java.util.Date;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -33,9 +32,16 @@ public class CarNetToken {
     protected int authVersion = 1;
     protected int validity = -1;
     protected String service = "";
-    private Date creationTime = new Date();
+    protected Date creationTime = new Date();
 
     public CarNetToken() {
+    }
+
+    public CarNetToken(String idToken, String accessToken, String authType, int validity) {
+        this.idToken = idToken;
+        this.accessToken = accessToken;
+        this.authType = authType;
+        setValidity(validity);
     }
 
     public CarNetToken(CNApiToken token) {
@@ -44,12 +50,12 @@ public class CarNetToken {
         securityToken = token.securityToken != null ? token.securityToken : "";
         refreshToken = token.refreshToken != null ? token.refreshToken : "";
         authType = token.authType;
-        if (token.validity != null) {
-            int treshhold = token.validity - new Double(token.validity * 0.9).intValue();
-            validity = token.validity - treshhold;
-            validity = 300;
-        }
+        setValidity(token.validity);
+    }
+
+    public void setValidity(int validity) {
         creationTime = new Date();
+        this.validity = validity - new Double(validity * 0.9).intValue(); // reduce by 20% treshhold
         if (!isValid()) {
             invalidate();
         }
@@ -59,9 +65,12 @@ public class CarNetToken {
         this.service = service;
     }
 
-    public String getHttpHeader() {
-        return MessageFormat.format("Authorization: {0} {1} {2}", authType, authVersion, accessToken);
+    public String getAccessToken() {
+        return accessToken;
     }
+    // public String getHttpHeader() {
+    // return MessageFormat.format("Authorization: {0} {1} {2}", authType, authVersion, accessToken);
+    // }
 
     /**
      * Check if access token is still valid

@@ -19,6 +19,7 @@ import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_S
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.smarthome.core.library.types.PercentType;
 import org.eclipse.smarthome.core.library.types.QuantityType;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
 import org.openhab.binding.carnet.internal.CarNetException;
@@ -49,13 +50,13 @@ public class CarNetVehicleServiceCharger extends CarNetVehicleBaseService {
         CarNetChargerStatus cs = api.getChargerStatus();
         if (cs != null) {
             addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CHARGER, ITEMT_SWITCH, null, false, false);
-            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CURRENT, ITEMT_NUMBER, null, true, true);
+            // addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CURRENT, ITEMT_NUMBER, null, true, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_STATUS, ITEMT_STRING, null, false, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PWR_STATE, ITEMT_STRING, null, false, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CHG_STATE, ITEMT_STRING, null, false, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_FLOW, ITEMT_STRING, null, false, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_BAT_STATE, ITEMT_PERCENT, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_REMAINING, ITEMT_NUMBER, null, false, true);
+            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_REMAINING, ITEMT_TIME, null, false, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PLUG_STATE, ITEMT_STRING, null, false, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_LOCK_STATE, ITEMT_STRING, null, false, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_ERROR, ITEMT_NUMBER, null, false, true);
@@ -80,10 +81,10 @@ public class CarNetVehicleServiceCharger extends CarNetVehicleBaseService {
             updateChannel(group, CHANNEL_CHARGER_PWR_STATE, getStringType(sd.externalPowerSupplyState.content));
             updateChannel(group, CHANNEL_CHARGER_CHG_STATE, getStringType(sd.chargingState.content));
             updateChannel(group, CHANNEL_CHARGER_FLOW, getStringType(sd.energyFlow.content));
-            updateChannel(group, CHANNEL_CHARGER_BAT_STATE, new QuantityType<>(
-                    getInteger(cs.status.batteryStatusData.stateOfCharge.content), SmartHomeUnits.PERCENT));
-            updateChannel(group, CHANNEL_CHARGER_REMAINING,
-                    getDecimal(cs.status.batteryStatusData.remainingChargingTime.content));
+            updateChannel(group, CHANNEL_CHARGER_BAT_STATE,
+                    new PercentType(getInteger(cs.status.batteryStatusData.stateOfCharge.content)));
+            updateChannel(group, CHANNEL_CHARGER_REMAINING, new QuantityType<>(
+                    getDecimal(cs.status.batteryStatusData.remainingChargingTime.content), QMINUTES));
             updateChannel(group, CHANNEL_CHARGER_PLUG_STATE, getStringType(cs.status.plugStatusData.plugState.content));
             updateChannel(group, CHANNEL_CHARGER_LOCK_STATE, getStringType(cs.status.plugStatusData.lockState.content));
             return true;

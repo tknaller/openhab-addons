@@ -81,9 +81,9 @@ public class CarNetVehicleServiceTripData extends CarNetVehicleBaseService {
             boolean shortTerm = type.contains("short");
             int numTrips = shortTerm ? config.numTripShort : config.numTripLong;
 
-            int i = std.tripDataList.tripData.size() - 1; // latest first
+            int i = 0; // latest first
             int l = 1;
-            while ((i > 0) && (l <= numTrips)) {
+            while ((i < std.tripDataList.tripData.size()) && (l <= numTrips)) {
                 if (channels != null) {
                     createChannels(channels, shortTerm ? CHANNEL_TRIP_SHORT : CHANNEL_TRIP_LONG, l);
                 } else {
@@ -106,7 +106,7 @@ public class CarNetVehicleServiceTripData extends CarNetVehicleBaseService {
                                 KILOMETRE);
                     }
                 }
-                i--;
+                i++;
                 l++;
             }
         }

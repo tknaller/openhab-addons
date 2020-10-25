@@ -22,7 +22,6 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.QuantityType;
-import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus;
@@ -80,7 +79,7 @@ public class CarNetVehicleServiceClimater extends CarNetVehicleBaseService {
         String group = CHANNEL_GROUP_CLIMATER;
         CarNetClimaterStatusData sd = cs.status.climatisationStatusData;
         updateChannel(group, CHANNEL_CLIMATER_TARGET_TEMP,
-                new QuantityType<>(getDouble(cs.settings.targetTemperature.content), SIUnits.CELSIUS));
+                new QuantityType<>(getDouble(cs.settings.targetTemperature.content), DKELVIN));
         updateChannel(group, CHANNEL_CLIMATER_HEAT_SOURCE, getStringType(cs.settings.heaterSource.content));
         updateChannel(group, CHANNEL_CLIMATER_GEN_STATE, getStringType(sd.climatisationState.content));
         updateZoneStates(sd.climatisationElementStates.zoneStates);

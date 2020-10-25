@@ -54,7 +54,7 @@ public class CarNetVehicleServiceCarFinder extends CarNetVehicleBaseService {
     public boolean serviceUpdate() throws CarNetException {
         try {
             logger.debug("{}: Get Vehicle Position", thingId);
-            updateLocation(api.getStoredPosition(), CHANNEL_STORED_POS);
+            // updateLocation(api.getStoredPosition(), CHANNEL_STORED_POS);
 
             CarNetVehiclePosition position = updateLocation(api.getVehiclePosition(), CHANNEL_LOCATTION_GEO);
             String time = position.getCarSentTime();
@@ -64,7 +64,7 @@ public class CarNetVehicleServiceCarFinder extends CarNetVehicleBaseService {
                     parkingTime != null ? new DateTimeType(position.getParkingTime()) : UnDefType.NULL);
             return true;
         } catch (CarNetException e) {
-            updateChannel(CHANNEL_GROUP_LOCATION, CHANNEL_STORED_POS, UnDefType.UNDEF);
+            // updateChannel(CHANNEL_GROUP_LOCATION, CHANNEL_STORED_POS, UnDefType.UNDEF);
             updateChannel(CHANNEL_GROUP_LOCATION, CHANNEL_LOCATTION_GEO, UnDefType.UNDEF);
             updateChannel(CHANNEL_GROUP_LOCATION, CHANNEL_LOCATTION_TIME, UnDefType.UNDEF);
             updateChannel(CHANNEL_GROUP_LOCATION, CHANNEL_LOCATTION_PARK, UnDefType.UNDEF);

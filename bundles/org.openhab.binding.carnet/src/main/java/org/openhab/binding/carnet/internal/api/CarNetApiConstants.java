@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.carnet.internal.api;
 
+import java.nio.charset.StandardCharsets;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
 /**
@@ -82,10 +84,10 @@ public class CarNetApiConstants {
 
     public static final String CNAPI_OAUTH_BASE_URL = "https://identity.vwgroup.io";
     public static final String CNAPI_OAUTH_AUTHORIZE_URL = CNAPI_OAUTH_BASE_URL + "/oidc/v1/authorize";
-    public static final String CNAPI_OAUTH_IDENTIFIER_URL = CNAPI_OAUTH_BASE_URL
-            + "/signin-service/v1/09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com/login/identifier";
-    public static final String CNAPI_OAUTH_AUTHENTICATE_URL = CNAPI_OAUTH_BASE_URL
-            + "/signin-service/v1/09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com/login/authenticate";
+    // public static final String CNAPI_OAUTH_IDENTIFIER_URL = CNAPI_OAUTH_BASE_URL
+    // + "/signin-service/v1/09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com/login/identifier";
+    // public static final String CNAPI_OAUTH_AUTHENTICATE_URL = CNAPI_OAUTH_BASE_URL
+    // + "/signin-service/v1/09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com/login/authenticate";
     public static final String CNAPI_AUDI_TOKEN_URL = "https://app-api.my.audi.com/myaudiappidk/v1/token";
     public static final String CNAPI_VW_TOKEN_URL = "https://mbboauth-1d.prd.ece.vwg-connect.com/mbbcoauth/mobile/oauth2/v1/token";
 
@@ -113,4 +115,6 @@ public class CarNetApiConstants {
     public static final String CNAPI_SERVICE_TRIPSTATS = "tripstatistics";
     public static final String CNAPI_TRIP_SHORT_TERM = "shortTerm";
     public static final String CNAPI_TRIP_LONG_TERM = "longTerm";
+
+    public static final String UTF_8 = StandardCharsets.UTF_8.name();
 }

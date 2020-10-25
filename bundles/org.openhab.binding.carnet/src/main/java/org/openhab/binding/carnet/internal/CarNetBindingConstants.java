@@ -23,6 +23,7 @@ import javax.measure.quantity.Length;
 import javax.measure.quantity.Power;
 import javax.measure.quantity.Temperature;
 import javax.measure.quantity.Time;
+import javax.measure.quantity.Volume;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.smarthome.core.library.unit.MetricPrefix;
@@ -67,7 +68,7 @@ public class CarNetBindingConstants {
 
     public static final String CHANNEL_GROUP_LOCATION = "location";
     public static final String CHANNEL_LOCATTION_GEO = "position";
-    public static final String CHANNEL_STORED_POS = "storedPosition";
+    // public static final String CHANNEL_STORED_POS = "storedPosition";
     public static final String CHANNEL_LOCATTION_TIME = "lastUpdate";
     public static final String CHANNEL_LOCATTION_PARK = "parkingTime";
 
@@ -154,7 +155,9 @@ public class CarNetBindingConstants {
 
     public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
     public static final Unit<Power> KWATT = MetricPrefix.KILO(SmartHomeUnits.WATT);
-    public static final Unit<Time> DAYS = Units.DAY;
+    public static final Unit<Time> QDAYS = Units.DAY;
+    public static final Unit<Time> QMINUTES = Units.MINUTE;
     public static final Unit<Dimensionless> PERCENT = SmartHomeUnits.PERCENT;
     public static final Unit<Temperature> DKELVIN = MetricPrefix.DECI(Units.KELVIN);
+    public static final Unit<Volume> DLITRE = MetricPrefix.DECI(Units.LITRE);
 }

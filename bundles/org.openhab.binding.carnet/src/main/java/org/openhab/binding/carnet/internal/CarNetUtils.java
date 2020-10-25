@@ -13,6 +13,9 @@
 package org.openhab.binding.carnet.internal;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -20,6 +23,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 import javax.measure.Unit;
+import javax.xml.bind.DatatypeConverter;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -131,6 +135,25 @@ public class CarNetUtils {
         } catch (DateTimeException e) {
             // Unable to convert device's timezone, use system one
             return getTimestamp();
+        }
+    }
+
+    public static String sha512(String pin, String challenge) throws CarNetException {
+        try {
+            MessageDigest hash = MessageDigest.getInstance("SHA-512");
+            byte[] pinBytes = DatatypeConverter.parseHexBinary(pin);
+            byte[] challengeBytes = DatatypeConverter.parseHexBinary(challenge);
+            ByteBuffer input = ByteBuffer.allocate(pinBytes.length + challengeBytes.length);
+            input.put(pinBytes);
+            input.put(challengeBytes);
+            byte[] digest = hash.digest(input.array());
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < digest.length; ++i) {
+                sb.append(Integer.toHexString((digest[i] & 0xFF) | 0x100).substring(1, 3));
+            }
+            return sb.toString().toUpperCase();
+        } catch (NoSuchAlgorithmException e) {
+            throw new CarNetException("sha512() failed", e);
         }
     }
 }
