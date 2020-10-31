@@ -104,7 +104,10 @@ public class CarNetUtils {
             return UnDefType.NULL;
         }
         BigDecimal bd = new BigDecimal(value.doubleValue());
-        return toQuantityType(bd.setScale(digits, BigDecimal.ROUND_HALF_UP), unit);
+        if (digits >= 1) {
+            bd = bd.setScale(digits, BigDecimal.ROUND_HALF_UP);
+        }
+        return toQuantityType(bd, unit);
     }
 
     public static State toQuantityType(@Nullable Number value, Unit<?> unit) {

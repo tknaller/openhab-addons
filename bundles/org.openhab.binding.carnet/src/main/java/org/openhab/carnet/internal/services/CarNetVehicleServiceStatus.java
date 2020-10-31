@@ -21,7 +21,6 @@ import java.util.Map;
 
 import javax.measure.IncommensurableException;
 import javax.measure.UnconvertibleException;
-import javax.measure.Unit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.smarthome.core.library.types.DecimalType;
@@ -78,7 +77,7 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
                             }
                         }
                     } else {
-                        logger.debug("{}: Unknown data field  {}.{}, value={}{}", thingId, data.id, field.id,
+                        logger.debug("{}: Unknown data field {}.{}, value={}{}", thingId, data.id, field.id,
                                 field.value, getString(field.unit));
                     }
                 } catch (RuntimeException e) {
@@ -156,7 +155,8 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
     }
 
     private boolean checkMaintenance(CNStatusField field, ChannelIdMapEntry definition) {
-        if (definition.symbolicName.contains("MAINT_ALARM") && !field.value.equals(String.valueOf(1))) {
+        if (definition.symbolicName.contains("MAINT_ALARM") && field.value.equals(String.valueOf(1))) {
+            // MAINT_ALARM_INSPECTION+MAINT_ALARM_OIL_CHANGE + MAINT_ALARM_OIL_MINIMUM
             logger.debug("{}: Maintenance required: {} has incorrect pressure", thingId, definition.symbolicName);
             return true;
         }
@@ -199,26 +199,25 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
         State state = UnDefType.UNDEF;
         String val = getString(field.value);
         if (!val.isEmpty()) {
+            double value = Double.parseDouble(val);
+            if (value < 0) {
+                value = value * -1.0; // no egative values
+            }
+            BigDecimal bd = new BigDecimal(value);
             if (definition.unit != null) {
-                Unit<?> toUnit = definition.unit;
-                Unit<?> fromUnit = toUnit;
-                ChannelIdMapEntry defFrom = idMapper.updateDefinition(field, definition);
-                double value = Double.parseDouble(val);
-                if (defFrom.unit != null) {
-                    fromUnit = defFrom.unit;
-                    if (!fromUnit.equals(toUnit)) {
-                        try {
-                            BigDecimal bd = new BigDecimal(fromUnit.getConverterToAny(toUnit).convert(value));
-                            value = bd.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                        } catch (UnconvertibleException | IncommensurableException e) {
-                            logger.debug("{}: Unable to covert value", thingId);
-                        }
+                ChannelIdMapEntry fromDef = definition;
+                fromDef = idMapper.updateDefinition(field, definition);
+                if ((fromDef.fromUnit != null) && !fromDef.fromUnit.equals(definition.unit)) {
+                    try {
+                        // Convert between units
+                        bd = new BigDecimal(fromDef.fromUnit.getConverterToAny(definition.unit).convert(value));
+                    } catch (UnconvertibleException | IncommensurableException e) {
+                        logger.debug("{}: Unable to covert value", thingId);
                     }
                 }
-                state = new QuantityType<>(value, toUnit);
-            } else {
-                state = new DecimalType(val);
             }
+            value = bd.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+            state = definition.unit != null ? new QuantityType<>(value, definition.unit) : new DecimalType(val);
         }
         logger.debug("{}: Updating channel {} with {}", thingId, channel.getUID().getId(), state);
         thingHandler.updateChannel(channel, state);
@@ -227,7 +226,9 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
     private void updateSwitchChannel(Channel channel, ChannelIdMapEntry definition, CNStatusField field) {
         int value = Integer.parseInt(getString(field.value));
         boolean on;
-        if (definition.symbolicName.toUpperCase().contains("STATE2_")) {
+        if (definition.symbolicName.toUpperCase().contains("STATE1_")) {
+            on = value == 1; // 1=active, 0=not active
+        } else if (definition.symbolicName.toUpperCase().contains("STATE2_")) {
             on = value == 2; // 3=open, 2=closed
         } else if (definition.symbolicName.toUpperCase().contains("STATE3_")
                 || definition.symbolicName.toUpperCase().contains("SAFETY_")) {

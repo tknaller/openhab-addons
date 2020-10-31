@@ -16,12 +16,14 @@ import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.*;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_CLIMATER;
 
+import java.math.BigDecimal;
 import java.util.Map;
+
+import javax.measure.IncommensurableException;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.smarthome.core.library.types.OnOffType;
-import org.eclipse.smarthome.core.library.types.QuantityType;
+import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus;
@@ -50,42 +52,47 @@ public class CarNetVehicleServiceClimater extends CarNetVehicleBaseService {
     @Override
     public boolean createChannels(Map<String, ChannelIdMapEntry> ch) throws CarNetException {
         CarNetClimaterStatus cs = api.getClimaterStatus();
-        if (cs != null) {
-            addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CLIMATER, ITEMT_SWITCH, null, false, false);
+        if ((cs != null) && (cs.status.climatisationStatusData != null)) {
             addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CLIMATER, ITEMT_SWITCH, null, false, false);
             addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_WINHEAT, ITEMT_SWITCH, null, false, false);
             addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_PREHEAT, ITEMT_SWITCH, null, false, false);
             addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_TARGET_TEMP, ITEMT_TEMP, null, false, false);
             addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_HEAT_SOURCE, ITEMT_STRING, null, true, true);
             addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_GEN_STATE, ITEMT_STRING, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_FL_STATE, ITEMT_SWITCH, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_FR_STATE, ITEMT_SWITCH, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_RL_STATE, ITEMT_SWITCH, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_RR_STATE, ITEMT_SWITCH, null, false, true);
+            addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_FL_STATE, ITEMT_SWITCH, null, true, true);
+            addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_FR_STATE, ITEMT_SWITCH, null, true, true);
+            addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_RL_STATE, ITEMT_SWITCH, null, true, true);
+            addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_RR_STATE, ITEMT_SWITCH, null, true, true);
             addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_MIRROR_HEAT, ITEMT_SWITCH, null, false, true);
             return true;
         }
         return false;
     }
 
-    public boolean lockDoors(OnOffType onOff) throws CarNetException {
-        api.lockDoor(onOff == OnOffType.ON);
-        return true;
-    }
-
     @Override
     public boolean serviceUpdate() throws CarNetException {
-        CarNetClimaterStatus cs = api.getClimaterStatus();
-        String group = CHANNEL_GROUP_CLIMATER;
-        CarNetClimaterStatusData sd = cs.status.climatisationStatusData;
-        updateChannel(group, CHANNEL_CLIMATER_TARGET_TEMP,
-                new QuantityType<>(getDouble(cs.settings.targetTemperature.content), DKELVIN));
-        updateChannel(group, CHANNEL_CLIMATER_HEAT_SOURCE, getStringType(cs.settings.heaterSource.content));
-        updateChannel(group, CHANNEL_CLIMATER_GEN_STATE, getStringType(sd.climatisationState.content));
-        updateZoneStates(sd.climatisationElementStates.zoneStates);
-        updateChannel(group, CHANNEL_CLIMATER_MIRROR_HEAT,
-                getOnOff(sd.climatisationElementStates.isMirrorHeatingActive.content));
-        return true;
+        try {
+            CarNetClimaterStatus cs = api.getClimaterStatus();
+            if ((cs != null) && (cs.status != null) && (cs.status.climatisationStatusData != null)) {
+                String group = CHANNEL_GROUP_CLIMATER;
+                CarNetClimaterStatusData sd = cs.status.climatisationStatusData;
+                // convert temp from dK to C
+                Double temp = getDouble(cs.settings.targetTemperature.content).doubleValue();
+                BigDecimal bd = new BigDecimal(DKELVIN.getConverterToAny(SIUnits.CELSIUS).convert(temp).doubleValue());
+                bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP);
+                updateChannel(group, CHANNEL_CLIMATER_TARGET_TEMP,
+                        toQuantityType(bd.doubleValue(), 1, SIUnits.CELSIUS));
+                updateChannel(group, CHANNEL_CLIMATER_HEAT_SOURCE, getStringType(cs.settings.heaterSource.content));
+                updateChannel(group, CHANNEL_CLIMATER_GEN_STATE, getStringType(sd.climatisationState.content));
+                updateZoneStates(sd.climatisationElementStates.zoneStates);
+                updateChannel(group, CHANNEL_CLIMATER_MIRROR_HEAT,
+                        getOnOff(sd.climatisationElementStates.isMirrorHeatingActive.content));
+                return true;
+            }
+        } catch (IncommensurableException e) {
+
+        }
+        return false;
     }
 
     private boolean updateZoneStates(@Nullable CarNetClimaterZoneStateList zoneList) {

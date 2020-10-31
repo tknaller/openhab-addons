@@ -68,9 +68,9 @@ public class CarNetBindingConstants {
 
     public static final String CHANNEL_GROUP_LOCATION = "location";
     public static final String CHANNEL_LOCATTION_GEO = "position";
-    // public static final String CHANNEL_STORED_POS = "storedPosition";
     public static final String CHANNEL_LOCATTION_TIME = "lastUpdate";
-    public static final String CHANNEL_LOCATTION_PARK = "parkingTime";
+    public static final String CHANNEL_PARK_LOCATION = "parkingPosition";
+    public static final String CHANNEL_PARK_TIME = "parkingTime";
 
     public static final String CHANNEL_GROUP_CLIMATER = "climater";
     public static final String CHANNEL_CLIMATER_TARGET_TEMP = "targetTemperature";

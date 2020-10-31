@@ -115,21 +115,29 @@
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.vehicleLocked.label</label>
 		<description>@text/channel-type.carnet.vehicleLocked.description</description>
+        <state readOnly="true">
+        </state>
 	</channel-type>
 	<channel-type id="maintenanceRequired">
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.maintenanceRequired.label</label>
 		<description>@text/channel-type.carnet.maintenanceRequired.description</description>
+        <state readOnly="true">
+        </state>
 	</channel-type>
 	<channel-type id="windowsClosed">
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.windowsClosed.label</label>
 		<description>@text/channel-type.carnet.windowsClosed.description</description>
+        <state readOnly="true">
+        </state>
 	</channel-type>
 	<channel-type id="tiresOk">
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.tiresOk.label</label>
 		<description>@text/channel-type.carnet.tiresOk.description</description>
+        <state readOnly="true">
+        </state>
 	</channel-type>
 
 	<!-- Group control -->
@@ -137,27 +145,5 @@
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.update.label</label>
 		<description>@text/channel-type.carnet.update.description</description>
-	</channel-type>
-
-	<!-- Group location -->
-	<channel-type id="position">
-		<item-type>Location</item-type>
-		<label>@text/channel-type.carnet.position.label</label>
-		<description>@text/channel-type.carnet.position.description</description>
-	</channel-type>
-	<channel-type id="storedPosition">
-		<item-type>Location</item-type>
-		<label>@text/channel-type.carnet.storedPosition.label</label>
-		<description>@text/channel-type.carnet.storedPosition.description</description>
-	</channel-type>
-	<channel-type id="lastUpdate">
-		<item-type>DateTime</item-type>
-		<label>@text/channel-type.carnet.lastUpdate.label</label>
-		<description>@text/channel-type.carnet.lastUpdate.description</description>
-	</channel-type>
-	<channel-type id="parkingTime">
-		<item-type>DateTime</item-type>
-		<label>@text/channel-type.carnet.parkingTime.label</label>
-		<description>@text/channel-type.carnet.parkingTime.description</description>
 	</channel-type>
 </thing:thing-descriptions>

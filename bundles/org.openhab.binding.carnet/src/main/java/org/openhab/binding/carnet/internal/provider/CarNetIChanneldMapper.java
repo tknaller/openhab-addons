@@ -32,6 +32,8 @@ import org.openhab.binding.carnet.internal.handler.CustomUnits;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link CarNetIChanneldMapper} maps status value IDs from the API to channel definitions.
@@ -43,6 +45,7 @@ import org.osgi.service.component.annotations.Reference;
 @NonNullByDefault
 @Component(service = CarNetIChanneldMapper.class)
 public class CarNetIChanneldMapper {
+    private final Logger logger = LoggerFactory.getLogger(CarNetIChanneldMapper.class);
     private final Map<String, ChannelIdMapEntry> map = new LinkedHashMap<>();
     private final CarNetTextResources resources;
 
@@ -53,50 +56,57 @@ public class CarNetIChanneldMapper {
         // Status
         add("KILOMETER_STATUS", "0x0101010002", "kilometerStatus", ITEMT_DISTANCE, CHANNEL_GROUP_GENERAL, KILOMETRE);
         add("TEMPERATURE_OUTSIDE", "0x0301020001", "tempOutside", ITEMT_TEMP, CHANNEL_GROUP_GENERAL, SIUnits.CELSIUS);
-        add("STATE2_PARKING_LIGHT", "0x0301010001", "parkingLight", ITEMT_SWITCH, CHANNEL_GROUP_GENERAL);
-        add("STATE3_PARKING_BRAKE", "0x0301030001", "parkingBrake", ITEMT_SWITCH, CHANNEL_GROUP_GENERAL);
+        add("STATE1_PARKING_LIGHT", "0x0301010001", "parkingLight", ITEMT_SWITCH, CHANNEL_GROUP_GENERAL);
+        add("STATE1_PARKING_BRAKE", "0x0301030001", "parkingBrake", ITEMT_SWITCH, CHANNEL_GROUP_GENERAL);
         add("POSITION_CONVERTIBLE_TOP", "0x030105000A", "positionConvertableTop", ITEMT_PERCENT);
         add("STATE3_SUN_ROOF_MOTOR_COVER", "0x030105000B", "roofMotorCoverState", ITEMT_SWITCH);
         add("POSITION_SUN_ROOF_MOTOR_COVER", "0x030105000C");
         add("STATE3_SUN_ROOF_REAR_MOTOR_COVER", "0x030105000D", "roofRearMotorCoverState", ITEMT_SWITCH);
         add("POSITION_SUN_ROOF_REAR_MOTOR_COVER", "0x030105000E");
         add("STATE3_SPOILER", "0x0301050011", "spoilerState", ITEMT_SWITCH);
-        add("POSITION_SPOILER", "0x0301050012", "spoilerPos", ITEMT_PERCENT);
-        add("STATE3_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_SWITCH);
+        add("POSITION_SPOILER", "0x0301050012");
+        add("STATE2_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_SWITCH);
         add("POSITION_SERVICE_FLAP", "0x0301050010");
+        add("CURRENT_SPEED", "0x0301030004", "currentSpeed", ITEMT_SPEED, CHANNEL_GROUP_STATUS,
+                SIUnits.KILOMETRE_PER_HOUR); // to be verified
+        add("BEM", "0x0301030003"); // what does BEM means?
 
         // Range
-        add("FUEL_LEVEL_PERCENT", "0x030103000A", "fuelPercentage", ITEMT_PERCENT, CHANNEL_GROUP_GENERAL, PERCENT);
-        add("TOTAL_RANGE", "0x0301030005", "totalRange", ITEMT_DISTANCE, CHANNEL_GROUP_GENERAL, KILOMETRE);
+        add("FUEL_LEVEL_PERCENT", "0x030103000A", "fuelPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE, PERCENT);
+        add("FUEL_METHOD", "0x030103000B", "fuelMethod", ITEMT_STRING, CHANNEL_GROUP_RANGE, null, true, true); // '0':'measured',
+        // '1':'calculated'
+        add("TOTAL_RANGE", "0x0301030005", "totalRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
         add("PRIMARY_RANGE", "0x0301030006", "primaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
-        add("PRIMARY_FUEL_TYPE", "0x0301030007", "primaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
+        add("PRIMARY_FUEL_TYPE", "0x0301030007", "primaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE, null, true,
+                true);
         add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
-        add("SECONDARY_DRIVE", "0x0301030009", "secondaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE);
+        add("SECONDARY_DRIVE", "0x0301030009", "secondaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE, null, true,
+                true);
         add("15CNG_LEVEL_IN_PERCENT", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE, PERCENT);
-        // add("CHARGING_LEVEL_PERCENT", "0x0301030002", "chargingLevel", ITEMT_PERCENT, CHANNEL_GROUP_RANGE, PERCENT);
-        add("CHARGING_LEVEL_PERCENT", "0x0301030002");
+        add("CHARGING_LEVEL_PERCENT", "0x0301030002", "chargingLevel", ITEMT_PERCENT, CHANNEL_GROUP_RANGE, PERCENT);
 
         // Maintenance
         add("MAINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
         add("MAINT_DIST_TO_INSPECTION", "0x0203010003", "distanceToInspection", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
                 KILOMETRE);
         add("MAINT_TIME_TO_INSPECTION", "0x0203010004", "timeToInspection", ITEMT_TIME, CHANNEL_GROUP_MAINT, QDAYS);
+        add("MAINT_INTERVAL_AD_BLUE_RANGE", "0x02040C0001", "distanceAdBlue", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
+                KILOMETRE);
         add("MAINT_ALARM_OIL_CHANGE", "0x0203010005", "oilWarningChange", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
         add("MAINT_ALARM_OIL_MINIMUM", "0x0204040002", "oilWarningLevel", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);
         add("MAINT_OIL_DIPSTICK_PERCENT", "0x0204040003", "oilPercentage", ITEMT_PERCENT, CHANNEL_GROUP_MAINT, PERCENT);
         add("MAINT_OIL_LEVEL_AMOUNT_IN_LITERS", "0x0204040001");
+        add("MAINT_OIL_LEVEL_DISPLAY", "0x0204040004");
         add("MAINT_DISTANCE_TO_OIL_CHANGE", "0x0203010001", "distanceOilChange", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
                 KILOMETRE);
         add("MAINT_OIL_TIME_TO_CHANGE", "0x0203010002", "intervalOilChange", ITEMT_TIME, CHANNEL_GROUP_MAINT, QDAYS);
-        add("MAINT_INTERVAL_AD_BLUE_RANGE", "0x02040C0001", "distanceAdBlue", ITEMT_DISTANCE, CHANNEL_GROUP_MAINT,
-                KILOMETRE);
         add("MAINT_MONTHLY_MILEAGE", "0x0203010007", "monthlyMilage", ITEMT_DISTANCE, CHANNEL_GROUP_GENERAL, KILOMETRE);
 
         // Doors/trunk
         add("STATE3_CONVERTABLE_TOP", "0x0301050009", "covertableTopState", ITEMT_NUMBER, CHANNEL_GROUP_DOORS);
         add("STATE3_TRUNK_LID", "0x030104000E", "trunkLidState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
         add("LOCK2_TRUNK_LID", "0x030104000D", "trunkLidLocked", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
-        add("SAFETY_TRUNK_LID", "0x030104000F", "trunkLidState", ITEMT_SWITCH);
+        add("SAFETY_TRUNK_LID", "0x030104000F", "trunkLidSafety", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
         add("STATE3_HOOD", "0x0301040011", "hoodState", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
         add("LOCK3_HOOD", "0x0301040010", "hoodLocked", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
         add("SAFETY_HOOD", "0x0301040012", "hoodSafety", ITEMT_SWITCH, CHANNEL_GROUP_DOORS);
@@ -155,6 +165,7 @@ public class CarNetIChanneldMapper {
 
         public boolean advanced = false;
         public boolean readOnly = true;
+        public @Nullable Unit<?> fromUnit;
         public @Nullable Unit<?> unit;
         public Optional<Integer> min = Optional.empty();
         public Optional<Integer> max = Optional.empty();
@@ -181,6 +192,10 @@ public class CarNetIChanneldMapper {
             return getChannelAttribute("advanced");
         }
 
+        public String getReadOnly() {
+            return getChannelAttribute("readonly");
+        }
+
         public String getChannelAttribute(String attribute) {
             String key = "channel-type.carnet." + channelName + "." + attribute;
             String value = resources.getText(key);
@@ -202,51 +217,67 @@ public class CarNetIChanneldMapper {
     }
 
     public ChannelIdMapEntry updateDefinition(CNStatusField field, ChannelIdMapEntry definition) {
-        if (gs(field.unit).contains("%")) {
-            definition.itemType = ITEMT_PERCENT;
-            definition.unit = SmartHomeUnits.PERCENT;
-        } else if (gs(field.unit).equalsIgnoreCase("d")) {
-            definition.itemType = ITEMT_TIME;
-            definition.unit = QDAYS;
-        } else if (gs(field.unit).equalsIgnoreCase("min")) {
-            definition.itemType = ITEMT_TIME;
-            definition.unit = QMINUTES;
-        } else if (gs(field.unit).equalsIgnoreCase("l")) {
-            definition.itemType = ITEMT_VOLUME;
-            definition.unit = SmartHomeUnits.LITRE;
-        } else if (gs(field.unit).equalsIgnoreCase("gal")) {
-            definition.itemType = ITEMT_VOLUME;
-            definition.unit = CustomUnits.GALLON;
-        } else if (gs(field.unit).equalsIgnoreCase("dK")) {
-            definition.itemType = ITEMT_TEMP;
-            definition.unit = DKELVIN;
-        } else if (gs(field.unit).equalsIgnoreCase("C")) {
-            definition.itemType = ITEMT_TEMP;
-            definition.unit = SIUnits.CELSIUS;
-        } else if (gs(field.unit).equalsIgnoreCase("F")) {
-            definition.itemType = ITEMT_TEMP;
-            definition.unit = ImperialUnits.FAHRENHEIT;
-        } else if (gs(field.unit).equalsIgnoreCase("km")) {
-            definition.itemType = ITEMT_DISTANCE;
-            definition.unit = KILOMETRE;
-        } else if (gs(field.unit).equalsIgnoreCase("mi")) {
-            definition.itemType = ITEMT_DISTANCE;
-            definition.unit = ImperialUnits.MILE;
-        } else if (gs(field.unit).equalsIgnoreCase("in")) {
-            definition.itemType = ITEMT_DISTANCE;
-            definition.unit = ImperialUnits.INCH;
-        } else if (gs(field.unit).equalsIgnoreCase("km/h")) {
-            definition.itemType = ITEMT_SPEED;
-            definition.unit = SIUnits.KILOMETRE_PER_HOUR;
-        } else if (gs(field.unit).equalsIgnoreCase("mph")) {
-            definition.itemType = ITEMT_SPEED;
-            definition.unit = ImperialUnits.MILES_PER_HOUR;
+        String itemType = "";
+        Unit<?> unit = null;
+
+        String fieldUnit = gs(field.unit);
+        if (fieldUnit.isEmpty() && fieldUnit.equalsIgnoreCase("null")) {
+            return definition;
+        }
+        if (fieldUnit.contains("%")) {
+            itemType = ITEMT_PERCENT;
+            unit = SmartHomeUnits.PERCENT;
+        } else if (fieldUnit.equalsIgnoreCase("d")) {
+            itemType = ITEMT_TIME;
+            unit = QDAYS;
+        } else if (fieldUnit.equalsIgnoreCase("min")) {
+            itemType = ITEMT_TIME;
+            unit = QMINUTES;
+        } else if (fieldUnit.equalsIgnoreCase("l")) {
+            itemType = ITEMT_VOLUME;
+            unit = SmartHomeUnits.LITRE;
+        } else if (fieldUnit.equalsIgnoreCase("gal")) {
+            itemType = ITEMT_VOLUME;
+            unit = CustomUnits.GALLON;
+        } else if (fieldUnit.equalsIgnoreCase("dK")) {
+            itemType = ITEMT_TEMP;
+            unit = DKELVIN;
+        } else if (fieldUnit.equalsIgnoreCase("C")) {
+            itemType = ITEMT_TEMP;
+            unit = SIUnits.CELSIUS;
+        } else if (fieldUnit.equalsIgnoreCase("F")) {
+            itemType = ITEMT_TEMP;
+            unit = ImperialUnits.FAHRENHEIT;
+        } else if (fieldUnit.equalsIgnoreCase("km")) {
+            itemType = ITEMT_DISTANCE;
+            unit = KILOMETRE;
+        } else if (fieldUnit.equalsIgnoreCase("mi")) {
+            itemType = ITEMT_DISTANCE;
+            unit = ImperialUnits.MILE;
+        } else if (fieldUnit.equalsIgnoreCase("in")) {
+            itemType = ITEMT_DISTANCE;
+            unit = ImperialUnits.INCH;
+        } else if (fieldUnit.equalsIgnoreCase("km/h")) {
+            itemType = ITEMT_SPEED;
+            unit = SIUnits.KILOMETRE_PER_HOUR;
+        } else if (fieldUnit.equalsIgnoreCase("mph") || fieldUnit.equalsIgnoreCase("mi/h")) {
+            itemType = ITEMT_SPEED;
+            unit = ImperialUnits.MILES_PER_HOUR;
+        } else {
+            logger.debug("Field unit unknown: {}", fieldUnit);
+        }
+
+        if (unit != null) {
+            definition.fromUnit = unit; // needs conversion
+        }
+        if (!itemType.isEmpty() && !definition.itemType.equals(itemType)) {
+            logger.debug("itemType for channel {} differs from sensor value {}", definition.itemType, itemType);
         }
         return definition;
     }
 
     public ChannelIdMapEntry add(String name, String id, String channel, String itemType, String group,
-            @Nullable Unit<?> unit) {
+            @Nullable Unit<?> unit, boolean advanced, boolean readOnly) {
         ChannelIdMapEntry entry = new ChannelIdMapEntry(resources);
         entry.id = id;
         entry.symbolicName = name;
@@ -255,12 +286,22 @@ public class CarNetIChanneldMapper {
         entry.itemType = itemType;
         if (itemType.equals(ITEMT_PERCENT) && (unit == null)) {
             entry.unit = SmartHomeUnits.PERCENT;
+        } else {
+            entry.unit = unit;
         }
-        entry.unit = unit;
         if (!map.containsKey(id)) {
             map.put(id, entry);
         }
+        entry.advanced = advanced;
+        entry.readOnly = readOnly;
         return entry;
+    }
+
+    public ChannelIdMapEntry add(String name, String id, String channel, String itemType, String group,
+            @Nullable Unit<?> unit) {
+        boolean advanced = group.equals(CHANNEL_GROUP_STATUS) || group.equals(CHANNEL_GROUP_WINDOWS)
+                || group.equals(CHANNEL_GROUP_DOORS) || group.equals(CHANNEL_GROUP_TIRES);
+        return add(name, id, channel, itemType, group, unit, advanced, true);
     }
 
     public ChannelIdMapEntry add(String name, String id, String channelName, String itemType, String groupName) {
@@ -268,16 +309,16 @@ public class CarNetIChanneldMapper {
     }
 
     public ChannelIdMapEntry add(String name, String id, String channelName, String itemType) {
-        return add(name, id, channelName, itemType, CHANNEL_GROUP_STATUS, null);
+        return add(name, id, channelName, itemType, CHANNEL_GROUP_STATUS, null, false, true);
     }
 
     public ChannelIdMapEntry add(String name, String id) {
-        return add(name, id, "", "", CHANNEL_GROUP_STATUS, null);
+        return add(name, id, "", "", CHANNEL_GROUP_STATUS, null, false, true);
     }
 
     public ChannelIdMapEntry add(String group, String channel, String itemType, @Nullable Unit<?> unit,
             boolean advanced, boolean readOnly) {
-        return add(mkChannelId(group, channel), channel, channel, itemType, group, unit);
+        return add(mkChannelId(group, channel), channel, channel, itemType, group, unit, advanced, readOnly);
     }
 
     private static String gs(@Nullable String s) {

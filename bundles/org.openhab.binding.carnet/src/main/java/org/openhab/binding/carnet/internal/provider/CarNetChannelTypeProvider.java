@@ -12,8 +12,6 @@
  */
 package org.openhab.binding.carnet.internal.provider;
 
-import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -70,9 +68,7 @@ public class CarNetChannelTypeProvider implements ChannelTypeProvider {
             String label = channelDef.getLabel();
             String description = channelDef.getDescription();
             String attr = channelDef.getAdvanced();
-            boolean advanced = group.equals(CHANNEL_GROUP_STATUS) || group.equals(CHANNEL_GROUP_RANGE)
-                    || group.equals(CHANNEL_GROUP_WINDOWS) || group.equals(CHANNEL_GROUP_DOORS)
-                    || group.equals(CHANNEL_GROUP_TIRES);
+            boolean advanced = channelDef.advanced;
             if (!attr.isEmpty()) {
                 advanced = Boolean.valueOf(attr);
             }

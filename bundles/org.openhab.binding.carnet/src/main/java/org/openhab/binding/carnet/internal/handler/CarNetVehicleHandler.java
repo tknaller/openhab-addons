@@ -230,6 +230,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 for (Map.Entry<String, CarNetVehicleBaseService> s : services.entrySet()) {
                     s.getValue().createChannels(channels);
                 }
+                logger.debug("{}: Creating {} channels", thingId, channels.size());
                 createChannels(new ArrayList<>(channels.values()));
                 channelsCreated = true;
             }
