@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.measure.Unit;
 
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.http.HttpStatus;
@@ -329,6 +328,11 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         for (Map.Entry<String, CarNetVehicleBaseService> s : services.entrySet()) {
             updated |= s.getValue().update();
         }
+
+        if (updated) {
+            updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_UPDATED, getTimestamp());
+
+        }
         return updated;
     }
 
@@ -413,9 +417,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private String getApiStatus(String errorMessage, String errorClass) {
         if (errorMessage.contains(errorClass)) {
             // extract the error code like VSR.security.9007
-            String key = API_STATUS_MSG_PREFIX + StringUtils
-                    .substringBefore(StringUtils.substringAfterLast(errorMessage, API_STATUS_CLASS_SECURUTY + "."), ")")
-                    .trim();
+            String key = API_STATUS_MSG_PREFIX
+                    + substringBefore(substringAfterLast(errorMessage, API_STATUS_CLASS_SECURUTY + "."), ")").trim();
             return resources.get(key);
         }
         return "";

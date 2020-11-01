@@ -61,7 +61,7 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     /**
      * shared instance of HTTP client for asynchronous calls
      */
-    private @Nullable HttpClient httpClient;
+    private HttpClient httpClient = new HttpClient();
     private CarNetApi api = new CarNetApi();
 
     @Activate
@@ -77,10 +77,8 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
                     .filter(cipher -> !cipher.equals("^TLS_RSA_.*$")).toArray(String[]::new);
             ssl.setExcludeCipherSuites(excludedCiphersWithoutTlsRsaExclusion);
             this.httpClient = new HttpClient(ssl);
+            this.httpClient.start();
             logger.debug("{}", httpClient.dump());
-            if (this.httpClient != null) {
-                this.httpClient.start();
-            }
         } catch (Exception e) {
             logger.warn("Unable to start HttpClient!");
         }

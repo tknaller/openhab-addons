@@ -20,7 +20,6 @@ import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
@@ -78,7 +77,7 @@ public class CarNetVehicleServiceRLU extends CarNetVehicleBaseService {
                 } else {
                     CarNetRluLockAction entry = hist.actions.action.get(i);
                     String group = CHANNEL_GROUP_RLUHIST + l;
-                    updateChannel(group, CHANNEL_RLUHIST_TS, new DateTimeType(getString(entry.timestamp)));
+                    updateChannel(group, CHANNEL_RLUHIST_TS, getDateTime(getString(entry.timestamp)));
                     updateChannel(group, CHANNEL_RLUHIST_OP, getStringType(entry.operation));
                     updateChannel(group, CHANNEL_RLUHIST_RES, getStringType(entry.rluResult));
                 }

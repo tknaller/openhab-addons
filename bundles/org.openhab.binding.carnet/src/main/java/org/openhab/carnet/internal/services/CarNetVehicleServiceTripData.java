@@ -16,11 +16,12 @@ import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.*;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_TRIPDATA;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
@@ -77,6 +78,13 @@ public class CarNetVehicleServiceTripData extends CarNetVehicleBaseService {
         boolean updated = false;
         CarNetTripData std = api.getTripData(type);
         if (std != null) {
+            Collections.sort(std.tripDataList.tripData, Collections.reverseOrder(new Comparator<CarNetTripDataEntry>() {
+                @Override
+                public int compare(CarNetTripDataEntry a, CarNetTripDataEntry b) {
+                    return a.timestamp.compareTo(b.timestamp);
+                }
+            }));
+
             CarNetVehicleConfiguration config = getConfig();
             boolean shortTerm = type.contains("short");
             int numTrips = shortTerm ? config.numTripShort : config.numTripLong;
@@ -91,8 +99,7 @@ public class CarNetVehicleServiceTripData extends CarNetVehicleBaseService {
                     CarNetTripDataEntry entry = std.tripDataList.tripData.get(i);
                     if (entry != null) {
                         double fuel = getDouble(entry.averageFuelConsumption) / 10.0; // convert dL to l
-                        updated |= updateChannel(group, CHANNEL_TRIP_TIME,
-                                new DateTimeType(getString(entry.timestamp)));
+                        updated |= updateChannel(group, CHANNEL_TRIP_TIME, getDateTime(getString(entry.timestamp)));
                         updated |= updateChannel(group, CHANNEL_TRIP_AVG_FUELCON, new DecimalType(fuel), 1,
                                 SmartHomeUnits.LITRE);
                         updated |= updateChannel(group, CHANNEL_TRIP_AVG_ELCON,

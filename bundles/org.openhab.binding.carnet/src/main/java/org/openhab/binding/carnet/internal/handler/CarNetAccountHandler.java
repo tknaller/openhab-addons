@@ -22,7 +22,6 @@ import java.util.TreeMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.thing.Bridge;
@@ -106,7 +105,6 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         Map<String, String> properties = new TreeMap<String, String>();
 
         config = getConfigAs(CarNetAccountConfiguration.class);
-        Validate.notNull(api, "API not initialized");
         api.setConfig(config);
         api.initialize();
         refreshProperties(properties);

@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.carnet.internal.api;
 
+import static org.openhab.binding.carnet.internal.CarNetUtils.*;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.UTF_8;
 
 import java.io.UnsupportedEncodingException;
@@ -22,7 +23,6 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.http.HttpHeader;
@@ -56,8 +56,8 @@ public class CarNetHttpClient {
     public static String getUrlParm(String input, String parameter) {
         String pattern = "&" + parameter + "=";
         if (input.contains(pattern)) {
-            String res = StringUtils.substringAfter(input, pattern);
-            return res.contains("&") ? StringUtils.substringBefore(res, "&") : res;
+            String res = substringAfter(input, pattern);
+            return res.contains("&") ? substringBefore(res, "&") : res;
         }
         return "";
     }

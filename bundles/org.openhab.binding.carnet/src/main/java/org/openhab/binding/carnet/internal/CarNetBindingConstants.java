@@ -52,7 +52,7 @@ public class CarNetBindingConstants {
 
     // List of all ChannelGroups and Channels
     public static final String CHANNEL_GROUP_GENERAL = "general";
-    public static final String CHANNEL_GENERAL_VIN = "vin";
+    public static final String CHANNEL_GENERAL_UPDATED = "lastUpdate";
     public static final String CHANNEL_GENERAL_LOCKED = "vehicleLocked";
     public static final String CHANNEL_GENERAL_MAINTREQ = "maintenanceRequired";
     public static final String CHANNEL_GENERAL_WINCLOSED = "windowsClosed";
@@ -68,7 +68,7 @@ public class CarNetBindingConstants {
 
     public static final String CHANNEL_GROUP_LOCATION = "location";
     public static final String CHANNEL_LOCATTION_GEO = "position";
-    public static final String CHANNEL_LOCATTION_TIME = "lastUpdate";
+    public static final String CHANNEL_LOCATTION_TIME = "positionLastUpdate";
     public static final String CHANNEL_PARK_LOCATION = "parkingPosition";
     public static final String CHANNEL_PARK_TIME = "parkingTime";
 

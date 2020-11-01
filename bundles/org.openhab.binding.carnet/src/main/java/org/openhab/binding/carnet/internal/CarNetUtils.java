@@ -21,6 +21,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 import javax.measure.Unit;
 import javax.xml.bind.DatatypeConverter;
@@ -44,12 +46,62 @@ import org.eclipse.smarthome.core.types.UnDefType;
  */
 @NonNullByDefault
 public class CarNetUtils {
-    public static String mkChannelId(String group, String channel) {
-        return group + "#" + channel;
-    }
-
     public static String getString(@Nullable String value) {
         return value != null ? value : "";
+    }
+
+    public static String substringBefore(@Nullable String string, String pattern) {
+        if (string != null) {
+            int pos = string.indexOf(pattern);
+            if (pos > 0) {
+                return string.substring(0, pos);
+            }
+        }
+        return "";
+    }
+
+    public static String substringBeforeLast(@Nullable String string, String pattern) {
+        if (string != null) {
+            int pos = string.lastIndexOf(pattern);
+            if (pos > 0) {
+                return string.substring(0, pos);
+            }
+        }
+        return "";
+    }
+
+    public static String substringAfter(@Nullable String string, String pattern) {
+        if (string != null) {
+            int pos = string.indexOf(pattern);
+            if (pos != -1) {
+                return string.substring(pos + pattern.length());
+            }
+        }
+        return "";
+    }
+
+    public static String substringAfterLast(@Nullable String string, String pattern) {
+        if (string != null) {
+            int pos = string.lastIndexOf(pattern);
+            if (pos != -1) {
+                return string.substring(pos + pattern.length());
+            }
+        }
+        return "";
+    }
+
+    public static String substringBetween(@Nullable String string, String begin, String end) {
+        if (string != null) {
+            int s = string.indexOf(begin);
+            if (s != -1) {
+                // The end tag might be included before the start tag, e.g.
+                // when using "http://" and ":" to get the IP from http://192.168.1.1:8081/xxx
+                // therefore make it 2 steps
+                String result = string.substring(s + begin.length());
+                return substringBefore(result, end);
+            }
+        }
+        return "";
     }
 
     public static String getMessage(Exception e) {
@@ -141,6 +193,24 @@ public class CarNetUtils {
         }
     }
 
+    public static State getDateTime(String timestamp) {
+        /*
+         * ZonedDateTime gmtTime = LocalDateTime.parse(timestamp, DateTimeFormatter.ofPattern("yyyy-MM-ddTHH:mm:ssZ"))
+         * .atZone(ZoneId.of("GMT"));
+         * LocalDateTime localTime = gmtTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+         * ZonedDateTime zdt = localTime.atZone(ZoneId.systemDefault());
+         * return new DateTimeType(zdt);
+         *
+         * return new DateTimeType(timestamp);
+         */
+        try {
+            Date date = Date.from(Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestamp)));
+            return new DateTimeType(ZonedDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault()));
+        } catch (DateTimeException e) {
+            return UnDefType.UNDEF;
+        }
+    }
+
     public static String sha512(String pin, String challenge) throws CarNetException {
         try {
             MessageDigest hash = MessageDigest.getInstance("SHA-512");
@@ -158,5 +228,9 @@ public class CarNetUtils {
         } catch (NoSuchAlgorithmException e) {
             throw new CarNetException("sha512() failed", e);
         }
+    }
+
+    public static String mkChannelId(String group, String channel) {
+        return group + "#" + channel;
     }
 }

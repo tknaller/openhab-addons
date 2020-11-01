@@ -39,6 +39,7 @@
 		<label>@text/thing-type.carnet.vehicle.group.general.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.general.description</description>
 		<channels>
+			<channel id="lastUpdate" typeId="lastUpdate"/>
 			<channel id="vehicleLocked" typeId="vehicleLocked"/>
 			<channel id="maintenanceRequired" typeId="maintenanceRequired"/>
 			<channel id="windowsClosed" typeId="windowsClosed"/>
@@ -58,12 +59,13 @@
 		<label>@text/thing-type.carnet.vehicle.group.status.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.status.description</description>
 	</channel-group-type>
+
 	<channel-group-type id="location">
 		<label>@text/thing-type.carnet.vehicle.group.location.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.location.description</description>
 		<channels>
 			<channel id="position" typeId="position"/>
-			<channel id="lastUpdate" typeId="lastUpdate"/>
+			<channel id="positionUpdate" typeId="positionUpdate"/>
 			<channel id="parkingTime" typeId="parkingTime"/>
 		</channels>
 	</channel-group-type>
@@ -115,29 +117,29 @@
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.vehicleLocked.label</label>
 		<description>@text/channel-type.carnet.vehicleLocked.description</description>
-        <state readOnly="true">
-        </state>
+		<state readOnly="true">
+		</state>
 	</channel-type>
 	<channel-type id="maintenanceRequired">
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.maintenanceRequired.label</label>
 		<description>@text/channel-type.carnet.maintenanceRequired.description</description>
-        <state readOnly="true">
-        </state>
+		<state readOnly="true">
+		</state>
 	</channel-type>
 	<channel-type id="windowsClosed">
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.windowsClosed.label</label>
 		<description>@text/channel-type.carnet.windowsClosed.description</description>
-        <state readOnly="true">
-        </state>
+		<state readOnly="true">
+		</state>
 	</channel-type>
 	<channel-type id="tiresOk">
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.tiresOk.label</label>
 		<description>@text/channel-type.carnet.tiresOk.description</description>
-        <state readOnly="true">
-        </state>
+		<state readOnly="true">
+		</state>
 	</channel-type>
 
 	<!-- Group control -->

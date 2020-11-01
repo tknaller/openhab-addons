@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.measure.IncommensurableException;
 import javax.measure.UnconvertibleException;
+import javax.measure.Unit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.smarthome.core.library.types.DecimalType;
@@ -217,7 +218,12 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
                 }
             }
             value = bd.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-            state = definition.unit != null ? new QuantityType<>(value, definition.unit) : new DecimalType(val);
+            Unit<?> unit = definition.unit;
+            if (unit != null) {
+                state = new QuantityType<>(value, unit);
+            } else {
+                state = new DecimalType(val);
+            }
         }
         logger.debug("{}: Updating channel {} with {}", thingId, channel.getUID().getId(), state);
         thingHandler.updateChannel(channel, state);

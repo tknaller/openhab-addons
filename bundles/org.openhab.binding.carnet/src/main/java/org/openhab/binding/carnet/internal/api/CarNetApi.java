@@ -13,7 +13,7 @@
 package org.openhab.binding.carnet.internal.api;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_REQUEST_TIMEOUT;
-import static org.openhab.binding.carnet.internal.CarNetUtils.sha512;
+import static org.openhab.binding.carnet.internal.CarNetUtils.*;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 import static org.openhab.binding.carnet.internal.api.CarNetHttpClient.*;
 
@@ -39,8 +39,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
@@ -97,7 +95,6 @@ public class CarNetApi {
         CarNetVehicleConfiguration vehicle = new CarNetVehicleConfiguration();
     }
 
-    @NonNullByDefault
     private class CarNetPendingRequest {
         public String vin = "";
         public String service = "";
@@ -152,9 +149,8 @@ public class CarNetApi {
     public CarNetApi() {
     }
 
-    public CarNetApi(@Nullable HttpClient httpClient) {
+    public CarNetApi(HttpClient httpClient) {
         logger.debug("Initializing CarNet API");
-        Validate.notNull(httpClient);
         this.httpClient = httpClient;
         this.httpClient.setFollowRedirects(true);
     }
@@ -306,9 +302,9 @@ public class CarNetApi {
             }
             String html = httpGet(url, headers);
             url = getRedirect(); // Signin URL
-            String csrf = StringUtils.substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
-            String relayState = StringUtils.substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
-            String hmac = StringUtils.substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
+            String csrf = substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
+            String relayState = substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
+            String hmac = substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
 
             // Authenticate: Username
             logger.trace("{}: OAuth input: User", config.vehicle.vin);
@@ -323,9 +319,9 @@ public class CarNetApi {
             logger.trace("{}: OAuth input: Password", config.vehicle.vin);
             url = CNAPI_OAUTH_BASE_URL + getRedirect(); // Signin URL
             html = httpGet(url, headers);
-            csrf = StringUtils.substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
-            relayState = StringUtils.substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
-            hmac = StringUtils.substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
+            csrf = substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
+            relayState = substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
+            hmac = substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
 
             logger.trace("{}: OAuth input: Authenticate", config.vehicle.vin);
             url = CNAPI_OAUTH_BASE_URL + "/signin-service/v1/" + clientId + "/login/authenticate";
@@ -487,8 +483,7 @@ public class CarNetApi {
             Map<String, String> headers = fillActionHeaders("", createVwToken());
             String json = httpGet(url, headers);
             CarNetHomeRegion region = gson.fromJson(json, CarNetHomeRegion.class);
-            config.vehicle.homeRegionUrl = StringUtils.substringBefore(region.homeRegion.baseUri.content, "/api")
-                    + "/fs-car/";
+            config.vehicle.homeRegionUrl = substringBefore(region.homeRegion.baseUri.content, "/api") + "/fs-car/";
             return config.vehicle.homeRegionUrl;
         } catch (CarNetException e) {
             logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
@@ -575,21 +570,18 @@ public class CarNetApi {
         createBrandToken();
         String json = httpGet(CNAPI_URI_VEHICLE_LIST);
         CarNetVehicleList vehiceList = gson.fromJson(json, CarNetVehicleList.class);
-        Validate.notNull(vehiceList, "Unable to get vehicle list!");
         return vehiceList;
     }
 
     public CarNetVehicleDetails getVehicleDetails(String vin) throws CarNetException {
         String json = httpGet(CNAPI_URI_VEHICLE_DETAILS, vin);
         CarNetVehicleDetails details = gson.fromJson(json, CarNetVehicleDetails.class);
-        Validate.notNull(details, "Unable to get vehicle details!");
         return details;
     }
 
     public CarNetVehicleStatus getVehicleStatus() throws CarNetException {
         String json = httpGet(CNAPI_URI_VEHICLE_STATUS);
         CarNetVehicleStatus status = gson.fromJson(json, CarNetVehicleStatus.class);
-        Validate.notNull(status, "Unable to get vehicle details!");
         return status;
     }
 

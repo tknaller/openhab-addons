@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
@@ -52,7 +51,6 @@ public class CarNetDiscoveryService extends AbstractDiscoveryService implements 
 
     public CarNetDiscoveryService(CarNetAccountHandler bridgeHandler, Bundle bundle) {
         super(SUPPORTED_THING_TYPES_UIDS, TIMEOUT);
-        Validate.notNull(bridgeHandler);
         this.accountHandler = bridgeHandler;
         this.bridgeUID = bridgeHandler.getThing().getUID();
     }

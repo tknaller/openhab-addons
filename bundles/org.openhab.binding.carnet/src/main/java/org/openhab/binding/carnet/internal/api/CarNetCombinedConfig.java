@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.carnet.internal.api;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.carnet.internal.config.CarNetAccountConfiguration;
 import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
 
@@ -20,6 +21,7 @@ import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
  *
  * @author Markus Michels - Initial contribution
  */
+@NonNullByDefault
 public class CarNetCombinedConfig {
     public CarNetAccountConfiguration account = new CarNetAccountConfiguration();
     public CarNetVehicleConfiguration vehicle = new CarNetVehicleConfiguration();
