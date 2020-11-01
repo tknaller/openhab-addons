@@ -221,7 +221,7 @@ public class CarNetIChanneldMapper {
         Unit<?> unit = null;
 
         String fieldUnit = gs(field.unit);
-        if (fieldUnit.isEmpty() && fieldUnit.equalsIgnoreCase("null")) {
+        if (fieldUnit.isEmpty() || fieldUnit.equalsIgnoreCase("null")) {
             return definition;
         }
         if (fieldUnit.contains("%")) {

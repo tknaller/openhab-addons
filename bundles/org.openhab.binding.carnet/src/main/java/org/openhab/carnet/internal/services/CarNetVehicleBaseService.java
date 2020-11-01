@@ -20,6 +20,7 @@ import javax.measure.Unit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
@@ -45,6 +46,7 @@ public class CarNetVehicleBaseService {
     protected final CarNetIChanneldMapper idMapper;
     protected final String thingId;
     protected String serviceId = "";
+    protected boolean enabled = true;
 
     public CarNetVehicleBaseService(CarNetVehicleHandler thingHandler, CarNetApi api) {
         this.thingHandler = thingHandler;
@@ -56,19 +58,34 @@ public class CarNetVehicleBaseService {
     public void initialize() {
     }
 
+    public String getServiceId() {
+        return serviceId;
+    }
+
+    // will be overload by service
     public boolean createChannels(Map<String, ChannelIdMapEntry> ch) throws CarNetException {
         return false;
     }
 
     public boolean update() throws CarNetException {
         try {
-            serviceUpdate();
+            if (!enabled) {
+                return false;
+            }
+            return serviceUpdate();
         } catch (CarNetException e) {
-
+            int httpCode = e.getApiResult().httpCode;
+            if (httpCode == HttpStatus.FORBIDDEN_403) {
+                enabled = false;
+                logger.debug("Service not available!");
+            } else if (httpCode == HttpStatus.NO_CONTENT_204) {
+                logger.debug("Service return NO_CONTENT (204)");
+            }
         }
         return false;
     }
 
+    // will be overload by service
     public boolean serviceUpdate() throws CarNetException {
         return false;
     }
@@ -81,10 +98,6 @@ public class CarNetVehicleBaseService {
             return true;
         }
         return false;
-    }
-
-    public String getServiceId() {
-        return serviceId;
     }
 
     protected boolean updateChannel(String group, String channel, State value) {

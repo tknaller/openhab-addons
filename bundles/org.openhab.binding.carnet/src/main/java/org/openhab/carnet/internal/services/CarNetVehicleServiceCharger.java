@@ -49,7 +49,6 @@ public class CarNetVehicleServiceCharger extends CarNetVehicleBaseService {
     public boolean createChannels(Map<String, ChannelIdMapEntry> ch) throws CarNetException {
         CarNetChargerStatus cs = api.getChargerStatus();
         if (cs != null) {
-            addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CHARGER, ITEMT_SWITCH, null, false, false);
             // addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CURRENT, ITEMT_NUMBER, null, true, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_STATUS, ITEMT_STRING, null, false, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PWR_STATE, ITEMT_STRING, null, false, true);

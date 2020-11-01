@@ -144,6 +144,8 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
 
         // Update aggregated status
         thingHandler.updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_LOCKED,
+                vehicleLocked ? OnOffType.ON : OnOffType.OFF); // Do we need this channel?
+        thingHandler.updateChannel(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_LOCK,
                 vehicleLocked ? OnOffType.ON : OnOffType.OFF);
         thingHandler.updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_MAINTREQ,
                 maintenanceRequired ? OnOffType.ON : OnOffType.OFF);

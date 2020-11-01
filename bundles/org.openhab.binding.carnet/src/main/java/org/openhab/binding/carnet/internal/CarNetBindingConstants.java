@@ -63,7 +63,6 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_CONTROL_CLIMATER = "climater";
     public static final String CHANNEL_CONTROL_WINHEAT = "windowHeat";
     public static final String CHANNEL_CONTROL_PREHEAT = "preHeater";
-    public static final String CHANNEL_CONTROL_CHARGER = "charger";
     public static final String CHANNEL_CONTROL_UPDATE = "update";
 
     public static final String CHANNEL_GROUP_LOCATION = "location";

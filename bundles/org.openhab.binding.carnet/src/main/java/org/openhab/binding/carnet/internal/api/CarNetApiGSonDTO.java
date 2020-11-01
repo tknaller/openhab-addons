@@ -90,6 +90,27 @@ public class CarNetApiGSonDTO {
         public Boolean content;
     }
 
+    public static class CarNetOidcConfig {
+        // OpenID Connect Configuration
+        public String issuer;
+        public String authorization_endpoint;
+        public String token_endpoint;
+        public String revocation_endpoint;
+        public String end_session_endpoint;
+        public String jwks_uri;
+        public String userinfo_endpoint;
+        public String[] response_types_supported;
+        public String[] subject_types_supported;
+        public String[] id_token_signing_alg_values_supported;
+        public String[] code_challenge_methods_supported;
+        public String[] scopes_supported;
+        public String[] claims_supported;
+        public String[] ui_locales_supported;
+        public String[] grant_types_supported;
+        public String[] acr_values_supported;
+        public String[] token_endpoint_auth_methods_supported;
+    }
+
     public static class CarNetHomeRegion {
         public class CNHomeRegion {
             public class CNBaseUri {
@@ -110,9 +131,31 @@ public class CarNetApiGSonDTO {
             public String userId;
             public String pairingCode;
             public String vin;
+
+            public boolean isPairingCompleted() {
+                return pairingStatus.equalsIgnoreCase("PAIRINGCOMPLETE");
+            }
         }
 
-        CarNetPairingInfo pairingInfo;
+        public CarNetPairingInfo pairingInfo;
+    }
+
+    public static class CNRoleRights {
+        /*
+         * "role":{
+         * "content":"PRIMARY_USER",
+         * "status":"ENABLED",
+         * "securityLevel":"HG_2b"
+         * }
+         */
+
+        public class CarNetUserRoleRights {
+            public String content;
+            public String status;
+            public String securityLevel;
+        }
+
+        public CarNetUserRoleRights role;
     }
 
     public static class CNVehicleData {

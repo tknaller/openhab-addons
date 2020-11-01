@@ -159,14 +159,17 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 return false;
             }
             config.vin = vin.toUpperCase();
-
             api.setConfig(config);
-            String url = api.getHomeReguionUrl();
-            config.homeRegionUrl = url != null ? url : "";
+            config.homeRegionUrl = api.getHomeReguionUrl();
 
             serviceAvailability = new CarNetServiceAvailability(); // init all to true
             CarNetOperationList ol = api.getOperationList();
             if (ol != null) {
+                config.user.id = ol.userId;
+                config.user.role = ol.role;
+                config.user.status = ol.status;
+                config.user.securityLevel = ol.securityLevel;
+
                 CarNetVehicleData vmi = api.getVehicleManagementInfo();
                 if ((vmi != null) && !vmi.isConnect) {
                     logger.info("{}: CarConnect might not be enabled!", thingId);
@@ -181,32 +184,47 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
                 // String ui = api.getUserInfo();
                 CarNetPairingInfo pi = api.getPairingStatus();
-                String pc = "";
-                if (pi != null) {
-                    config.userId = pi.userId;
-                    pc = pi.pairingCode;
-                } else {
-                    config.userId = getString(ol.userId);
+                config.user.pairingCode = pi.pairingCode;
+                if (!pi.isPairingCompleted()) {
+                    logger.warn("{}: Pairing for {} is not completed, use MMI to pair with code {}", thingId, ol.role,
+                            pi.pairingCode);
                 }
+                // CarNetUserRoleRights rights = api.getRoleRights();
                 logger.debug("{}: Active userId = {}, role = {} (securityLevel {}), status = {}, Pairing Code {}",
-                        thingId, config.userId, ol.role, ol.securityLevel, ol.status, pc);
+                        thingId, config.user.id, ol.role, ol.securityLevel, ol.status, config.user.pairingCode);
             }
             api.setConfig(config);
 
             if (testData) {
                 // Get available services
-                String r = api.getVehicleRights();
-                String vu = api.getVehicleUsers();
-                String t = api.getClimaterTimer();
-                String h = api.getHistory();
-                String ts = api.getTripStats("shortTerm");
-                String d = api.getDestinations();
-                String df = api.getMyDestinationsFeed(config.userId);
-                String poi = api.getPois();
-                String un = api.getUserNews();
+                String t = null, h = null, ts = null, d = null, df = null, poi = null;
+                try {
+                    t = api.getClimaterTimer();
+                } catch (Exception e) {
+                }
+                try {
+                    h = api.getHistory();
+                } catch (Exception e) {
+                }
+                try {
+                    ts = api.getTripStats("shortTerm");
+                } catch (Exception e) {
+                }
+                try {
+                    d = api.getDestinations();
+                } catch (Exception e) {
+                }
+                try {
+                    df = api.getMyDestinationsFeed(config.user.id);
+                } catch (Exception e) {
+                }
+                try {
+                    poi = api.getPois();
+                } catch (Exception e) {
+                }
                 logger.debug(
-                        "{}: Additional Data\nVehicle Users:{}\nVehicle rights: {}\nHistory:{}\nTimer: {}\nnDestinations: {}\nPOIs: {}\nMyDestinationsFeed: {}\nUser News: {}\nTrip Stats short: {}",
-                        thingId, vu, r, h, t, d, poi, df, un, ts);
+                        "{}: Additional Data\nHistory:{}\nTimer: {}\nnDestinations: {}\nPOIs: {}\nMyDestinationsFeed: {}\nTrip Stats short: {}",
+                        thingId, h, t, d, poi, df, ts);
                 logger.debug("\n------\n{}: End of Additional Data", thingId);
                 testData = false;
             }
@@ -218,8 +236,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             addService(serviceAvailability.carFinder, CNAPI_SERVICE_CARFINDER,
                     new CarNetVehicleServiceCarFinder(this, api));
             addService(serviceAvailability.rlu, CNAPI_SERVICE_REMOTELOCK, new CarNetVehicleServiceRLU(this, api));
-            addService(serviceAvailability.clima, CNAPI_SERVICE_CLIMATER, new CarNetVehicleServiceClimater(this, api));
             addService(serviceAvailability.charger, CNAPI_SERVICE_CHARGER, new CarNetVehicleServiceCharger(this, api));
+            addService(serviceAvailability.clima, CNAPI_SERVICE_CLIMATER, new CarNetVehicleServiceClimater(this, api));
             addService(serviceAvailability.tripData, CNAPI_SERVICE_TRIPDATA,
                     new CarNetVehicleServiceTripData(this, api));
 
@@ -278,8 +296,15 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             return;
         }
 
+        ThingStatus s = getThing().getStatus();
+        if ((s == ThingStatus.INITIALIZING) || (s == ThingStatus.UNKNOWN)) {
+            logger.info("{}: Thing not yet fully initialized, command ignored", thingId);
+            return;
+        }
+
         String channelId = channelUID.getIdWithoutGroup();
         String error = "";
+        boolean sendOffOnError = false;
         try {
             switch (channelId) {
                 case CHANNEL_CONTROL_UPDATE:
@@ -287,15 +312,19 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     updateState(channelUID.getId(), OnOffType.OFF);
                     break;
                 case CHANNEL_CONTROL_LOCK:
+                    sendOffOnError = true;
                     api.lockDoor((OnOffType) command == OnOffType.ON);
                     break;
                 case CHANNEL_CONTROL_CLIMATER:
+                    sendOffOnError = true;
                     api.controlClimater((OnOffType) command == OnOffType.ON);
                     break;
                 case CHANNEL_CONTROL_WINHEAT:
+                    sendOffOnError = true;
                     api.controlWindowHeating((OnOffType) command == OnOffType.ON);
                     break;
                 case CHANNEL_CONTROL_PREHEAT:
+                    sendOffOnError = true;
                     api.controlPreHeating((OnOffType) command == OnOffType.ON);
                     break;
                 default:
@@ -303,14 +332,17 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
         } catch (CarNetException e) {
             error = getError(e);
+            if (sendOffOnError) {
+                updateState(channelUID.getId(), OnOffType.OFF);
+            }
         } catch (RuntimeException e) {
             error = "General Error: " + getString(e.getMessage());
             logger.warn("{}: {}", thingId, error, e);
         }
 
-        if (!error.isEmpty()) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
-        }
+        // if (!error.isEmpty()) {
+        // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
+        // }
     }
 
     /**
@@ -331,7 +363,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
         if (updated) {
             updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_UPDATED, getTimestamp());
-
         }
         return updated;
     }
@@ -427,7 +458,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private String getError(CarNetException e) {
         CarNetApiResult res = e.getApiResult();
         if (res.httpCode == HttpStatus.FORBIDDEN_403) {
-            logger.debug("{}: API Service is not available!", thingId);
+            logger.info("{}: API Service is not available: ", thingId);
             return "";
         }
 
@@ -452,8 +483,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             logger.debug("{}: {}({} - {})", thingId, message, error.code, error.description);
         }
         CarNetApiResult http = e.getApiResult();
-        if (!http.isHttpOk()) {
-            logger.debug("{}: {}", thingId, http.response);
+        if (!http.isHttpOk() && !http.response.isEmpty()) {
+            logger.debug("{}: HTTP response: {}", thingId, http.response);
         }
         logger.debug("{}: {}", thingId, e.toString());
         return "Unknown Error";

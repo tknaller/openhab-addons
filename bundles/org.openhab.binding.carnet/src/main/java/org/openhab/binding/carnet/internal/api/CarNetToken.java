@@ -50,7 +50,9 @@ public class CarNetToken {
         securityToken = token.securityToken != null ? token.securityToken : "";
         refreshToken = token.refreshToken != null ? token.refreshToken : "";
         authType = token.authType;
-        setValidity(token.validity);
+        if (token.validity != null) {
+            setValidity(token.validity);
+        }
     }
 
     public void setValidity(int validity) {

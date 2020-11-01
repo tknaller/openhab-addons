@@ -24,7 +24,17 @@ public class CarNetVehicleConfiguration {
     public String vin = "";
     public String pin = "";
     public String homeRegionUrl = "";
-    public String userId = "";
+
+    public static class CarNetUserInfo {
+        public String id = "";
+        public String oauthId = "";
+        public String role = "";
+        public String status = "";
+        public String pairingCode = "";
+        public String securityLevel = "";
+    }
+
+    public CarNetUserInfo user = new CarNetUserInfo();
 
     public int numTripShort = 1; // number of entries from history
     public int numTripLong = 1; // number of entries from history
