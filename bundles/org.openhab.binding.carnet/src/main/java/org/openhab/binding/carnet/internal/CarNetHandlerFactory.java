@@ -14,15 +14,12 @@ package org.openhab.binding.carnet.internal;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -31,8 +28,7 @@ import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandlerFactory;
-import org.eclipse.smarthome.io.net.http.HttpClientFactory;
-import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetTokenManager;
 import org.openhab.binding.carnet.internal.discovery.CarNetDiscoveryService;
 import org.openhab.binding.carnet.internal.handler.CarNetAccountHandler;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
@@ -54,34 +50,18 @@ import org.slf4j.LoggerFactory;
 @Component(configurationPid = "binding.carnet", service = ThingHandlerFactory.class)
 public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     private final Logger logger = LoggerFactory.getLogger(CarNetHandlerFactory.class);
+
     private final CarNetTextResources resources;
     private final CarNetIChanneldMapper channelIdMapper;
+    private final CarNetTokenManager tokenManager;
     private final Map<ThingUID, @Nullable ServiceRegistration<?>> discoveryServiceRegistrations = new HashMap<>();
-
-    /**
-     * shared instance of HTTP client for asynchronous calls
-     */
-    private HttpClient httpClient = new HttpClient();
-    private CarNetApi api = new CarNetApi();
 
     @Activate
     public CarNetHandlerFactory(@Reference CarNetTextResources resources,
-            @Reference CarNetIChanneldMapper channelIdMapper, @Reference HttpClientFactory httpClientFactory) {
+            @Reference CarNetIChanneldMapper channelIdMapper, @Reference CarNetTokenManager tokenManager) {
         this.resources = resources;
         this.channelIdMapper = channelIdMapper;
-        try {
-            // this.httpClient = httpClientFactory.getCommonHttpClient();
-            SslContextFactory ssl = new SslContextFactory();
-            // ssl.setIncludeCipherSuites("^TLS_RSA_.*$");
-            String[] excludedCiphersWithoutTlsRsaExclusion = Arrays.stream(ssl.getExcludeCipherSuites())
-                    .filter(cipher -> !cipher.equals("^TLS_RSA_.*$")).toArray(String[]::new);
-            ssl.setExcludeCipherSuites(excludedCiphersWithoutTlsRsaExclusion);
-            this.httpClient = new HttpClient(ssl);
-            this.httpClient.start();
-            logger.debug("{}", httpClient.dump());
-        } catch (Exception e) {
-            logger.warn("Unable to start HttpClient!");
-        }
+        this.tokenManager = tokenManager;
     }
 
     @Override
@@ -94,12 +74,11 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
         if (THING_TYPE_ACCOUNT.equals(thingTypeUID)) {
-            api = new CarNetApi(httpClient);
-            CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, resources, api);
+            CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, resources, tokenManager);
             registerDeviceDiscoveryService(handler);
             return handler;
         } else if (THING_TYPE_VEHICLE.equals(thingTypeUID)) {
-            return new CarNetVehicleHandler(thing, api, resources, channelIdMapper);
+            return new CarNetVehicleHandler(thing, resources, channelIdMapper, tokenManager);
         }
 
         return null;

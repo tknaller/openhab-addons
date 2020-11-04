@@ -25,7 +25,7 @@ import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHistory.CarNetRluHistory;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHistory.CarNetRluHistory.CarNetRluLockActionList.CarNetRluLockAction;
-import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
+import org.openhab.binding.carnet.internal.handler.CarNetCombinedConfig;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
 import org.slf4j.Logger;
@@ -68,10 +68,10 @@ public class CarNetVehicleServiceRLU extends CarNetVehicleBaseService {
     private boolean update(@Nullable Map<String, ChannelIdMapEntry> channels) throws CarNetException {
         CarNetRluHistory hist = api.getRluActionHistory();
         if (hist != null) {
-            CarNetVehicleConfiguration config = getConfig();
+            CarNetCombinedConfig config = getConfig();
             int i = hist.actions.action.size() - 1; // latest first
             int l = 1;
-            while ((i > 0) && (l <= config.numActions)) {
+            while ((i > 0) && (l <= config.vehicle.numActions)) {
                 if (channels != null) {
                     createChannels(channels, l);
                 } else {

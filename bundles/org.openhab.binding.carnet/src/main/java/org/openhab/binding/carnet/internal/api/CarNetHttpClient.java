@@ -39,6 +39,7 @@ import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.UrlEncoded;
 import org.openhab.binding.carnet.internal.CarNetException;
+import org.openhab.binding.carnet.internal.handler.CarNetCombinedConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,8 +52,8 @@ import org.slf4j.LoggerFactory;
 public class CarNetHttpClient {
     private final Logger logger = LoggerFactory.getLogger(CarNetHttpClient.class);
 
-    private CarNetCombinedConfig config = new CarNetCombinedConfig();
     private final HttpClient httpClient;
+    private CarNetCombinedConfig config = new CarNetCombinedConfig();
     private HttpFields responseHeaders = new HttpFields();
     private boolean nextRedirect = false;
 

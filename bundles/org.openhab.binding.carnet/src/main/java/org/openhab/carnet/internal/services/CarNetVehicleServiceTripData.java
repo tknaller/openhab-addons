@@ -29,7 +29,7 @@ import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData.CarNetTripDataList.CarNetTripDataEntry;
-import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
+import org.openhab.binding.carnet.internal.handler.CarNetCombinedConfig;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
 import org.slf4j.Logger;
@@ -85,9 +85,9 @@ public class CarNetVehicleServiceTripData extends CarNetVehicleBaseService {
                 }
             }));
 
-            CarNetVehicleConfiguration config = getConfig();
+            CarNetCombinedConfig config = getConfig();
             boolean shortTerm = type.contains("short");
-            int numTrips = shortTerm ? config.numTripShort : config.numTripLong;
+            int numTrips = shortTerm ? config.vehicle.numTripShort : config.vehicle.numTripLong;
 
             int i = 0; // latest first
             int l = 1;

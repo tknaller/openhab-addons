@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.carnet.internal.api;
+package org.openhab.binding.carnet.internal.handler;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetOidcConfig;
@@ -36,6 +36,7 @@ public class CarNetCombinedConfig {
     public String responseType = "";
     public String xappName = "";
     public String xappVersion = "";
+    public String tokenSetId = "";
 
     public CarNetAccountConfiguration account = new CarNetAccountConfiguration();
     public CarNetVehicleConfiguration vehicle = new CarNetVehicleConfiguration();

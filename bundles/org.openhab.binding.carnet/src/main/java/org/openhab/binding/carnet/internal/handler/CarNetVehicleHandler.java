@@ -57,6 +57,7 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNPairingInfo.Ca
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData.CarNetVehicleData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceAvailability;
 import org.openhab.binding.carnet.internal.api.CarNetApiResult;
+import org.openhab.binding.carnet.internal.api.CarNetTokenManager;
 import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
@@ -86,9 +87,10 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private final CarNetTextResources resources;
     private final CarNetIChanneldMapper idMapper;
     private final Map<String, Object> channelData = new HashMap<>();
+    private final CarNetTokenManager tokenManager;
 
     public String thingId = "";
-    private CarNetApi api;
+    private CarNetApi api = new CarNetApi();
     private @Nullable CarNetAccountHandler accountHandler;
     private @Nullable ScheduledFuture<?> pollingJob;
     private int updateCounter = 0;
@@ -99,14 +101,15 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
     private Map<String, CarNetVehicleBaseService> services = new LinkedHashMap<>();
     private CarNetServiceAvailability serviceAvailability = new CarNetServiceAvailability();
-    private CarNetVehicleConfiguration config = new CarNetVehicleConfiguration();
+    private CarNetCombinedConfig config = new CarNetCombinedConfig();
 
-    public CarNetVehicleHandler(Thing thing, CarNetApi api, CarNetTextResources resources,
-            CarNetIChanneldMapper idMapper) {
+    public CarNetVehicleHandler(Thing thing, CarNetTextResources resources, CarNetIChanneldMapper idMapper,
+            CarNetTokenManager tokenManager) {
         super(thing);
-        this.api = api;
+
         this.resources = resources;
         this.idMapper = idMapper;
+        this.tokenManager = tokenManager;
     }
 
     @Override
@@ -126,10 +129,15 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             return;
         }
         accountHandler = handler;
+        thingId = getThing().getUID().getId();
+
+        api = new CarNetApi(handler.getHttpClient(), tokenManager);
 
         scheduler.schedule(() -> {
-            accountHandler.registerListener(this);
-            setupPollingJob();
+            if (accountHandler != null) {
+                accountHandler.registerListener(this);
+                setupPollingJob();
+            }
         }, 1, TimeUnit.SECONDS);
     }
 
@@ -139,14 +147,14 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
      * @return true=successful
      */
     boolean initializeThing() {
-        thingId = getThing().getUID().getId();
         channelData.clear(); // clear any cached channels
         boolean successful = true;
         String error = "";
         try {
-            config = getConfigAs(CarNetVehicleConfiguration.class);
+            config = accountHandler.getCombinedConfig();
+            config.vehicle = getConfigAs(CarNetVehicleConfiguration.class);
             Map<String, String> properties = getThing().getProperties();
-            skipCount = Math.max(config.refreshInterval / POLL_INTERVAL, 2);
+            skipCount = Math.max(config.vehicle.refreshInterval / POLL_INTERVAL, 2);
 
             String vin = "";
             if (properties.containsKey(PROPERTY_VIN)) {
@@ -158,21 +166,21 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                         "VIN not set (Thing properties)");
                 return false;
             }
-            config.vin = vin.toUpperCase();
+            config.vehicle.vin = vin.toUpperCase();
             api.setConfig(config);
-            config.homeRegionUrl = api.getHomeReguionUrl();
+            config.vehicle.homeRegionUrl = api.getHomeReguionUrl();
 
             serviceAvailability = new CarNetServiceAvailability(); // init all to true
             CarNetOperationList ol = api.getOperationList();
             if (ol != null) {
-                config.user.id = ol.userId;
-                config.user.role = ol.role;
-                config.user.status = ol.status;
-                config.user.securityLevel = ol.securityLevel;
+                config.vehicle.user.id = ol.userId;
+                config.vehicle.user.role = ol.role;
+                config.vehicle.user.status = ol.status;
+                config.vehicle.user.securityLevel = ol.securityLevel;
 
                 CarNetVehicleData vmi = api.getVehicleManagementInfo();
-                if ((vmi != null) && !vmi.isConnect) {
-                    logger.info("{}: CarConnect might not be enabled!", thingId);
+                if (!vmi.isConnect) {
+                    logger.warn("{}: CarConnect might not be enabled!", thingId);
                 }
 
                 serviceAvailability = api.getServiceAvailability(ol);
@@ -184,14 +192,15 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
                 // String ui = api.getUserInfo();
                 CarNetPairingInfo pi = api.getPairingStatus();
-                config.user.pairingCode = pi.pairingCode;
+                config.vehicle.user.pairingCode = pi.pairingCode;
                 if (!pi.isPairingCompleted()) {
                     logger.warn("{}: Pairing for {} is not completed, use MMI to pair with code {}", thingId, ol.role,
                             pi.pairingCode);
                 }
                 // CarNetUserRoleRights rights = api.getRoleRights();
                 logger.debug("{}: Active userId = {}, role = {} (securityLevel {}), status = {}, Pairing Code {}",
-                        thingId, config.user.id, ol.role, ol.securityLevel, ol.status, config.user.pairingCode);
+                        thingId, config.vehicle.user.id, ol.role, ol.securityLevel, ol.status,
+                        config.vehicle.user.pairingCode);
             }
             api.setConfig(config);
 
@@ -215,7 +224,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 } catch (Exception e) {
                 }
                 try {
-                    df = api.getMyDestinationsFeed(config.user.id);
+                    df = api.getMyDestinationsFeed(config.vehicle.user.id);
                 } catch (Exception e) {
                 }
                 try {
@@ -375,7 +384,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
      */
     private void setupPollingJob() {
         cancelPollingJob();
-        logger.trace("Setting up polling job with an interval of {} seconds", config.refreshInterval);
+        logger.trace("Setting up polling job with an interval of {} seconds", config.vehicle.refreshInterval);
 
         pollingJob = scheduler.scheduleWithFixedDelay(() -> {
             if (forceUpdate || (++updateCounter % skipCount == 0)) {
@@ -539,7 +548,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         super.dispose();
     }
 
-    public CarNetVehicleConfiguration getThingConfig() {
+    public CarNetCombinedConfig getThingConfig() {
         return config;
     }
 

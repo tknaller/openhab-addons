@@ -15,6 +15,7 @@ package org.openhab.binding.carnet.internal.handler;
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_TOKEN_REFRESH_INTERVAL_SEC;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -40,6 +43,8 @@ import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
+import org.openhab.binding.carnet.internal.api.CarNetHttpClient;
+import org.openhab.binding.carnet.internal.api.CarNetTokenManager;
 import org.openhab.binding.carnet.internal.config.CarNetAccountConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,11 +60,12 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 public class CarNetAccountHandler extends BaseBridgeHandler {
     private final Logger logger = LoggerFactory.getLogger(CarNetAccountHandler.class);
-    // private @Nullable final DynamicStateDescriptionProvider stateDescriptionProvider;
-    private CarNetAccountConfiguration config = new CarNetAccountConfiguration();
-    private final @Nullable CarNetApi api;
+    private final CarNetCombinedConfig config = new CarNetCombinedConfig();
+    private final CarNetTokenManager tokenManager;
+    private final CarNetApi api;
+    private final CarNetHttpClient http;
 
-    private @Nullable List<CarNetVehicleInformation> vehicleList;
+    private List<CarNetVehicleInformation> vehicleList = new ArrayList<>();
     private List<CarNetDeviceListener> vehicleInformationListeners = Collections
             .synchronizedList(new ArrayList<CarNetDeviceListener>());
     private @Nullable ScheduledFuture<?> refreshJob;
@@ -74,11 +80,34 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
      *
      * @param bridge Bridge object representing a FRITZ!Box
      */
-    public CarNetAccountHandler(Bridge bridge, @Nullable CarNetTextResources resources, CarNetApi api) {
+    public CarNetAccountHandler(Bridge bridge, @Nullable CarNetTextResources resources,
+            CarNetTokenManager tokenManager) {
         super(bridge);
-        // this.stateDescriptionProvider = stateDescriptionProvider;
-        this.api = api;
-        // applyTemplateChannelUID = new ChannelUID(bridge.getUID(), CHANNEL_APPLY_TEMPLATE);
+
+        // Each instance has it's own http client. Audi requires weaked SSL attributes, other may not
+        this.tokenManager = tokenManager;
+
+        HttpClient httpClient = new HttpClient();
+        try {
+            SslContextFactory ssl = new SslContextFactory();
+            // ssl.setIncludeCipherSuites("^TLS_RSA_.*$");
+            String[] excludedCiphersWithoutTlsRsaExclusion = Arrays.stream(ssl.getExcludeCipherSuites())
+                    .filter(cipher -> !cipher.equals("^TLS_RSA_.*$")).toArray(String[]::new);
+            ssl.setExcludeCipherSuites(excludedCiphersWithoutTlsRsaExclusion);
+            httpClient = new HttpClient(ssl);
+            httpClient.start();
+            logger.debug("{}", httpClient.dump());
+        } catch (Exception e) {
+            logger.warn("Unable to start HttpClient!");
+        }
+
+        this.http = new CarNetHttpClient(httpClient);
+        this.api = new CarNetApi(http, tokenManager);
+
+        // Generate a unique Id for all tokens of the new Account thing, but also of all depending Vehicle things. This
+        // allows sharing the tokens across all things associated with the account.
+        config.tokenSetId = tokenManager.generateTokenSetId();
+        tokenManager.setHttpClient(config.tokenSetId, http);
     }
 
     /**
@@ -86,8 +115,6 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
      */
     @Override
     public void initialize() {
-        config = getConfigAs(CarNetAccountConfiguration.class);
-
         updateStatus(ThingStatus.UNKNOWN);
 
         // Example for background initialization:
@@ -100,11 +127,10 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         });
     }
 
-    @SuppressWarnings("null")
     public boolean initializeThing() throws CarNetException {
         Map<String, String> properties = new TreeMap<String, String>();
 
-        config = getConfigAs(CarNetAccountConfiguration.class);
+        config.account = getConfigAs(CarNetAccountConfiguration.class);
         api.setConfig(config);
         api.initialize();
         refreshProperties(properties);
@@ -132,28 +158,65 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         }
     }
 
+    public CarNetHttpClient getHttpClient() {
+        // Account and Vehicle Handlers are sharing the same httpClient
+        return http;
+    }
+
+    public CarNetCombinedConfig getCombinedConfig() {
+        return config;
+    }
+
+    /**
+     * Called by vehicle handler to register callback
+     *
+     * @param listener Listener interface provided by Vehicle Handler
+     */
     public void registerListener(CarNetDeviceListener listener) {
         vehicleInformationListeners.add(listener);
     }
 
+    /**
+     * Called by vehicle handler to unregister callback
+     *
+     * @param listener Listener interface provided by Vehicle Handler
+     */
     public void unregisterListener(CarNetDeviceListener listener) {
         vehicleInformationListeners.remove(listener);
     }
 
+    /**
+     * Forward discovery information to all listeners (Vehicle Handlers)
+     *
+     * @param vehicleInformationList
+     */
     private void informVehicleInformationListeners(@Nullable List<CarNetVehicleInformation> vehicleInformationList) {
         this.vehicleInformationListeners.forEach(discovery -> discovery.informationUpdate(vehicleInformationList));
     }
 
+    /**
+     * Notify all listeners about status changes
+     *
+     * @param status New status
+     * @param detail Status details
+     * @param message Message
+     */
     void stateChanged(ThingStatus status, ThingStatusDetail detail, String message) {
         updateStatus(status, detail, message);
         this.vehicleInformationListeners.forEach(discovery -> discovery.stateChanged(status, detail, message));
     }
 
+    /**
+     * Thing configuration was updated
+     */
     @Override
     public void handleConfigurationUpdate(Map<String, Object> configurationParameters) {
         super.handleConfigurationUpdate(configurationParameters);
     }
 
+    /**
+     * Empty handleCommand for Account Thing
+     */
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         String channelId = channelUID.getIdWithoutGroup();

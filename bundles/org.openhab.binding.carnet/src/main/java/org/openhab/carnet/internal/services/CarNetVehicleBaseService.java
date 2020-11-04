@@ -24,8 +24,8 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
-import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
 import org.openhab.binding.carnet.internal.handler.CarNetAccountHandler;
+import org.openhab.binding.carnet.internal.handler.CarNetCombinedConfig;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
@@ -112,7 +112,7 @@ public class CarNetVehicleBaseService {
         return thingHandler.updateChannel(group, channel, value, digits, unit);
     }
 
-    protected CarNetVehicleConfiguration getConfig() {
+    protected CarNetCombinedConfig getConfig() {
         return thingHandler.getThingConfig();
     }
 }
