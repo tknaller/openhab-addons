@@ -97,7 +97,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private int skipCount = 1;
     private boolean forceUpdate;
     private boolean channelsCreated = false;
-    private boolean testData = true;
+    private boolean testData = false;
 
     private Map<String, CarNetVehicleBaseService> services = new LinkedHashMap<>();
     private CarNetServiceAvailability serviceAvailability = new CarNetServiceAvailability();
@@ -204,9 +204,17 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
             api.setConfig(config);
 
-            if (testData) {
+            if (logger.isDebugEnabled() && testData) {
                 // Get available services
-                String t = null, h = null, ts = null, d = null, df = null, poi = null;
+                String t = null, h = null, ts = null, d = null, df = null, poi = null, hr = null, mt = null, sb = null;
+                try {
+                    mt = api.getRecommendedMaintenance();
+                } catch (Exception e) {
+                }
+                try {
+                    sb = api.getServiceBook();
+                } catch (Exception e) {
+                }
                 try {
                     t = api.getClimaterTimer();
                 } catch (Exception e) {
@@ -231,6 +239,11 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     poi = api.getPois();
                 } catch (Exception e) {
                 }
+                try {
+                    hr = api.getVehicleHealthReport();
+                } catch (Exception e) {
+                }
+
                 logger.debug(
                         "{}: Additional Data\nHistory:{}\nTimer: {}\nnDestinations: {}\nPOIs: {}\nMyDestinationsFeed: {}\nTrip Stats short: {}",
                         thingId, h, t, d, poi, df, ts);

@@ -68,7 +68,7 @@ public class CarNetApiConstants {
     public static final String CNAPI_URI_CMD_HONK = "bs/rhf/v1/{0}/{1}/vehicles/{2}/honkAndFlash";
     public static final String CNAPI_URI_GETTRIP = "bs/tripstatistics/v1/{0}/{1}/vehicles/{2}/tripdata/{3}?type={4}";
 
-    private static final String VWPRE = "https://msg.volkswagen.de/fs-car/";
+    public static final String VWPRE = "https://msg.volkswagen.de/fs-car/";
     public static final String CNAPI_VWURL_CLIMATE_STATUS = VWPRE + CNAPI_URI_CLIMATER_STATUS;
     public static final String CNAPI_VWURL_CHARGER_STATUS = VWPRE + CNAPI_URI_CHARGER_STATUS;
     public static final String CNAPI_VWURL_STORED_POS = VWPRE + CNAPI_URI_STORED_POS;

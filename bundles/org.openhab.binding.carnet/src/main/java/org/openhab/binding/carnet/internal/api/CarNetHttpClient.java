@@ -15,15 +15,17 @@ package org.openhab.binding.carnet.internal.api;
 import static org.openhab.binding.carnet.internal.CarNetUtils.*;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -134,6 +136,10 @@ public class CarNetHttpClient {
         return request(HttpMethod.POST, uri, "", headers, buildPostData(data, json), "", "");
     }
 
+    public String postForm(String uri, Map<String, String> headers, Map<String, String> data) throws CarNetException {
+        return request(HttpMethod.POST, uri, "", headers, buildFormData(data), "", "");
+    }
+
     private String request(HttpMethod method, String uri, String parms, Map<String, String> headers, String data,
             String pvin, String token) throws CarNetException {
         Request request = null;
@@ -223,7 +229,11 @@ public class CarNetHttpClient {
         headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
         headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + token);
-        headers.put("If-None-Match", "none");
+        // headers.put("If-None-Match", "none");
+
+        headers.put("X-Country-Id", "DE");
+        headers.put("X-Language-Id", "de");
+
         return headers;
     }
 
@@ -259,13 +269,14 @@ public class CarNetHttpClient {
     }
 
     public Map<String, String> fillRefreshHeaders() {
-        Map<String, String> headers = new TreeMap<String, String>();
+        Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
         headers.put(CNAPI_HEADER_APP, config.xappName);
         headers.put(CNAPI_HEADER_VERS, config.xappVersion);
         headers.put(HttpHeader.CONTENT_TYPE.toString(), "application/x-www-form-urlencoded");
-        headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
+        // headers.put(HttpHeader.ACCEPT.toString(), "application/json");
         headers.put("X-Client-Id", config.xClientId);
+        // headers.put("X-Client-Id", config.clientId);
         return headers;
     }
 
@@ -296,6 +307,18 @@ public class CarNetHttpClient {
             }
         }
         return json ? "{ " + data + " }" : data;
+    }
+
+    public static String buildFormData(Map<String, String> dataMap) {
+        String data = "";
+        try {
+            for (Map.Entry<String, String> e : dataMap.entrySet()) {
+                data = data + (data.isEmpty() ? "" : "+") + e.getKey() + "=" + URLEncoder.encode(e.getValue(), UTF_8);
+            }
+        } catch (UnsupportedEncodingException e) {
+
+        }
+        return data;
     }
 
     /**

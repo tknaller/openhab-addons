@@ -233,6 +233,41 @@ public class CarNetApi {
         return position;
     }
 
+    public String getVehicleHealthReport() throws CarNetException {
+        String json = callApi("bs/vhs/v2/vehicle/{2}", "healthReport");
+        return json;
+    }
+
+    public String getRecommendedMaintenance() throws CarNetException {
+        String json = callActionApi(
+                "myaudi/recommended-maintenance-tasks/v1/vehicles/{2}/recommended-maintenance-tasks",
+                "recommendedMaintenanceTasks");
+        return json;
+    }
+
+    public String getServiceBook() throws CarNetException {
+        try {
+            return http.get("https://mal-1a.prd.ece.vwg-connect.com/myaudi/service-book/v1/vehicles/{2}/service-book",
+                    CarNetHttpClient.fillActionHeaders(new HashMap<>(), "application/json;charset=UTF-8",
+                            createVwToken(), ""));
+        } catch (CarNetException e) {
+            CarNetApiResult res = e.getApiResult();
+            logger.debug("{}: API call {} failed: HTTP {}, {}", config.vehicle.vin, "getServiceBook", res.httpCode,
+                    e.toString());
+            String json = loadJson("getServiceBook");
+            if (json == null) {
+                throw e;
+            }
+            return json;
+        }
+        /*
+         * String json = callActionApi(
+         * "https://mal-1a.prd.ece.vwg-connect.com/myaudi/service-book/v1/vehicles/{2}/service-book",
+         * "getServiceBook");
+         * return json;
+         */
+    }
+
     public CarNetVehiclePosition getStoredPosition() throws CarNetException {
         String json = callApi(CNAPI_VWURL_STORED_POS, "getStoredPosition");
         CarNetVehiclePosition position = gson.fromJson(json, CarNetVehiclePosition.class);
@@ -291,7 +326,7 @@ public class CarNetApi {
     }
 
     public @Nullable String getPersonalData() throws CarNetException {
-        if (/* isBrandAudi() || */ isBrandGo()) {
+        if (isBrandAudi() || isBrandGo()) {
             return null; // not supported for Audi vehicles
         }
 
@@ -410,7 +445,8 @@ public class CarNetApi {
     }
 
     public String getPois() throws CarNetException {
-        return callApi("{0}/{1}/vehicles/{2}/pois", "");
+        // return callApi("{0}/{1}/vehicles/{2}/pois", "");
+        return callApi("https://msg.audi.de/audi/b2c/poinav/v1/vehicles/{2}/pois", "getPois");
     }
 
     public String getUserInfo() throws CarNetException {
@@ -452,6 +488,21 @@ public class CarNetApi {
     private String callApi(String uri, String function) throws CarNetException {
         try {
             return http.get(uri, fillAppHeaders());
+        } catch (CarNetException e) {
+            CarNetApiResult res = e.getApiResult();
+            logger.debug("{}: API call {} failed: HTTP {}, {}", config.vehicle.vin, function, res.httpCode,
+                    e.toString());
+            String json = loadJson(function);
+            if (json == null) {
+                throw e;
+            }
+            return json;
+        }
+    }
+
+    private String callActionApi(String uri, String function) throws CarNetException {
+        try {
+            return http.get(uri, fillActionHeaders());
         } catch (CarNetException e) {
             CarNetApiResult res = e.getApiResult();
             logger.debug("{}: API call {} failed: HTTP {}, {}", config.vehicle.vin, function, res.httpCode,

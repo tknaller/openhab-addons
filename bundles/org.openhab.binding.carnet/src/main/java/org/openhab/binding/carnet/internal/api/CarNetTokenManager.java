@@ -237,9 +237,6 @@ public class CarNetTokenManager {
             data.put("token", tokens.idToken.accessToken);
             json = http.post("https://app-api.live-my.audi.com/azs/v1/token", headers, data, true);
             token = gson.fromJson(json, CNApiToken.class);
-            if (token.validity < 0) {
-                token.validity = tokens.idToken.validity;
-            }
             tokens.brandToken = new CarNetToken(token);
             updateTokenSet(config.tokenSetId, tokens);
 
@@ -371,7 +368,6 @@ public class CarNetTokenManager {
         try {
             TokenSet tokens = getTokenSet(config.tokenSetId);
             refreshToken(config, config.account.brand, tokens.brandToken);
-            refreshToken(config, CNAPI_BRAND_VW, tokens.vwToken);
 
             Iterator<CarNetToken> it = securityTokens.iterator();
             while (it.hasNext()) {
@@ -404,20 +400,36 @@ public class CarNetTokenManager {
             Map<String, String> data = new TreeMap<>();
 
             if (isBrandAudi(brand)) {
-                url = CNAPI_URL_AUDI_GET_TOKEN;
-                // rtoken = idToken.refreshToken;
+                // url = CNAPI_URL_AUDI_GET_TOKEN; // config.oidcConfig.token_endpoint;
+                url = "https://app-api.live-my.audi.com/azs/v1/token";
                 rtoken = tokens.brandToken.refreshToken;
-                url = CNAPI_URL_GET_SEC_TOKEN;
-                data.put("client_id", config.clientId);
+                /*
+                 * data.put("grant_type", "refresh_token");
+                 * data.put("refresh_token", rtoken);
+                 * data.put("scope", "sc2:fal");
+                 * data.put("X-Client-Id", config.xClientId);
+                 *
+                 */
+
                 data.put("grant_type", "refresh_token");
-                data.put("response_type", "token id_token");
-                data.put("refresh_token", rtoken);
+                data.put("stage", "live");
+                data.put("token", rtoken);
+                data.put("config", "myaudi");
+
+                /*
+                 * url = "https://mbboauth-1d.prd.ece.vwg-connect.com/mbbcoauth/mobile/oauth2/v1/token";
+                 * data.put("grant_type", "refresh_token");
+                 * data.put("refresh_token", rtoken);
+                 * data.put("scope", "sc2:fal");
+                 */
             } else if (isBrandVW(brand)) {
                 url = CNAPI_URL_GET_SEC_TOKEN;
                 rtoken = tokens.vwToken.refreshToken;
                 data.put("grant_type", "refresh_token");
                 data.put("scope", "scope=sc2%3Afa");
                 data.put("token", rtoken);
+
+                data.put("stage", "live");
             } else if (isBrandSkoda(brand)) {
 
             } else if (isBrandGo(brand)) {
@@ -430,19 +442,47 @@ public class CarNetTokenManager {
                 data.put("refresh_token=", rtoken);
                 url = CNAPI_URL_DEF_GET_TOKEN;
                 rtoken = tokens.brandToken.refreshToken; // not sure if that is the correct default one
-            }
+            } /*
+               * else i(isBrandBMW){
+               * "username": []string{user},
+               * "password": []string{password},
+               * "client_id": []string{"dbf0a542-ebd1-4ff0-a9a7-55172fbfce35"},
+               * "redirect_uri":
+               * []string{"https://www.bmw-connecteddrive.com/app/default/static/external-dispatch.html"},
+               * "response_type": []string{"token"},
+               * "scope": []string{"authenticate_user fupo"},
+               * "state": []string{"eyJtYXJrZXQiOiJkZSIsImxhbmd1YWdlIjoiZGUiLCJkZXN0aW5hdGlvbiI6ImxhbmRpbmdQYWdlIn0"},
+               * "locale": []string{"DE-de"},
+               * } else (isBrandFord()) {
+               * "client_id": []string{"9fb503e0-715b-47e8-adfd-ad4b7770f73b"},
+               * fordAuth = "https://fcis.ice.ibmcloud.com"
+               * fordAPI = "https://usapi.cv.ford.com"
+               * "grant_type": []string{"password"},
+               * "username": []string{user},
+               * "password": []string{password},
+               */
 
             try {
-                String json = http.post(url, http.fillRefreshHeaders(), data, false);
+                // String json = http.post(url, http.fillRefreshHeaders(), data, true);
+                // String json = http.post(url, http.fillRefreshHeaders(), data, false);
+                String json = http.post(url, http.fillRefreshHeaders(), data, true);
+                CNApiToken newToken = gson.fromJson(json, CNApiToken.class);
+                tokens.brandToken = new CarNetToken(newToken);
+                tokens.vwToken.invalidate(); // force creation of new VW token
+                updateTokenSet(config.tokenSetId, tokens);
                 return true;
             } catch (CarNetException e) {
-                logger.debug("{}: Unable to refresh token {} - {}", config.vehicle.vin, token, e.getApiResult());
+                logger.debug("{}: Unable to refresh token: {}", config.vehicle.vin, e.toString());
+                // Invalidate token
+                if (token.isExpired()) {
+                    tokens.brandToken.invalidate();
+                    updateTokenSet(config.tokenSetId, tokens);
+                }
             }
         }
 
-        // Invalidate token
-        // token.invalidate();
         return false;
+
     }
 
     public boolean createTokenSet(String tokenSetId) {
