@@ -220,12 +220,13 @@ public class CarNetTokenManager {
                 // process token
                 token = gson.fromJson(json, CNApiToken.class);
                 if ((token.accessToken == null) || token.accessToken.isEmpty()) {
-                    throw new CarNetException("Authentication failed: Unable to get access token!");
+                    throw new CarNetException("Authentication failed: Unable to get id token!");
                 }
 
                 tokens.idToken = new CarNetToken(token);
             }
             logger.debug("{}: OAuth successful", config.vehicle.vin);
+            config.xcsrf = csrf = substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
 
             logger.debug("{}: Get VW Token", config.vehicle.vin);
             headers.clear();
