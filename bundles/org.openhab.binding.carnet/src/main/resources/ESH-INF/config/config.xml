@@ -16,7 +16,7 @@
 			<options>
 				<option value="Audi">Audi</option>
 			</options>
-            <default>Audi</default>
+			<default>Audi</default>
 		</parameter>
 		<parameter name="country" type="text" required="true">
 			<label>Market (Country)</label>
