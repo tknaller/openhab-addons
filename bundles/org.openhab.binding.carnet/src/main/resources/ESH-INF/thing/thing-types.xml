@@ -16,16 +16,25 @@
 			<channel-group id="rluHistory3" typeId="rluHistory"/>
 			<channel-group id="status" typeId="status"/>
 			<channel-group id="location" typeId="location"/>
+			<channel-group id="maintenance" typeId="maintenance"/>
 			<channel-group id="charger" typeId="charger"/>
 			<channel-group id="range" typeId="range"/>
 			<channel-group id="climater" typeId="climater"/>
 			<channel-group id="tripShort1" typeId="tripShort"/>
 			<channel-group id="tripShort2" typeId="tripShort"/>
 			<channel-group id="tripShort3" typeId="tripShort"/>
+			<channel-group id="tripShort4" typeId="tripShort"/>
+			<channel-group id="tripShort5" typeId="tripShort"/>
 			<channel-group id="tripLong1" typeId="tripLong"/>
 			<channel-group id="tripLong2" typeId="tripLong"/>
 			<channel-group id="tripLong3" typeId="tripLong"/>
-			<channel-group id="maintenance" typeId="maintenance"/>
+			<channel-group id="tripLong4" typeId="tripLong"/>
+			<channel-group id="tripLong5" typeId="tripLong"/>
+			<channel-group id="destination1" typeId="destination"/>
+			<channel-group id="destination2" typeId="destination"/>
+			<channel-group id="destination3" typeId="destination"/>
+			<channel-group id="destination4" typeId="destination"/>
+			<channel-group id="destination5" typeId="destination"/>
 			<channel-group id="doors" typeId="doors"/>
 			<channel-group id="windows" typeId="windows"/>
 			<channel-group id="tires" typeId="tires"/>
@@ -63,11 +72,6 @@
 	<channel-group-type id="location">
 		<label>@text/thing-type.carnet.vehicle.group.location.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.location.description</description>
-		<channels>
-			<channel id="position" typeId="position"/>
-			<channel id="positionUpdate" typeId="positionUpdate"/>
-			<channel id="parkingTime" typeId="parkingTime"/>
-		</channels>
 	</channel-group-type>
 
 	<channel-group-type id="range">
@@ -99,6 +103,10 @@
 		<label>@text/thing-type.carnet.vehicle.group."charger".label</label>
 		<description>@text/thing-type.carnet.vehicle.group."charger".description</description>
 	</channel-group-type>
+	<channel-group-type id="rluHistory">
+		<label>@text/thing-type.carnet.vehicle.group.rluHistory.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.rluHistory.description</description>
+	</channel-group-type>
 	<channel-group-type id="tripShort">
 		<label>@text/thing-type.carnet.vehicle.group.tripShort.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.tripShort.description</description>
@@ -107,9 +115,9 @@
 		<label>@text/thing-type.carnet.vehicle.group.tripLong.label</label>
 		<description>@text/thing-type.carnet.vehicle.group.tripLong.description</description>
 	</channel-group-type>
-	<channel-group-type id="rluHistory">
-		<label>@text/thing-type.carnet.vehicle.group.rluHistory.label</label>
-		<description>@text/thing-type.carnet.vehicle.group.rluHistory.description</description>
+	<channel-group-type id="destination">
+		<label>@text/thing-type.carnet.vehicle.group.destination.label</label>
+		<description>@text/thing-type.carnet.vehicle.group.destination.description</description>
 	</channel-group-type>
 
 	<!-- Group general -->
@@ -143,6 +151,11 @@
 	</channel-type>
 
 	<!-- Group control -->
+	<channel-type id="lastUpdate">
+		<item-type>DateTime</item-type>
+		<label>@text/channel-type.carnet.lastUpdate.label</label>
+		<description>@text/channel-type.carnet.lastUpdate.description</description>
+	</channel-type>
 	<channel-type id="update">
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.carnet.update.label</label>

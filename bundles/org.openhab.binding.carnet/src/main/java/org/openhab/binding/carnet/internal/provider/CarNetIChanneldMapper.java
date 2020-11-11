@@ -63,9 +63,9 @@ public class CarNetIChanneldMapper {
         add("POSITION_SUN_ROOF_MOTOR_COVER", "0x030105000C");
         add("STATE3_SUN_ROOF_REAR_MOTOR_COVER", "0x030105000D", "roofRearMotorCoverState", ITEMT_SWITCH);
         add("POSITION_SUN_ROOF_REAR_MOTOR_COVER", "0x030105000E");
-        add("STATE3_SPOILER", "0x0301050011", "spoilerState", ITEMT_SWITCH);
+        add("STATE3_SPOILER", "0x0301050011", "spoilerState", ITEMT_SWITCH, CHANNEL_GROUP_STATUS, null, true, true);
         add("POSITION_SPOILER", "0x0301050012");
-        add("STATE2_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_SWITCH);
+        add("STATE3_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_SWITCH);
         add("POSITION_SERVICE_FLAP", "0x0301050010");
         add("CURRENT_SPEED", "0x0301030004", "currentSpeed", ITEMT_SPEED, CHANNEL_GROUP_STATUS,
                 SIUnits.KILOMETRE_PER_HOUR); // to be verified
@@ -79,10 +79,12 @@ public class CarNetIChanneldMapper {
         add("PRIMARY_RANGE", "0x0301030006", "primaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
         add("PRIMARY_FUEL_TYPE", "0x0301030007", "primaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE, null, true,
                 true);
-        add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE);
+        add("SECONDARY_RANGE", "0x0301030008", "secondaryRange", ITEMT_DISTANCE, CHANNEL_GROUP_RANGE, KILOMETRE, true,
+                true);
         add("SECONDARY_DRIVE", "0x0301030009", "secondaryFuelType", ITEMT_NUMBER, CHANNEL_GROUP_RANGE, null, true,
                 true);
-        add("15CNG_LEVEL_IN_PERCENT", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE, PERCENT);
+        add("15CNG_LEVEL_IN_PERCENT", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE, PERCENT,
+                true, true);
         add("CHARGING_LEVEL_PERCENT", "0x0301030002", "chargingLevel", ITEMT_PERCENT, CHANNEL_GROUP_RANGE, PERCENT);
 
         // Maintenance

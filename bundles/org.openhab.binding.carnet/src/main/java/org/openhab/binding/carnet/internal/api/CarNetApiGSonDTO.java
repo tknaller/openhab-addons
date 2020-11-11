@@ -406,41 +406,51 @@ public class CarNetApiGSonDTO {
         public boolean destinations = true;
     }
 
-    public static class CarNetDestinations {
-        public class CNDestinationAddress {
-            public String addressType;
-            public String city;
-            public String country;
-            public String street;
-            public String zipCode;
-        }
+    public static class CNDestinations {
+        public class CarNetDestination {
+            public class CNDestinationAddress {
+                public String addressType;
+                public String city;
+                public String country;
+                public String street;
+                public String zipCode;
+            }
 
-        public class CNDestinationGeo {
-            public Double latitude;
-            public Double longitude;
-        }
+            public class CNDestinationGeo {
+                public Double latitude;
+                public Double longitude;
 
-        public class CNDestinationPOI {
-            public String lastName;
-            // "phoneData":[{"phoneType":"2"} ]}
-        }
+                public double getLattitude() {
+                    // return (latitude != null) ? latitude / 1000000.0 : 0;
+                    return (latitude != null) ? latitude : 0;
+                }
 
-        public class CNDestination {
+                public double getLongitude() {
+                    // return (longitude != null) ? longitude / 1000000.0 : 0;
+                    return (longitude != null) ? longitude : 0;
+                }
+            }
+
+            public class CNDestinationPOI {
+                public String lastName;
+                // "phoneData":[{"phoneType":"2"} ]}
+            }
+
             public String destinationName = "";
             public Boolean immediateDestination;
             public String id;
-            CNDestinationAddress address;
+            public CNDestinationAddress address;
             public String destinationSource;
-            CNDestinationGeo geoCoordinate;
-            CNDestinationPOI POIContact;
+            public CNDestinationGeo geoCoordinate;
+            public CNDestinationPOI POIContact;
             public String fetchStatus;
         }
 
-        public class CNDestinationList {
-            public ArrayList<CNDestination> destination;
+        public static class CarNetDestinationList {
+            public ArrayList<CarNetDestination> destination;
         }
 
-        CNDestinationList destinations;
+        public CarNetDestinationList destinations;
     }
 
     public static class CarNetTripData {
@@ -697,5 +707,116 @@ public class CarNetApiGSonDTO {
         }
 
         CarNetClimaterStatus climater;
+    }
+
+    public static class CNVehicleSpec {
+        public class CarNetVehicleSpec {
+            public class CarNetUserVehicles {
+                public class CNUserRole {
+                    String role;
+                }
+
+                public class CarNetVehicle {
+                    public class CNVehicleCore {
+                        public String commissionNumber;
+                        public String modelYear;
+                        public String exteriorColorId;
+                    }
+
+                    public class CNVehicleClassification {
+                        public String driveTrain;
+                        public String modelRange;
+                    }
+
+                    public class CarNetVehicleMedia {
+                        public String shortName;
+                        public String longName;
+                        public String exteriorColor;
+                        public String interiorColor;
+                    }
+
+                    public class CarNetVehiclePicture {
+                        public String mediaType;
+                        public String url;
+                    }
+
+                    public class CNVehicleHifa {
+                        public String factoryPickupDateFrom;
+                        public String factoryPickupDateTill;
+                        public String fbDestination;
+                    }
+
+                    public class CNVehiclePdw {
+                        Boolean pdwVehicle;
+                    }
+
+                    public class CarNetEquipment {
+                        public String code;
+                        public String name;
+                        public String categoryId;
+                        public String categoryName;
+                        public String subCategoryId;
+                        public String subCategoryName;
+                        public String teaserImage;
+                        public Boolean standard;
+                    }
+
+                    public class CarNetTechSpec {
+                        public String key;
+                        public String name;
+                        public String value;
+                        public String groupId;
+                        public String groupName;
+                    }
+
+                    public class CNConsumption {
+                        public class CNWltps {
+                            public class CNAttribute {
+                                public String attributeId;
+                                public String scaleUnit;
+                                public String value;
+                            }
+
+                            public String attributeGroup;
+                            public ArrayList<CNAttribute> attributes;
+                        }
+
+                        public class CNTechnicalSpecification {
+                            public String key;
+                            public String name;
+                            public String value;
+                            public String unit;
+                            public String groupId;
+                            public String groupName;
+                        }
+
+                        public ArrayList<CNWltps> wltps;
+                        public ArrayList<CNTechnicalSpecification> technicalSpecifications;
+                    }
+
+                    public CNVehicleCore core;
+                    public CNVehicleClassification classification;
+                    public CarNetVehicleMedia media;
+                    public ArrayList<CarNetVehiclePicture> renderPictures;
+                    public CNVehicleHifa hifa;
+                    public CNVehiclePdw pdw;
+                    public ArrayList<CarNetEquipment> equipments;
+                    public ArrayList<CarNetTechSpec> techSpecs;
+                    public CNConsumption consumption;
+                }
+
+                public String csid;
+                public String vin;
+                public Boolean owner;
+                public String type;
+                public String devicePlatform;
+                public Boolean mbbConnect;
+                public CNUserRole userRole;
+            }
+
+            public ArrayList<CarNetUserVehicles> userVehicles;
+        }
+
+        public CarNetVehicleSpec data;
     }
 }

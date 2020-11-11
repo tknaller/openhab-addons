@@ -58,6 +58,7 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData.Ca
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceAvailability;
 import org.openhab.binding.carnet.internal.api.CarNetApiResult;
 import org.openhab.binding.carnet.internal.api.CarNetTokenManager;
+import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
 import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
@@ -65,6 +66,7 @@ import org.openhab.carnet.internal.services.CarNetVehicleBaseService;
 import org.openhab.carnet.internal.services.CarNetVehicleServiceCarFinder;
 import org.openhab.carnet.internal.services.CarNetVehicleServiceCharger;
 import org.openhab.carnet.internal.services.CarNetVehicleServiceClimater;
+import org.openhab.carnet.internal.services.CarNetVehicleServiceDestinations;
 import org.openhab.carnet.internal.services.CarNetVehicleServiceRLU;
 import org.openhab.carnet.internal.services.CarNetVehicleServiceStatus;
 import org.openhab.carnet.internal.services.CarNetVehicleServiceTripData;
@@ -155,6 +157,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             config.vehicle = getConfigAs(CarNetVehicleConfiguration.class);
             Map<String, String> properties = getThing().getProperties();
             skipCount = Math.max(config.vehicle.refreshInterval / POLL_INTERVAL, 2);
+            channelsCreated = false;
 
             String vin = "";
             if (properties.containsKey(PROPERTY_VIN)) {
@@ -173,10 +176,10 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             serviceAvailability = new CarNetServiceAvailability(); // init all to true
             CarNetOperationList ol = api.getOperationList();
             if (ol != null) {
-                config.vehicle.user.id = ol.userId;
-                config.vehicle.user.role = ol.role;
-                config.vehicle.user.status = ol.status;
-                config.vehicle.user.securityLevel = ol.securityLevel;
+                config.user.id = ol.userId;
+                config.user.role = ol.role;
+                config.user.status = ol.status;
+                config.user.securityLevel = ol.securityLevel;
 
                 CarNetVehicleData vmi = api.getVehicleManagementInfo();
                 if (!vmi.isConnect) {
@@ -190,23 +193,20 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                         thingId, sa.statusData, sa.tripData, sa.destinations, sa.carFinder, sa.clima, sa.charger,
                         sa.rlu);
 
-                // String ui = api.getUserInfo();
                 CarNetPairingInfo pi = api.getPairingStatus();
-                config.vehicle.user.pairingCode = pi.pairingCode;
+                config.user.pairingCode = pi.pairingCode;
                 if (!pi.isPairingCompleted()) {
                     logger.warn("{}: Pairing for {} is not completed, use MMI to pair with code {}", thingId, ol.role,
                             pi.pairingCode);
                 }
-                // CarNetUserRoleRights rights = api.getRoleRights();
                 logger.debug("{}: Active userId = {}, role = {} (securityLevel {}), status = {}, Pairing Code {}",
-                        thingId, config.vehicle.user.id, ol.role, ol.securityLevel, ol.status,
-                        config.vehicle.user.pairingCode);
+                        thingId, config.user.id, ol.role, ol.securityLevel, ol.status, config.user.pairingCode);
             }
             api.setConfig(config);
 
             if (logger.isDebugEnabled() && testData) {
                 // Get available services
-                String t = null, h = null, ts = null, d = null, df = null, poi = null, hr = null, mt = null, sb = null;
+                String t = null, h = null, ts = null, df = null, poi = null, hr = null, mt = null, sb = null;
                 try {
                     mt = api.getRecommendedMaintenance();
                 } catch (Exception e) {
@@ -228,11 +228,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 } catch (Exception e) {
                 }
                 try {
-                    d = api.getDestinations();
-                } catch (Exception e) {
-                }
-                try {
-                    df = api.getMyDestinationsFeed(config.vehicle.user.id);
+                    df = api.getMyDestinationsFeed(config.user.id);
                 } catch (Exception e) {
                 }
                 try {
@@ -245,8 +241,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 }
 
                 logger.debug(
-                        "{}: Additional Data\nHistory:{}\nTimer: {}\nnDestinations: {}\nPOIs: {}\nMyDestinationsFeed: {}\nTrip Stats short: {}",
-                        thingId, h, t, d, poi, df, ts);
+                        "{}: Additional Data\nHistory:{}\nTimer: {}\nPOIs: {}\nMyDestinationsFeed: {}\nTrip Stats short: {}",
+                        thingId, h, t, poi, df, ts);
                 logger.debug("\n------\n{}: End of Additional Data", thingId);
                 testData = false;
             }
@@ -262,6 +258,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             addService(serviceAvailability.clima, CNAPI_SERVICE_CLIMATER, new CarNetVehicleServiceClimater(this, api));
             addService(serviceAvailability.tripData, CNAPI_SERVICE_TRIPDATA,
                     new CarNetVehicleServiceTripData(this, api));
+            addService(serviceAvailability.destinations, CNAPI_SERVICE_DESTINATIONS,
+                    new CarNetVehicleServiceDestinations(this, api));
 
             if (!channelsCreated) {
                 // Add additional channels
@@ -269,11 +267,26 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 for (Map.Entry<String, CarNetVehicleBaseService> s : services.entrySet()) {
                     s.getValue().createChannels(channels);
                 }
+
                 logger.debug("{}: Creating {} channels", thingId, channels.size());
-                createChannels(new ArrayList<>(channels.values()));
+                ArrayList<ChannelIdMapEntry> channelList = new ArrayList<>(channels.values());
+                /*
+                 * try (FileWriter myWriter = new FileWriter("carnetChannels.MD")) {
+                 * String lastGroup = "";
+                 * for (ChannelIdMapEntry e : channelList) {
+                 * String group = lastGroup.equals(e.groupName) ? "" : e.groupName;
+                 * String s = String.format("| %-12.12s | %-23.23s | %-20.20s | %-7s | %-85s |\n", group,
+                 * e.channelName, e.itemType, e.readOnly ? "yes" : "no", e.getDescription());
+                 * myWriter.write(s);
+                 * lastGroup = e.groupName;
+                 * }
+                 * } catch (IOException e) {
+                 * }
+                 */
+
+                createChannels(channelList);
                 channelsCreated = true;
             }
-
         } catch (CarNetException e) {
             CarNetApiErrorDTO res = e.getApiResult().getApiError();
             if (res.description.contains("disabled ")) {
@@ -282,10 +295,10 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 logger.debug("{}: {}", thingId, message);
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING, message);
                 return false;
-            } else {
-                successful = false;
-                error = getError(e);
             }
+
+            successful = false;
+            error = getError(e);
         } catch (RuntimeException e) {
             error = "General Error: " + getString(e.getMessage());
             logger.warn("{}: {}", thingId, error, e);
@@ -310,6 +323,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     @Override
     public void informationUpdate(@Nullable List<CarNetVehicleInformation> vehicleList) {
         forceUpdate = true;
+        channelsCreated = false;
     }
 
     @Override
@@ -327,6 +341,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         String channelId = channelUID.getIdWithoutGroup();
         String error = "";
         boolean sendOffOnError = false;
+        boolean connectionLost = false;
         try {
             switch (channelId) {
                 case CHANNEL_CONTROL_UPDATE:
@@ -354,17 +369,18 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
         } catch (CarNetException e) {
             error = getError(e);
-            if (sendOffOnError) {
-                updateState(channelUID.getId(), OnOffType.OFF);
-            }
+            logger.warn("{}: {}", thingId, error);
         } catch (RuntimeException e) {
             error = "General Error: " + getString(e.getMessage());
             logger.warn("{}: {}", thingId, error, e);
         }
 
-        // if (!error.isEmpty()) {
-        // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
-        // }
+        if (!error.isEmpty()) {
+            if (sendOffOnError) {
+                updateState(channelUID.getId(), OnOffType.OFF);
+            }
+            // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
+        }
     }
 
     /**

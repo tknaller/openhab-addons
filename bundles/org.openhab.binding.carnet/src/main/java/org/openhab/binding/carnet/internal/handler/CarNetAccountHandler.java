@@ -44,6 +44,7 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleLis
 import org.openhab.binding.carnet.internal.api.CarNetHttpClient;
 import org.openhab.binding.carnet.internal.api.CarNetTokenManager;
 import org.openhab.binding.carnet.internal.config.CarNetAccountConfiguration;
+import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,10 +82,9 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
     public CarNetAccountHandler(Bridge bridge, @Nullable CarNetTextResources resources,
             CarNetTokenManager tokenManager) {
         super(bridge);
-
-        // Each instance has it's own http client. Audi requires weaked SSL attributes, other may not
         this.tokenManager = tokenManager;
 
+        // Each instance has it's own http client. Audi requires weaked SSL attributes, other may not
         HttpClient httpClient = new HttpClient();
         try {
             SslContextFactory ssl = new SslContextFactory();
@@ -234,7 +234,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         cancelRefreshJob();
         logger.trace("Setting up token refresh job, checking every 5 minutes");
         refreshJob = scheduler.scheduleWithFixedDelay(() -> refreshToken(), initialWaitTime,
-                60 /* API_TOKEN_REFRESH_INTERVAL_SEC */, TimeUnit.SECONDS);
+                60/* API_TOKEN_REFRESH_INTERVAL_SEC */, TimeUnit.SECONDS);
     }
 
     /**

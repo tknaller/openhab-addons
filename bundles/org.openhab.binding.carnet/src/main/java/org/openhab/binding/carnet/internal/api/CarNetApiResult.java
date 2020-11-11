@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.carnet.internal.api;
 
+import static org.eclipse.jetty.http.HttpStatus.*;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.api.ContentResponse;
@@ -74,6 +76,15 @@ public class CarNetApiResult {
 
     public boolean isHttpOk() {
         return httpCode == HttpStatus.OK_200 || httpCode == HttpStatus.ACCEPTED_202;
+    }
+
+    public boolean isHttpUnauthorized() {
+        return (httpCode == UNAUTHORIZED_401 || httpCode == HttpStatus.FORBIDDEN_403
+                || httpCode == HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407);
+    }
+
+    public boolean isHttpServerError() {
+        return (httpCode >= INTERNAL_SERVER_ERROR_500) && (httpCode <= INTERNAL_SERVER_ERROR_500 + 99);
     }
 
     private void fillFromResponse(@Nullable ContentResponse contentResponse) {

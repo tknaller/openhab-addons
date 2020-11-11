@@ -29,7 +29,7 @@ import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData.CarNetTripDataList.CarNetTripDataEntry;
-import org.openhab.binding.carnet.internal.handler.CarNetCombinedConfig;
+import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
 import org.slf4j.Logger;
@@ -51,8 +51,19 @@ public class CarNetVehicleServiceTripData extends CarNetVehicleBaseService {
 
     @Override
     public boolean createChannels(Map<String, ChannelIdMapEntry> channels) throws CarNetException {
-        boolean updated = update("shortTerm", channels);
-        return updated | update("longTerm", channels);
+        try {
+            boolean updated = false;
+            if (getConfig().vehicle.numShortTrip > 0) {
+                update("shortTerm", channels);
+            }
+            if (getConfig().vehicle.numLongTrip > 0) {
+                updated |= update("longTerm", channels);
+            }
+            return updated;
+        } catch (CarNetException e) {
+
+        }
+        return false;
     }
 
     private boolean createChannels(Map<String, ChannelIdMapEntry> ch, String type, int index) {
@@ -87,7 +98,7 @@ public class CarNetVehicleServiceTripData extends CarNetVehicleBaseService {
 
             CarNetCombinedConfig config = getConfig();
             boolean shortTerm = type.contains("short");
-            int numTrips = shortTerm ? config.vehicle.numTripShort : config.vehicle.numTripLong;
+            int numTrips = shortTerm ? config.vehicle.numShortTrip : config.vehicle.numLongTrip;
 
             int i = 0; // latest first
             int l = 1;

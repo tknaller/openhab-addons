@@ -42,6 +42,7 @@ public class CarNetToken {
         this.accessToken = accessToken;
         this.authType = authType;
         setValidity(validity);
+        setValidity(60);
     }
 
     public CarNetToken(CNApiToken token) {

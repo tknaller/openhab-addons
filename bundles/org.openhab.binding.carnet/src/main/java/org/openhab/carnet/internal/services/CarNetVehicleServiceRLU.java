@@ -25,7 +25,6 @@ import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHistory.CarNetRluHistory;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHistory.CarNetRluHistory.CarNetRluLockActionList.CarNetRluLockAction;
-import org.openhab.binding.carnet.internal.handler.CarNetCombinedConfig;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
 import org.slf4j.Logger;
@@ -47,12 +46,19 @@ public class CarNetVehicleServiceRLU extends CarNetVehicleBaseService {
 
     @Override
     public boolean createChannels(Map<String, ChannelIdMapEntry> channels) throws CarNetException {
+        if (getConfig().vehicle.numActionHistory == 0) {
+            return false;
+        }
+
         addChannel(channels, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_LOCK, ITEMT_SWITCH, null, false, false);
         return update(channels);
     }
 
     private boolean createChannels(Map<String, ChannelIdMapEntry> ch, int index) {
         boolean a = false;
+        if (getConfig().vehicle.numActionHistory == 0) {
+            return false;
+        }
         String group = CHANNEL_GROUP_RLUHIST + index;
         a |= addChannel(ch, group, CHANNEL_RLUHIST_OP, ITEMT_STRING, null, false, true);
         a |= addChannel(ch, group, CHANNEL_RLUHIST_TS, ITEMT_DATETIME, null, false, true);
@@ -66,26 +72,30 @@ public class CarNetVehicleServiceRLU extends CarNetVehicleBaseService {
     }
 
     private boolean update(@Nullable Map<String, ChannelIdMapEntry> channels) throws CarNetException {
-        CarNetRluHistory hist = api.getRluActionHistory();
-        if (hist != null) {
-            CarNetCombinedConfig config = getConfig();
-            int i = hist.actions.action.size() - 1; // latest first
-            int l = 1;
-            while ((i > 0) && (l <= config.vehicle.numActions)) {
-                if (channels != null) {
-                    createChannels(channels, l);
-                } else {
-                    CarNetRluLockAction entry = hist.actions.action.get(i);
-                    String group = CHANNEL_GROUP_RLUHIST + l;
-                    updateChannel(group, CHANNEL_RLUHIST_TS, getDateTime(getString(entry.timestamp)));
-                    updateChannel(group, CHANNEL_RLUHIST_OP, getStringType(entry.operation));
-                    updateChannel(group, CHANNEL_RLUHIST_RES, getStringType(entry.rluResult));
+        try {
+            CarNetRluHistory hist = api.getRluActionHistory();
+            if (hist != null) {
+                int num = getConfig().vehicle.numActionHistory;
+                int i = hist.actions.action.size() - 1; // latest first
+                int l = 1;
+                while ((i > 0) && (l <= num)) {
+                    if (channels != null) {
+                        createChannels(channels, l);
+                    } else {
+                        CarNetRluLockAction entry = hist.actions.action.get(i);
+                        String group = CHANNEL_GROUP_RLUHIST + l;
+                        updateChannel(group, CHANNEL_RLUHIST_TS, getDateTime(getString(entry.timestamp)));
+                        updateChannel(group, CHANNEL_RLUHIST_OP, getStringType(entry.operation));
+                        updateChannel(group, CHANNEL_RLUHIST_RES, getStringType(entry.rluResult));
+                    }
+                    i--;
+                    l++;
                 }
-                i--;
-                l++;
-            }
 
-            return true;
+                return true;
+            }
+        } catch (CarNetException e) {
+
         }
         return false;
     }

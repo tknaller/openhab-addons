@@ -19,9 +19,9 @@ import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_S
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.smarthome.core.library.types.PercentType;
 import org.eclipse.smarthome.core.library.types.QuantityType;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
+import org.eclipse.smarthome.core.types.UnDefType;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus;
@@ -47,46 +47,61 @@ public class CarNetVehicleServiceCharger extends CarNetVehicleBaseService {
 
     @Override
     public boolean createChannels(Map<String, ChannelIdMapEntry> ch) throws CarNetException {
-        CarNetChargerStatus cs = api.getChargerStatus();
-        if (cs != null) {
-            // addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CURRENT, ITEMT_NUMBER, null, true, true);
-            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_STATUS, ITEMT_STRING, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PWR_STATE, ITEMT_STRING, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CHG_STATE, ITEMT_STRING, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_FLOW, ITEMT_STRING, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_BAT_STATE, ITEMT_PERCENT, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_REMAINING, ITEMT_TIME, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PLUG_STATE, ITEMT_STRING, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_LOCK_STATE, ITEMT_STRING, null, false, true);
-            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_ERROR, ITEMT_NUMBER, null, false, true);
-            return true;
+        try {
+            CarNetChargerStatus cs = api.getChargerStatus();
+            if (cs != null) {
+                // addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CURRENT, ITEMT_NUMBER, null, true, true);
+                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_STATUS, ITEMT_STRING, null, false, true);
+                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PWR_STATE, ITEMT_STRING, null, false, true);
+                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CHG_STATE, ITEMT_STRING, null, false, true);
+                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_FLOW, ITEMT_STRING, null, false, true);
+                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_BAT_STATE, ITEMT_PERCENT, null, false, true);
+                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_REMAINING, ITEMT_TIME, null, false, true);
+                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PLUG_STATE, ITEMT_STRING, null, false, true);
+                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_LOCK_STATE, ITEMT_STRING, null, false, true);
+                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_ERROR, ITEMT_NUMBER, null, false, true);
+                return true;
+            }
+        } catch (CarNetException e) {
+
         }
         return false;
     }
 
     @Override
     public boolean serviceUpdate() throws CarNetException {
-        CarNetChargerStatus cs = api.getChargerStatus();
-        if (cs == null) {
-            return false;
-        }
-        CarNetChargerStatusData sd = cs.status.chargingStatusData;
-        if (sd != null) {
-            String group = CHANNEL_GROUP_CHARGER;
-            updateChannel(group, CHANNEL_CHARGER_CURRENT, getDecimal(cs.settings.maxChargeCurrent.content),
-                    SmartHomeUnits.AMPERE);
-            updateChannel(group, CHANNEL_CHARGER_STATUS, getStringType(sd.chargingState.content));
-            updateChannel(group, CHANNEL_CHARGER_ERROR, getDecimal(sd.chargingStateErrorCode.content));
-            updateChannel(group, CHANNEL_CHARGER_PWR_STATE, getStringType(sd.externalPowerSupplyState.content));
-            updateChannel(group, CHANNEL_CHARGER_CHG_STATE, getStringType(sd.chargingState.content));
-            updateChannel(group, CHANNEL_CHARGER_FLOW, getStringType(sd.energyFlow.content));
-            updateChannel(group, CHANNEL_CHARGER_BAT_STATE,
-                    new PercentType(getInteger(cs.status.batteryStatusData.stateOfCharge.content)));
-            updateChannel(group, CHANNEL_CHARGER_REMAINING, new QuantityType<>(
-                    getDecimal(cs.status.batteryStatusData.remainingChargingTime.content), QMINUTES));
-            updateChannel(group, CHANNEL_CHARGER_PLUG_STATE, getStringType(cs.status.plugStatusData.plugState.content));
-            updateChannel(group, CHANNEL_CHARGER_LOCK_STATE, getStringType(cs.status.plugStatusData.lockState.content));
-            return true;
+        try {
+            CarNetChargerStatus cs = api.getChargerStatus();
+            if ((cs.status == null) || (cs.status.chargingStatusData == null)) {
+                return false;
+            }
+            CarNetChargerStatusData sd = cs.status.chargingStatusData;
+            if (sd != null) {
+                String group = CHANNEL_GROUP_CHARGER;
+                updateChannel(group, CHANNEL_CHARGER_CURRENT,
+                        cs.settings != null ? getDecimal(cs.settings.maxChargeCurrent.content) : UnDefType.UNDEF,
+                        SmartHomeUnits.AMPERE);
+                updateChannel(group, CHANNEL_CHARGER_STATUS, getStringType(sd.chargingState.content));
+                updateChannel(group, CHANNEL_CHARGER_ERROR, getDecimal(sd.chargingStateErrorCode.content));
+                updateChannel(group, CHANNEL_CHARGER_PWR_STATE, getStringType(sd.externalPowerSupplyState.content));
+                updateChannel(group, CHANNEL_CHARGER_CHG_STATE, getStringType(sd.chargingState.content));
+                updateChannel(group, CHANNEL_CHARGER_FLOW, getStringType(sd.energyFlow.content));
+                updateChannel(group, CHANNEL_CHARGER_BAT_STATE,
+                        new QuantityType<>(getInteger(cs.status.batteryStatusData.stateOfCharge.content), PERCENT));
+                int remaining = getDecimal(cs.status.batteryStatusData.remainingChargingTime.content).intValue();
+                updateChannel(group, CHANNEL_CHARGER_REMAINING,
+                        remaining == 65535 ? UnDefType.UNDEF
+                                : new QuantityType<>(
+                                        getDecimal(cs.status.batteryStatusData.remainingChargingTime.content),
+                                        QMINUTES));
+                updateChannel(group, CHANNEL_CHARGER_PLUG_STATE,
+                        getStringType(cs.status.plugStatusData.plugState.content));
+                updateChannel(group, CHANNEL_CHARGER_LOCK_STATE,
+                        getStringType(cs.status.plugStatusData.lockState.content));
+                return true;
+            }
+        } catch (CarNetException e) {
+
         }
         return false;
     }

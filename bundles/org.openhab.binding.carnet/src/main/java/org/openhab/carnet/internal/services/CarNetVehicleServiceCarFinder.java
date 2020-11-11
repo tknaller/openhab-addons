@@ -52,7 +52,7 @@ public class CarNetVehicleServiceCarFinder extends CarNetVehicleBaseService {
         boolean ok = false;
         try {
             api.getVehiclePosition();
-            // ok = true;
+            ok = true;
         } catch (CarNetException e) {
             if (e.getApiResult().httpCode == HttpStatus.NO_CONTENT_204) {
                 ok = true; // Ignore No Content = Info not available, but valid API result
@@ -72,13 +72,13 @@ public class CarNetVehicleServiceCarFinder extends CarNetVehicleBaseService {
     public boolean serviceUpdate() throws CarNetException {
         try {
             logger.debug("{}: Get Vehicle Position", thingId);
-            // updateLocation(api.getStoredPosition(), CHANNEL_STORED_POS);
             CarNetVehiclePosition position = updateLocation(api.getVehiclePosition(), CHANNEL_LOCATTION_GEO);
             String time = position.getCarSentTime();
             updateChannel(CHANNEL_GROUP_LOCATION, CHANNEL_LOCATTION_TIME, new DateTimeType(time));
 
+            updateLocation(api.getStoredPosition(), CHANNEL_PARK_LOCATION);
             String parkingTime = getString(position.getParkingTime());
-            updateChannel(CHANNEL_GROUP_LOCATION, CHANNEL_PARK_LOCATION,
+            updateChannel(CHANNEL_GROUP_LOCATION, CHANNEL_PARK_TIME,
                     !parkingTime.isEmpty() ? new DateTimeType(position.getParkingTime()) : UnDefType.NULL);
             return true;
         } catch (CarNetException e) {
@@ -93,9 +93,11 @@ public class CarNetVehicleServiceCarFinder extends CarNetVehicleBaseService {
     }
 
     private @Nullable CarNetVehiclePosition updateLocation(@Nullable CarNetVehiclePosition position, String channel) {
-        PointType location = new PointType(new DecimalType(position.getLattitude()),
-                new DecimalType(position.getLongitude()));
-        updateChannel(CHANNEL_GROUP_LOCATION, channel, location);
+        if (position != null) {
+            PointType location = new PointType(new DecimalType(position.getLattitude()),
+                    new DecimalType(position.getLongitude()));
+            updateChannel(CHANNEL_GROUP_LOCATION, channel, location);
+        }
         return position;
     }
 }

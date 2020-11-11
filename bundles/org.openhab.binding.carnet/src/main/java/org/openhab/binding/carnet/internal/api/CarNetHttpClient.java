@@ -41,7 +41,7 @@ import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.UrlEncoded;
 import org.openhab.binding.carnet.internal.CarNetException;
-import org.openhab.binding.carnet.internal.handler.CarNetCombinedConfig;
+import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -203,7 +203,7 @@ public class CarNetHttpClient {
      */
     private String getBrandUrl(String uriTemplate, String args, String vin) throws MalformedURLException {
         String path = MessageFormat.format(uriTemplate, config.account.brand, config.account.country, vin,
-                config.vehicle.user.id);
+                config.user.id);
         if (!uriTemplate.contains("://")) { // not a full URL
             return getUrl(path.isEmpty() ? path : path + (!args.isEmpty() ? "?" + args : ""));
         } else {
@@ -226,8 +226,8 @@ public class CarNetHttpClient {
         headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
         headers.put(CNAPI_HEADER_APP, config.xappName);
         headers.put(CNAPI_HEADER_VERS, config.xappVersion);
-        headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
+        headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
         headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + token);
         // headers.put("If-None-Match", "none");
 

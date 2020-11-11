@@ -81,6 +81,18 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_CLIMATER_RR_STATE = "rearRight";
     public static final String CHANNEL_CLIMATER_MIRROR_HEAT = "mirrorHeat";
 
+    public static final String CHANNEL_GROUP_CHARGER = "charger";
+    public static final String CHANNEL_CHARGER_CURRENT = "maxCurrent";
+    public static final String CHANNEL_CHARGER_STATUS = "chargingStatus";
+    public static final String CHANNEL_CHARGER_ERROR = "errorCode";
+    public static final String CHANNEL_CHARGER_PWR_STATE = "powerState";
+    public static final String CHANNEL_CHARGER_FLOW = "energyFlow";
+    public static final String CHANNEL_CHARGER_CHG_STATE = "chargingState";
+    public static final String CHANNEL_CHARGER_BAT_STATE = "batteryState";
+    public static final String CHANNEL_CHARGER_REMAINING = "remainingTime";
+    public static final String CHANNEL_CHARGER_PLUG_STATE = "plugState";
+    public static final String CHANNEL_CHARGER_LOCK_STATE = "lockState";
+
     public static final String CHANNEL_GROUP_TRIP_PRE = "trip";
     public static final String CHANNEL_TRIP_SHORT = "Short";
     public static final String CHANNEL_TRIP_LONG = "Long";
@@ -95,17 +107,15 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_TRIP_START_MIL = "startMileage";
     public static final String CHANNEL_TRIP_OVR_MILAGE = "overallMileage";
 
-    public static final String CHANNEL_GROUP_CHARGER = "charger";
-    public static final String CHANNEL_CHARGER_CURRENT = "maxCurrent";
-    public static final String CHANNEL_CHARGER_STATUS = "chargingStatus";
-    public static final String CHANNEL_CHARGER_ERROR = "errorCode";
-    public static final String CHANNEL_CHARGER_PWR_STATE = "powerState";
-    public static final String CHANNEL_CHARGER_FLOW = "energyFlow";
-    public static final String CHANNEL_CHARGER_CHG_STATE = "chargingState";
-    public static final String CHANNEL_CHARGER_BAT_STATE = "batteryState";
-    public static final String CHANNEL_CHARGER_REMAINING = "remainingTime";
-    public static final String CHANNEL_CHARGER_PLUG_STATE = "plugState";
-    public static final String CHANNEL_CHARGER_LOCK_STATE = "lockState";
+    public static final String CHANNEL_GROUP_DEST_PRE = "destination";
+    public static final String CHANNEL_DEST_NAME = "destinationName";
+    public static final String CHANNEL_DEST_POI = "destinationPoi";
+    public static final String CHANNEL_DEST_GEO = "destinationLocation";
+    public static final String CHANNEL_DEST_STREET = "destinatinStreet";
+    public static final String CHANNEL_DEST_CITY = "destinationCity";
+    public static final String CHANNEL_DEST_ZIP = "destinationZip";
+    public static final String CHANNEL_DEST_COUNTY = "destinationCountry";
+    public static final String CHANNEL_DEST_SOURCE = "destinationSource";
 
     // Other channels group in here
     public static final String CHANNEL_GROUP_STATUS = "status";

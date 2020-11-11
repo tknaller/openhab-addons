@@ -19,11 +19,13 @@ import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -35,6 +37,8 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNDestinations;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNDestinations.CarNetDestinationList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHistory;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHistory.CarNetRluHistory;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNOperationList;
@@ -46,8 +50,9 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNRoleRights;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNRoleRights.CarNetUserRoleRights;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData.CarNetVehicleData;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleSpec;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleSpec.CarNetVehicleSpec;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetActionResponse;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetDestinations;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetHomeRegion;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetOidcConfig;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceAvailability;
@@ -56,8 +61,8 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDet
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus;
+import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
 import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
-import org.openhab.binding.carnet.internal.handler.CarNetCombinedConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -221,6 +226,24 @@ public class CarNetApi {
         return details;
     }
 
+    public CarNetVehicleSpec getVehicleSpec() throws CarNetException {
+        // POST https://userinfo.my.audi.com/patp/v1/vgql/v1/graphql
+        // x-csrf-token: ffaf7a7e-f1b1-4235-9127-6e225150a2d5
+        // x-myaudi-request-id: 5ab10c87-b3bc-43a9-aaec-16eda37fd1fb
+
+        String query = "{ "
+                + "\"query\":\"\\n\\nfragment VehicleFragment on Vehicle {\\n  core {\\n    commissionNumber\\n    modelYear\\n    exteriorColorId\\n  }\\n  classification {\\n    driveTrain\\n    modelRange\\n  }\\n  media {\\n    shortName\\n    longName\\n    exteriorColor\\n    interiorColor\\n  }\\n  renderPictures(mediaTypes: $mediaTypes) {\\n      mediaType\\n      url\\n  }\\n  hifa {\\n    factoryPickupDateFrom\\n    factoryPickupDateTill\\n    fbDestination\\n  }\\n  pdw {\\n    pdwVehicle\\n  }\\n  equipments {\\n    code\\n    name\\n    categoryId\\n    categoryName\\n    subCategoryId\\n    subCategoryName\\n    teaserImage\\n    standard\\n  }\\n  techSpecs {\\n    key\\n    name\\n    value\\n    unit\\n    groupId\\n    groupName\\n  }\\n  consumption {\\n    wltps {\\n      attributeGroup\\n      attributes {\\n        attributeId\\n        scaleUnit\\n        value\\n      }\\n    }\\n    technicalSpecifications {\\n      key\\n      name\\n      value\\n      unit\\n      groupId\\n      groupName\\n    }\\n  }\\n}\\n\\n\\nquery ($mediaTypes: [String]) {\\n  userVehicles {\\n      csid\\n      vin\\n      owner\\n      type\\n      devicePlatform\\n      mbbConnect\\n      userRole {\\n        role\\n      }\\n      vehicle {\\n        ...VehicleFragment\\n      }\\n  }\\n}\\n\","
+                + "\"variables\":{\"mediaTypes\":[\"MYAPN1NB\",\"MYAPN2NB\",\"MYAPN3NB\",\"MYAPN5NB\",\"MYAPN6NB\",\"MYAPN8NB\",\"MYAPN9NB\",\"MYAPI1\",\"MYAPI2\",\"MYAPI4\"]}}";
+        Map<String, String> headers = fillActionHeaders("application/json;charset=utf-8", "");
+        headers.put("x-csrf-token", tokenManager.getCsrfToken(config.tokenSetId));
+        headers.put("x-myaudi-request-id", UUID.randomUUID().toString());
+        headers.put("referer", "https://my.audi.com/");
+        String json = http.post("https://featureapps.audi.com/audi-env-config/0/config/myaudi/livem2/idk.json", headers,
+                query, "");
+        CNVehicleSpec details = gson.fromJson(json, CNVehicleSpec.class);
+        return details.data;
+    }
+
     public CarNetVehicleStatus getVehicleStatus() throws CarNetException {
         String json = callApi(CNAPI_URI_VEHICLE_STATUS, "getVehicleStatus");
         CarNetVehicleStatus status = gson.fromJson(json, CarNetVehicleStatus.class);
@@ -274,13 +297,24 @@ public class CarNetApi {
         return position;
     }
 
-    public String getDestinations() throws CarNetException {
+    public CarNetDestinationList getDestinations() throws CarNetException {
         String json = callApi(CNAPI_URI_DESTINATIONS, "getDestinations");
-        CarNetDestinations destinations = gson.fromJson(json, CarNetDestinations.class);
-        if ((destinations.destinations != null) && destinations.destinations.destination.size() > 0) {
-            return json;
+        if ((json != null) && json.equals("{\"destinations\":null}")) {
+            // This services returns an empty list rather than http 403 when access is not allowed
+            // in this case try to load test data
+            String test = loadJson("getDestinations");
+            if (test != null) {
+                json = test;
+            }
         }
-        return json;
+        CNDestinations dest = gson.fromJson(json, CNDestinations.class);
+        if (dest.destinations != null) {
+            return dest.destinations;
+        }
+
+        CarNetDestinationList empty = new CarNetDestinationList();
+        empty.destination = new ArrayList<>();
+        return empty; // return empty list
     }
 
     public String getHistory() throws CarNetException {
@@ -363,25 +397,20 @@ public class CarNetApi {
         return null;
     }
 
-    public @Nullable CarNetOperationList getOperationList() {
-        try {
-            String json = http.get(CNAPI_VWURL_OPERATIONS, fillAppHeaders());
-            if (logger.isDebugEnabled()) {
-                try {
-                    logger.debug("Dave service list to {}/carnetServices.json", System.getProperty("user.dir"));
-                    FileWriter myWriter = new FileWriter("carnetServices.json");
-                    myWriter.write(json);
-                    myWriter.close();
-                } catch (IOException e) {
-                }
+    public @Nullable CarNetOperationList getOperationList() throws CarNetException {
+        String json = http.get(CNAPI_VWURL_OPERATIONS, fillAppHeaders());
+        if (logger.isDebugEnabled()) {
+            try {
+                logger.debug("Save service list to {}/carnetServices.json", System.getProperty("user.dir"));
+                FileWriter myWriter = new FileWriter("carnetServices.json");
+                myWriter.write(json);
+                myWriter.close();
+            } catch (IOException e) {
             }
-
-            CNOperationList operationList = gson.fromJson(json, CNOperationList.class);
-            return operationList.operationList;
-        } catch (CarNetException e) {
-
         }
-        return null;
+
+        CNOperationList operationList = gson.fromJson(json, CNOperationList.class);
+        return operationList.operationList;
     }
 
     public @Nullable String getVehicleUsers() throws CarNetException {
@@ -643,14 +672,6 @@ public class CarNetApi {
 
     public Map<String, String> fillAppHeaders() throws CarNetException {
         return http.fillAppHeaders(new HashMap<>(), createVwToken());
-    }
-
-    public Map<String, String> fillBrandHeaders() throws CarNetException {
-        return http.fillBrandHeaders(new HashMap<>(), createBrandToken());
-    }
-
-    private String createBrandToken() throws CarNetException {
-        return tokenManager.createBrandToken(config);
     }
 
     private String createVwToken() throws CarNetException {

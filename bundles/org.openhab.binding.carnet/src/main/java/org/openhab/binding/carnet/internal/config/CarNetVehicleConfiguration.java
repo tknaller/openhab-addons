@@ -34,10 +34,10 @@ public class CarNetVehicleConfiguration {
         public String securityLevel = "";
     }
 
-    public CarNetUserInfo user = new CarNetUserInfo();
+    public int numShortTrip = 1; // number of entries from short trip data history
+    public int numLongTrip = 1; // number of entries from long trip data history
+    public int numActionHistory = 1; // number of entries from action history
+    public int numDestinations = 1; // number of entries from the destination history;
 
-    public int numTripShort = 1; // number of entries from history
-    public int numTripLong = 1; // number of entries from history
-    public int numActions = 1; // number of entries from history
     public int refreshInterval = 10 * 60;
 }

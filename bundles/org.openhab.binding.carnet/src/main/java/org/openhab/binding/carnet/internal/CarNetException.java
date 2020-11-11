@@ -15,10 +15,14 @@ package org.openhab.binding.carnet.internal;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.carnet.internal.api.CarNetApiResult;
+
+import com.google.gson.JsonSyntaxException;
 
 /**
  * The {@link CarNetException} implements an extension to the standard Exception class. This allows to keep also the
@@ -29,6 +33,7 @@ import org.openhab.binding.carnet.internal.api.CarNetApiResult;
 @NonNullByDefault
 public class CarNetException extends Exception {
     private static final long serialVersionUID = -5809459454769761821L;
+    private static String NONE = "none";
 
     private @Nullable Throwable e = null;
     private CarNetApiResult apiResult = new CarNetApiResult();
@@ -89,5 +94,47 @@ public class CarNetException extends Exception {
 
     public CarNetApiResult getApiResult() {
         return apiResult;
+    }
+
+    public boolean isHttpAccessUnauthorized() {
+        return apiResult.isHttpUnauthorized();
+    }
+
+    public boolean isHttpServerError() {
+        return apiResult.isHttpServerError();
+    }
+
+    public boolean isUnknownHost() {
+        return getCauseClass() == MalformedURLException.class;
+    }
+
+    public boolean isMalformedURL() {
+        return getCauseClass() == UnknownHostException.class;
+    }
+
+    public boolean isJSONException() {
+        return getCauseClass() == JsonSyntaxException.class;
+    }
+
+    public boolean isTimeout() {
+        Class<?> extype = !isEmpty() ? getCauseClass() : null;
+        return (extype != null) && ((extype == TimeoutException.class) || (extype == ExecutionException.class)
+                || (extype == InterruptedException.class) || getMessage().toLowerCase().contains("timeout"));
+    }
+
+    private Class<?> getCauseClass() {
+        Throwable cause = getCause();
+        if (getCause() != null) {
+            return cause.getClass();
+        }
+        return CarNetException.class;
+    }
+
+    private boolean isEmpty() {
+        return nonNullString(super.getMessage()).equals(NONE);
+    }
+
+    private static String nonNullString(@Nullable String s) {
+        return s != null ? s : "";
     }
 }

@@ -113,7 +113,7 @@ public class CarNetStateDescriptionProvider implements DynamicStateDescriptionPr
                 case ITEMT_PERCENT:
                 default:
                     if ((channelDef.unit != null) && itemType.contains("Number")) {
-                        pattern = "%f %unit%";
+                        pattern = "%.1f %unit%";
                     }
             }
         }

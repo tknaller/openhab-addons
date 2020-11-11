@@ -125,10 +125,8 @@ public class CarNetUtils {
         return (value != null ? (Boolean) value : false);
     }
 
-    // as State
-
-    public static StringType getStringType(@Nullable String value) {
-        return new StringType(value != null ? value : "");
+    public static State getStringType(@Nullable String value) {
+        return value != null ? new StringType(value) : UnDefType.UNDEF;
     }
 
     public static DecimalType getDecimal(@Nullable Double value) {
