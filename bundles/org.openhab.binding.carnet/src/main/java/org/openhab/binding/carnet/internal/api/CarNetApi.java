@@ -17,7 +17,6 @@ import static org.openhab.binding.carnet.internal.CarNetUtils.substringBefore;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -146,9 +145,7 @@ public class CarNetApi {
         String url = "https://app-api.live-my.audi.com/myaudiappidk/v1/openid-configuration";
         Map<String, String> headers = new LinkedHashMap<>();
         headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
-        headers.put(HttpHeader.ACCEPT.toString(),
-                // "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
-                "application/json");
+        headers.put(HttpHeader.ACCEPT.toString(), "application/json");
         headers.put(HttpHeader.CONTENT_TYPE.toString(), "application/x-www-form-urlencoded");
         String json = http.get(url, headers);
         config.oidcDate = http.getResponseDate();
@@ -238,36 +235,6 @@ public class CarNetApi {
     public String getVehicleHealthReport() throws CarNetException {
         String json = callApi("bs/vhs/v2/vehicle/{2}", "healthReport");
         return json;
-    }
-
-    public String getRecommendedMaintenance() throws CarNetException {
-        String json = callActionApi(
-                "myaudi/recommended-maintenance-tasks/v1/vehicles/{2}/recommended-maintenance-tasks",
-                "recommendedMaintenanceTasks");
-        return json;
-    }
-
-    public String getServiceBook() throws CarNetException {
-        try {
-            return http.get("https://mal-1a.prd.ece.vwg-connect.com/myaudi/service-book/v1/vehicles/{2}/service-book",
-                    CarNetHttpClient.fillActionHeaders(new HashMap<>(), "application/json;charset=UTF-8",
-                            createVwToken(), ""));
-        } catch (CarNetException e) {
-            CarNetApiResult res = e.getApiResult();
-            logger.debug("{}: API call {} failed: HTTP {}, {}", config.vehicle.vin, "getServiceBook", res.httpCode,
-                    e.toString());
-            String json = loadJson("getServiceBook");
-            if (json == null) {
-                throw e;
-            }
-            return json;
-        }
-        /*
-         * String json = callActionApi(
-         * "https://mal-1a.prd.ece.vwg-connect.com/myaudi/service-book/v1/vehicles/{2}/service-book",
-         * "getServiceBook");
-         * return json;
-         */
     }
 
     public CarNetVehiclePosition getStoredPosition() throws CarNetException {
@@ -363,7 +330,6 @@ public class CarNetApi {
             headers.put(CNAPI_HEADER_APP, config.xappName);
             headers.put(CNAPI_HEADER_VERS, config.xappVersion);
             headers.put(HttpHeader.AUTHORIZATION.toString(), createVwToken());
-            // headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
             headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
             headers.put(HttpHeader.HOST.toString(), "customer-profile.apps.emea.vwapps.io");
             json = http.get(url, headers, createVwToken());
@@ -378,18 +344,7 @@ public class CarNetApi {
 
     public @Nullable CarNetOperationList getOperationList() throws CarNetException {
         String json = http.get(CNAPI_VWURL_OPERATIONS, fillAppHeaders());
-        if (logger.isDebugEnabled()) {
-            try {
-                logger.debug("Save service list to {}/carnetServices.json", System.getProperty("user.dir"));
-                FileWriter myWriter = new FileWriter("carnetServices.json");
-                myWriter.write(json);
-                myWriter.close();
-            } catch (IOException e) {
-            }
-        }
-
-        CNOperationList operationList = gson.fromJson(json, CNOperationList.class);
-        return operationList.operationList;
+        return gson.fromJson(json, CNOperationList.class).operationList;
     }
 
     public @Nullable String getVehicleUsers() throws CarNetException {
@@ -544,15 +499,6 @@ public class CarNetApi {
     }
 
     public boolean checkRequestSuccessful(String url) {
-        /*
-         * await self.check_request_succeeded(
-         * checkUrl,
-         * "lock vehicle" if lock else "unlock vehicle",
-         * REQUEST_SUCCESSFUL,
-         * REQUEST_FAILED,
-         * "requestStatusResponse.status",
-         * )
-         */
         return true;
     }
 
@@ -564,45 +510,37 @@ public class CarNetApi {
     }
 
     private void initBrandData() {
-        // Initialize your adapter here
-
         if (isBrandAudi()) {
             config.oidcConfigUrl = "https://app-api.live-my.audi.com/myaudiappidk/v1/openid-configuration";
-            config.urlCountry = "DE";
             config.clientId = "09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com";
             config.xClientId = "77869e21-e30a-4a92-b016-48ab7d3db1d8";
-            // config.authScope = "openid myaudi mbb mbbuserid profile email offline_access selfservice:read";
             config.authScope = "address profile badge birthdate birthplace nationalIdentifier nationality profession email vin phone nickname name picture mbb gallery openid";
-            // address%20profile%20badge%20birthdate%20birthplace%20nationalIdentifier%20nationality%20profession%20email%20vin%20phone%20nickname%20name%20picture%20mbb%20gallery%20openid"
             config.redirect_uri = "myaudi:///";
             config.responseType = "token id_token";
             config.xappVersion = "3.14.0";
             config.xappName = "myAudi";
         } else if (isBrandVW()) {
-            config.urlCountry = "DE";
-            config.clientId = "9496332b-ea03-4091-a224-8c746b885068%40apps_vw-dilab_com";
-            // clientId = "c7c15e7f-135c-4bd3-9875-63838616509f@apps_vw-dilab_com"; // VW IOS App
+            config.clientId = "9496332b-ea03-4091-a224-8c746b885068@apps_vw-dilab_com";
             config.xClientId = "38761134-34d0-41f3-9a73-c4be88d7d337";
-            config.authScope = "openid%20profile%20mbb%20email%20cars%20birthdate%20badge%20address%20vin";
+            config.authScope = "openid profile mbb email cars birthdate badge address vin";
             config.redirect_uri = "carnet://identity-kit/Flogin";
             config.xrequest = "de.volkswagen.carnet.eu.eremote";
             config.responseType = "id_token token code";
             config.xappName = "eRemote";
             config.xappVersion = "5.1.2";
         } else if (isBrandSkoda()) {
-            config.urlCountry = "CZ";
-            config.clientId = "7f045eee-7003-4379-9968-9355ed2adb06%40apps_vw-dilab_com";
+            config.clientId = "7f045eee-7003-4379-9968-9355ed2adb06@apps_vw-dilab_com";
             config.xClientId = "28cd30c6-dee7-4529-a0e6-b1e07ff90b79";
-            config.authScope = "openid%20profile%20phone%20address%20cars%20email%20birthdate%20badge%20dealers%20driversLicense%20mbb";
+            config.authScope = "openid profile phone address cars email birthdate badge dealers driversLicense mbb";
             config.redirect_uri = "skodaconnect://oidc.login/";
             config.xrequest = "cz.skodaauto.connect";
-            config.responseType = "code%20id_token";
+            config.responseType = "code id_token";
             config.xappVersion = "3.2.6";
             config.xappName = "cz.skodaauto.connect";
         } else if (isBrandGo()) {
             config.clientId = "ac42b0fa-3b11-48a0-a941-43a399e7ef84@apps_vw-dilab_com";
             config.xClientId = "";
-            config.authScope = "openid%20profile%20address%20email%20phone";
+            config.authScope = "openid profile address email phone";
             config.redirect_uri = "vwconnect://de.volkswagen.vwconnect/oauth2redirect/identitykit";
             config.responseType = "code";
         }

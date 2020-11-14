@@ -26,7 +26,6 @@ public class CarNetCombinedConfig {
     public CarNetOidcConfig oidcConfig = new CarNetOidcConfig();
     public String oidcDate = ""; // Date in getOIDC http response header
     public String oidcConfigUrl = "";
-    public String urlCountry = "";
     public String clientId = "";
     public String xClientId = "";
     public String authScope = "";
