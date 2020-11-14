@@ -15,9 +15,7 @@ package org.openhab.binding.carnet.internal.api;
 import static org.openhab.binding.carnet.internal.CarNetUtils.*;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.time.ZonedDateTime;
@@ -108,11 +106,6 @@ public class CarNetHttpClient {
         return request(HttpMethod.GET, uri, "", headers, "", vin, "");
     }
 
-    /*
-     * public String get(String uri) throws CarNetException {
-     * return get(uri, new HashMap<String, String>(), "");
-     * }
-     */
     /**
      * Sends a HTTP POST request using the synchronous client
      *
@@ -136,10 +129,20 @@ public class CarNetHttpClient {
         return request(HttpMethod.POST, uri, "", headers, buildPostData(data, json), "", "");
     }
 
-    public String postForm(String uri, Map<String, String> headers, Map<String, String> data) throws CarNetException {
-        return request(HttpMethod.POST, uri, "", headers, buildFormData(data), "", "");
-    }
-
+    /**
+     * Make http request (GET/PUT) with given set of headers. Body gets fill depending on method and content type.
+     *
+     * @param method HTTP method (GET/POST)
+     * @param uri URL of URI suffix. If only a suffix is given a complete URL will be created based on the brand base
+     *            url
+     * @param parms Paremeters will be added to the URL
+     * @param headers HTTP headers, additional headers might be added depending on content type
+     * @param data Body field, gets formatted according content type (form encoded vs. JSON format)
+     * @param pvin The account handler specifies a specific pin, if empty config.vehicle.vin will be used
+     * @param token Bearer or security token (or empty)
+     * @return Returns the HTTP response. In additional lastHttpHeaders get filled with the http response headers
+     * @throws CarNetException
+     */
     private String request(HttpMethod method, String uri, String parms, Map<String, String> headers, String data,
             String pvin, String token) throws CarNetException {
         Request request = null;
@@ -187,11 +190,21 @@ public class CarNetHttpClient {
         }
     }
 
+    /**
+     * Get redirect location from http response headers
+     *
+     * @return
+     */
     public String getRedirect() {
         String value = responseHeaders.get("Location");
         return value != null ? value : "";
     }
 
+    /**
+     * Get rresponse time from http response headers
+     *
+     * @return
+     */
     public String getResponseDate() {
         String value = responseHeaders.get("Date");
         return value != null ? value : "";
@@ -211,17 +224,9 @@ public class CarNetHttpClient {
         }
     }
 
-    public Map<String, String> fillBrandHeaders(Map<String, String> headers, String token) throws CarNetException {
-        String auth = MessageFormat.format("Bearer ", token);
-        headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
-        headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_EREMOTE);
-        headers.put(CNAPI_HEADER_VERS, CNAPI_HEADER_VERS_VALUE);
-        headers.put(HttpHeader.AUTHORIZATION.toString(), auth);
-        headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
-        // nextRedirect = true;
-        return headers;
-    }
-
+    /**
+     * Fill standad http headers
+     */
     public Map<String, String> fillAppHeaders(Map<String, String> headers, String token) throws CarNetException {
         headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
         headers.put(CNAPI_HEADER_APP, config.xappName);
@@ -237,6 +242,9 @@ public class CarNetHttpClient {
         return headers;
     }
 
+    /**
+     * Fill http headers for SOAP requests
+     */
     public static Map<String, String> fillActionHeaders(Map<String, String> headers, String contentType, String token,
             String securityToken) throws CarNetException {
         // "User-Agent": "okhttp/3.7.0",
@@ -268,18 +276,27 @@ public class CarNetHttpClient {
         return headers;
     }
 
+    /**
+     * Fill http headers for token refresh request
+     *
+     * @return
+     */
     public Map<String, String> fillRefreshHeaders() {
         Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
         headers.put(CNAPI_HEADER_APP, config.xappName);
         headers.put(CNAPI_HEADER_VERS, config.xappVersion);
         headers.put(HttpHeader.CONTENT_TYPE.toString(), "application/x-www-form-urlencoded");
-        // headers.put(HttpHeader.ACCEPT.toString(), "application/json");
         headers.put("X-Client-Id", config.xClientId);
-        // headers.put("X-Client-Id", config.clientId);
         return headers;
     }
 
+    /**
+     * Fill in POST data, set http headers
+     *
+     * @param request HTTP request structure
+     * @param data POST data
+     */
     private void fillPostData(Request request, String data) {
         if (!data.isEmpty()) {
             StringContentProvider postData;
@@ -296,6 +313,13 @@ public class CarNetHttpClient {
         }
     }
 
+    /**
+     * Format POST body depending on content type (JSON or form encoded)
+     *
+     * @param dataMap Field list
+     * @param json true=JSON format, false=form encoded
+     * @return formatted body
+     */
     public static String buildPostData(Map<String, String> dataMap, boolean json) {
         String data = "";
         for (Map.Entry<String, String> e : dataMap.entrySet()) {
@@ -309,18 +333,6 @@ public class CarNetHttpClient {
         return json ? "{ " + data + " }" : data;
     }
 
-    public static String buildFormData(Map<String, String> dataMap) {
-        String data = "";
-        try {
-            for (Map.Entry<String, String> e : dataMap.entrySet()) {
-                data = data + (data.isEmpty() ? "" : "+") + e.getKey() + "=" + URLEncoder.encode(e.getValue(), UTF_8);
-            }
-        } catch (UnsupportedEncodingException e) {
-
-        }
-        return data;
-    }
-
     /**
      * Constructs an URL from the stored information and a specified path
      *
@@ -332,6 +344,12 @@ public class CarNetHttpClient {
         return base.endsWith("/") && path.startsWith("/") ? base + path : base + "/" + path;
     }
 
+    /**
+     * Build URL base depending on brand
+     * 
+     * @return URL prefix/base url
+     * @throws MalformedURLException
+     */
     private String getBaseUrl() throws MalformedURLException {
         if (config.account.brand.equalsIgnoreCase(CNAPI_BRAND_AUDI)) {
             return CNAPI_BASE_URL_AUDI;
@@ -345,6 +363,13 @@ public class CarNetHttpClient {
         throw new MalformedURLException("Unknown brand for base URL");
     }
 
+    /**
+     * Get parameter value from URL string
+     * 
+     * @param input URL string
+     * @param parameter Parameter name
+     * @return Extracted value
+     */
     public static String getUrlParm(String input, String parameter) {
         String pattern = "&" + parameter + "=";
         if (input.contains(pattern)) {
@@ -359,6 +384,12 @@ public class CarNetHttpClient {
         return zdt.toInstant().toEpochMilli() * 1000; // return ms
     }
 
+    /**
+     * Encode fields for URL string
+     * 
+     * @param s Field value
+     * @return URL encoded value
+     */
     public static String urlEncode(String s) {
         String url = UrlEncoded.encodeString(s, StandardCharsets.UTF_8); // returns forms data format
         url = url.replace("+", "%20");
@@ -367,6 +398,11 @@ public class CarNetHttpClient {
         return url;
     }
 
+    /**
+     * Generate a NONCE value
+     * 
+     * @return new NONCE
+     */
     public static String generateNonce() {
         String dateTimeString = Long.toString(new Date().getTime());
         byte[] nonceBytes = dateTimeString.getBytes();

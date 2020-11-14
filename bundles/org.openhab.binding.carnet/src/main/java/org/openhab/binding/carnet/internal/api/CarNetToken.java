@@ -71,9 +71,6 @@ public class CarNetToken {
     public String getAccessToken() {
         return accessToken;
     }
-    // public String getHttpHeader() {
-    // return MessageFormat.format("Authorization: {0} {1} {2}", authType, authVersion, accessToken);
-    // }
 
     /**
      * Check if access token is still valid
@@ -89,10 +86,18 @@ public class CarNetToken {
         return (diff / 1000) > validity;
     }
 
+    /**
+     * Check token validity
+     * 
+     * @return true=token still valid, false=token has expired
+     */
     public boolean isValid() {
         return (!accessToken.isEmpty() || !idToken.isEmpty() || !securityToken.isEmpty()) && (validity != -1);
     }
 
+    /**
+     * Make a token invalid by marking it expired
+     */
     public void invalidate() {
         validity = -1;
     }

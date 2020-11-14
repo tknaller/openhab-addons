@@ -158,10 +158,6 @@ public class CarNetBindingConstants {
     public static final int API_TOKEN_REFRESH_INTERVAL_SEC = 5 * 60; // interval to check for valid token
     public static final int API_REQUEST_TIMEOUT = 60;
 
-    public static final String API_STATUS_MSG_PREFIX = "api-status";
-    public static final String API_STATUS_CLASS_SECURUTY = "VSR.security";
-    public static final String API_STATUS_GW_ERROR = "gw.error";
-
     public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
     public static final Unit<Power> KWATT = MetricPrefix.KILO(SmartHomeUnits.WATT);
     public static final Unit<Time> QDAYS = Units.DAY;

@@ -192,15 +192,6 @@ public class CarNetUtils {
     }
 
     public static State getDateTime(String timestamp) {
-        /*
-         * ZonedDateTime gmtTime = LocalDateTime.parse(timestamp, DateTimeFormatter.ofPattern("yyyy-MM-ddTHH:mm:ssZ"))
-         * .atZone(ZoneId.of("GMT"));
-         * LocalDateTime localTime = gmtTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
-         * ZonedDateTime zdt = localTime.atZone(ZoneId.systemDefault());
-         * return new DateTimeType(zdt);
-         *
-         * return new DateTimeType(timestamp);
-         */
         try {
             Date date = Date.from(Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestamp)));
             return new DateTimeType(ZonedDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault()));

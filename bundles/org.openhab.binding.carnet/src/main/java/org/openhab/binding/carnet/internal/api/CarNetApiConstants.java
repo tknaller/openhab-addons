@@ -51,7 +51,11 @@ public class CarNetApiConstants {
 
     public static int CNAPI_TIMEOUT_MS = 30 * 1000;
 
-    // URIs: {0}=brand, {1} = VIN
+    public static final String API_STATUS_MSG_PREFIX = "api-status";
+    public static final String API_STATUS_CLASS_SECURUTY = "VSR.security";
+    public static final String API_STATUS_GW_ERROR = "gw.error";
+
+    // URIs: {0}=brand, {1} = country, {2} = VIN, {3} = userId
     public static final String CNAPI_URI_GET_TOKEN = "core/auth/v1/{0}/{1}/token";
     public static final String CNAPI_URI_GET_USERINFO = "usermanagement/users/v1/{0}/{1}/vehicles/{2}/pairing";
     public static final String CNAPI_URI_VEHICLE_MANAGEMENT = "vehicleMgmt/vehicledata/v2/{0}/{1}/vehicles/{2}";

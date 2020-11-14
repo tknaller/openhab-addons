@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.carnet.internal;
+package org.openhab.binding.carnet.internal.handler;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -19,10 +19,9 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 
 /**
- * Serializable class, contains device specific status information.
+ * {@link CarNetVehicleInformation} define vehicle related information passed to the listener.
  *
  * @author Markus Michels - Initial Contribution
- *
  */
 @NonNullByDefault
 public class CarNetVehicleInformation {

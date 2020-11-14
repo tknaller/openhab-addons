@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.carnet.internal.handler;
 
+import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_TOKEN_REFRESH_INTERVAL_SEC;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,10 +36,8 @@ import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
-import org.openhab.binding.carnet.internal.CarNetDeviceListener;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
-import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
@@ -49,7 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link CarNetAccountHandler} implements access to the myAudi account API. It is implemented as a brdige device
+ * {@link CarNetAccountHandler} implements access to the myAudi account API. It is implemented as a brdige device
  * and also dispatches events to the vehicle things.
  *
  * @author Markus Michels - Initial contribution
@@ -68,11 +68,6 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
     private List<CarNetDeviceListener> vehicleInformationListeners = Collections
             .synchronizedList(new ArrayList<CarNetDeviceListener>());
     private @Nullable ScheduledFuture<?> refreshJob;
-
-    /**
-     * keeps track of the {@link ChannelUID} for the 'apply_tamplate' {@link Channel}
-     */
-    // private final ChannelUID applyTemplateChannelUID;
 
     /**
      * Constructor
@@ -125,6 +120,14 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         });
     }
 
+    /**
+     * Retries the vehicle list from the the account and post this information to the listeners. New things are created
+     * per vehicle under this account.
+     * A background job is scheduled to check token status and trigger a refresh before they expire.
+     *
+     * @return
+     * @throws CarNetException
+     */
     public boolean initializeThing() throws CarNetException {
         Map<String, String> properties = new TreeMap<String, String>();
 
@@ -145,24 +148,6 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         setupRefreshJob(5);
         stateChanged(ThingStatus.ONLINE, ThingStatusDetail.NONE, "");
         return true;
-    }
-
-    private void refreshToken() {
-        logger.debug("Validating/refreshing tokens");
-        try {
-            api.refreshTokens();
-        } catch (CarNetException e) {
-            logger.debug("Unable to refresh tokens", e);
-        }
-    }
-
-    public CarNetHttpClient getHttpClient() {
-        // Account and Vehicle Handlers are sharing the same httpClient
-        return http;
-    }
-
-    public CarNetCombinedConfig getCombinedConfig() {
-        return config;
     }
 
     /**
@@ -234,7 +219,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         cancelRefreshJob();
         logger.trace("Setting up token refresh job, checking every 5 minutes");
         refreshJob = scheduler.scheduleWithFixedDelay(() -> refreshToken(), initialWaitTime,
-                60/* API_TOKEN_REFRESH_INTERVAL_SEC */, TimeUnit.SECONDS);
+                API_TOKEN_REFRESH_INTERVAL_SEC, TimeUnit.SECONDS);
     }
 
     /**
@@ -244,6 +229,24 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         if (refreshJob != null) {
             refreshJob.cancel(false);
         }
+    }
+
+    private void refreshToken() {
+        logger.debug("Validating/refreshing tokens");
+        try {
+            api.refreshTokens();
+        } catch (CarNetException e) {
+            logger.debug("Unable to refresh tokens", e);
+        }
+    }
+
+    public CarNetHttpClient getHttpClient() {
+        // Account and Vehicle Handlers are sharing the same httpClient
+        return http;
+    }
+
+    public CarNetCombinedConfig getCombinedConfig() {
+        return config;
     }
 
     /**

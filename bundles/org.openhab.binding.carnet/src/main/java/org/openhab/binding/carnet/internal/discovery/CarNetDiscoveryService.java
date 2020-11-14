@@ -27,10 +27,10 @@ import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.ThingUID;
-import org.openhab.binding.carnet.internal.CarNetDeviceListener;
 import org.openhab.binding.carnet.internal.CarNetException;
-import org.openhab.binding.carnet.internal.CarNetVehicleInformation;
 import org.openhab.binding.carnet.internal.handler.CarNetAccountHandler;
+import org.openhab.binding.carnet.internal.handler.CarNetDeviceListener;
+import org.openhab.binding.carnet.internal.handler.CarNetVehicleInformation;
 import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +55,9 @@ public class CarNetDiscoveryService extends AbstractDiscoveryService implements 
         this.bridgeUID = bridgeHandler.getThing().getUID();
     }
 
+    /**
+     * Called by Account Handler for each vehicle found under the account, creates the corresponding vehicle thing
+     */
     @Override
     public void informationUpdate(@Nullable List<CarNetVehicleInformation> vehicleList) {
         if (vehicleList == null) {

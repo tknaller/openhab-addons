@@ -68,7 +68,7 @@ public class CarNetIChanneldMapper {
         add("STATE3_SERVICE_FLAP", "0x030105000F", "serviceFlapState", ITEMT_SWITCH);
         add("POSITION_SERVICE_FLAP", "0x0301050010");
         add("CURRENT_SPEED", "0x0301030004", "currentSpeed", ITEMT_SPEED, CHANNEL_GROUP_STATUS,
-                SIUnits.KILOMETRE_PER_HOUR); // to be verified
+                SIUnits.KILOMETRE_PER_HOUR);
         add("BEM", "0x0301030003"); // what does BEM means?
 
         // Range
@@ -85,7 +85,7 @@ public class CarNetIChanneldMapper {
                 true);
         add("15CNG_LEVEL_IN_PERCENT", "0x030103000D", "gasPercentage", ITEMT_PERCENT, CHANNEL_GROUP_RANGE, PERCENT,
                 true, true);
-        add("CHARGING_LEVEL_PERCENT", "0x0301030002", "chargingLevel", ITEMT_PERCENT, CHANNEL_GROUP_RANGE, PERCENT);
+        add("CHARGING_LEVEL_PERCENT", "0x0301030002");
 
         // Maintenance
         add("MAINT_ALARM_INSPECTION", "0x0203010006", "alarmInspection", ITEMT_SWITCH, CHANNEL_GROUP_MAINT);

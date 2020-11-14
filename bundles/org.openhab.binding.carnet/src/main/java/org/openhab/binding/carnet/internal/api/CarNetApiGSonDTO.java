@@ -148,7 +148,6 @@ public class CarNetApiGSonDTO {
          * "securityLevel":"HG_2b"
          * }
          */
-
         public class CarNetUserRoleRights {
             public String content;
             public String status;

@@ -85,18 +85,32 @@ public class CarNetTokenManager {
         return id;
     }
 
+    /**
+     * Create the API access token
+     */
     public String createVwToken(CarNetCombinedConfig config) throws CarNetException {
         TokenSet tokens = getTokenSet(config.tokenSetId);
-
         if (!tokens.vwToken.isExpired()) {
+            // Token is still valid
             return tokens.vwToken.accessToken;
         }
 
-        String url = "";
+        /*
+         * Authentication is performed as follows
+         * 1. OAuth based login is performed given the account credentials. This results in the so-called Id Token
+         * 2. The identity token is used to create an access token. In beetween Audi accepts tokens created by the VW
+         * token management.
+         * 3. The process also returns a refresh token, which could be used to refresh the access token before it
+         * expires. This avoids sending the credentials again and again.
+         * The token service also provides the option to revoke a token, this is not used. Token stays until unless the
+         * refresh fails.
+         */
+        String url = "", html = "", authCode = "", csrf = "";
+        String idToken = "", accessToken = "", expiresIn = "";
+        Map<String, String> headers = new LinkedHashMap<>();
+        Map<String, String> data = new LinkedHashMap<>();
         try {
             logger.debug("{}: Logging in, account={}", config.vehicle.vin, config.account.user);
-            Map<String, String> headers = new LinkedHashMap<>();
-            Map<String, String> data = new LinkedHashMap<>();
             headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
             headers.put(HttpHeader.ACCEPT.toString(),
                     "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
@@ -111,7 +125,6 @@ public class CarNetTokenManager {
                     + "&prompt=login&ui_locales=de-DE%20de";
             http.get(url, headers);
             url = http.getRedirect(); // Signin URL
-            // error=consent_required&error_description=
             if (url.isEmpty()) {
                 throw new CarNetException("Unable to get signin URL");
             }
@@ -121,9 +134,9 @@ public class CarNetTokenManager {
                 throw new CarNetException(
                         "Login failed, Consent missing. Login to Web App and give consent: " + message);
             }
-            String html = http.get(url, headers);
-            url = http.getRedirect(); // Signin URL
-            String csrf = substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
+            html = http.get(url, headers);
+            url = http.getRedirect();
+            csrf = substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
             String relayState = substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
             String hmac = substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
 
@@ -152,14 +165,11 @@ public class CarNetTokenManager {
             data.put("_csrf", csrf);
             data.put("relayState", relayState);
             data.put("hmac", hmac);
-            http.post(url, headers, data, false);
+            html = http.post(url, headers, data, false);
             url = http.getRedirect(); // Continue URL
 
+            // Now we need to follow multiple redirects, required data is fetched from the redirect URLs
             // String userId = "";
-            String authCode = "";
-            String id_token = "";
-            String accessToken = "";
-            String expires_in = "";
             int count = 10;
             while (count-- > 0) {
                 html = http.get(url, headers);
@@ -172,23 +182,31 @@ public class CarNetTokenManager {
                     break; // that's what we are looking for
                 }
                 if (url.contains("&id_token=")) {
-                    id_token = getUrlParm(url, "id_token");
+                    idToken = getUrlParm(url, "id_token");
                 }
                 if (url.contains("&expires_in=")) {
-                    expires_in = getUrlParm(url, "expires_in");
+                    expiresIn = getUrlParm(url, "expires_in");
                 }
                 if (url.contains("&access_token=")) {
                     accessToken = getUrlParm(url, "access_token");
                     break; // that's what we are looking for
                 }
             }
+        } catch (CarNetException e) {
+            throw new CarNetException("Login failed", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new CarNetException("Login failed", e);
+        }
 
+        try {
             CNApiToken token;
             String json = "";
-            if (!id_token.isEmpty()) {
+            if (!idToken.isEmpty()) {
+                // In this case the id and access token were returned by the login process
                 logger.trace("{}: OAuth successful, idToken and accessToken retrieved", config.vehicle.vin);
-                tokens.idToken = new CarNetToken(id_token, accessToken, "bearer", Integer.parseInt(expires_in, 10));
+                tokens.idToken = new CarNetToken(idToken, accessToken, "bearer", Integer.parseInt(expiresIn, 10));
             } else {
+                // Otherwise we just got an auhorization code and need to request the token
                 if (authCode.isEmpty()) {
                     logger.debug("{}: Unable to obtain authCode, last url={}, last response: {}", config.vehicle.vin,
                             url, html);
@@ -226,8 +244,11 @@ public class CarNetTokenManager {
                 tokens.idToken = new CarNetToken(token);
             }
             logger.debug("{}: OAuth successful", config.vehicle.vin);
-            config.xcsrf = csrf = substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
+            tokens.csrf = csrf;
 
+            // Last step: Request the access token from the VW token management
+            // We save the generated tokens as tokenSet. Account handler and vehicle handler(s) are sharing the same
+            // tokens. The tokenSetId provides access to that set.
             logger.debug("{}: Get VW Token", config.vehicle.vin);
             headers.clear();
             headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
@@ -249,21 +270,26 @@ public class CarNetTokenManager {
             updateTokenSet(config.tokenSetId, tokens);
             return tokens.vwToken.accessToken;
         } catch (CarNetException e) {
-            logger.info("{}: Login failed: {}", config.vehicle.vin, e.toString());
-        } catch (UnsupportedEncodingException e) {
-            throw new CarNetException("Login failed", e);
-        } catch (Exception e) {
-            logger.info("{}: Login failed: {}", config.vehicle.vin, e.getMessage());
+            throw new CarNetException("Unable to create API access token", e);
         }
-        return "";
     }
 
+    /**
+     * Create security token required for priviledged functions like lock/unlock.
+     *
+     * @param config The combined config (account+vehicle)
+     * @param service Service requesting this access level
+     * @param action Action to be performed
+     * @return Security Token
+     * @throws CarNetException
+     */
     public String createSecurityToken(CarNetCombinedConfig config, String service, String action)
             throws CarNetException {
         if (config.vehicle.pin.isEmpty()) {
             throw new CarNetException("No SPIN is confirgured, can't perform authentication");
         }
 
+        // First check for a valid token
         Iterator<CarNetToken> it = securityTokens.iterator();
         while (it.hasNext()) {
             CarNetToken stoken = it.next();
@@ -272,6 +298,11 @@ public class CarNetTokenManager {
             }
         }
 
+        /*
+         * 1. Security token is based on access token. We use the cashed token if still valid or request a new one.
+         * 2. Send a challenge to the token manager
+         * 3. Send authentication and request token, save token to the cache
+         */
         String accessToken = createVwToken(config);
 
         // "User-Agent": "okhttp/3.7.0",
@@ -284,7 +315,6 @@ public class CarNetTokenManager {
         headers.put(CNAPI_HEADER_VERS, "3.14.0");
         headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
-
         // Build Hash: SHA512(SPIN+Challenge)
         String url = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/vehicles/"
                 + config.vehicle.vin.toUpperCase() + "/services/" + service + "/operations/" + action
@@ -296,6 +326,7 @@ public class CarNetTokenManager {
         logger.debug("Authenticating SPIN, retires={}",
                 authInfo.securityPinAuthInfo.securityPinTransmission.remainingTries);
 
+        // Request authentication
         CarNetSecurityPinAuthentication pinAuth = new CarNetSecurityPinAuthentication();
         pinAuth.securityPinAuthentication.securityToken = authInfo.securityPinAuthInfo.securityToken;
         pinAuth.securityPinAuthentication.securityPin.challenge = authInfo.securityPinAuthInfo.securityPinTransmission.challenge;
@@ -338,12 +369,12 @@ public class CarNetTokenManager {
     public boolean refreshTokens(CarNetCombinedConfig config) throws CarNetException {
         try {
             TokenSet tokens = getTokenSet(config.tokenSetId);
-            refreshToken(config, config.account.brand, tokens.vwToken);
+            refreshToken(config, tokens.vwToken);
 
             Iterator<CarNetToken> it = securityTokens.iterator();
             while (it.hasNext()) {
                 CarNetToken stoken = it.next();
-                if (!refreshToken(config, config.account.brand, stoken)) {
+                if (!refreshToken(config, stoken)) {
                     // Token invalid / refresh failed -> remove
                     securityTokens.remove(stoken);
                 }
@@ -357,7 +388,15 @@ public class CarNetTokenManager {
         return false;
     }
 
-    public boolean refreshToken(CarNetCombinedConfig config, String brand, CarNetToken token) throws CarNetException {
+    /**
+     * Refresh the access token
+     *
+     * @param config Combined account/vehicle config
+     * @param token Token to refresh
+     * @return new token
+     * @throws CarNetException
+     */
+    public boolean refreshToken(CarNetCombinedConfig config, CarNetToken token) throws CarNetException {
         if (!token.isValid()) {
             // token is still valid
             return false;
@@ -369,12 +408,10 @@ public class CarNetTokenManager {
 
             try {
                 String url = "";
-                String rtoken = "";
                 Map<String, String> data = new TreeMap<>();
                 url = CNAPI_VW_TOKEN_URL;
                 data.put("grant_type", "refresh_token");
                 data.put("refresh_token", tokens.vwToken.refreshToken);
-                // data.put("scope", "sc2:fal");
                 data.put("scope", "sc2%3Afal");
                 String json = http.post(url, http.fillRefreshHeaders(), data, false);
                 CNApiToken newToken = gson.fromJson(json, CNApiToken.class);
@@ -394,6 +431,12 @@ public class CarNetTokenManager {
         return false;
     }
 
+    /**
+     * Create new tokenSet identified by tokenSetId
+     * 
+     * @param tokenSetId UUID to manage the token set
+     * @return successful yes/no
+     */
     public boolean createTokenSet(String tokenSetId) {
         if (!accountTokens.containsKey(tokenSetId)) {
             accountTokens.put(tokenSetId, new TokenSet());

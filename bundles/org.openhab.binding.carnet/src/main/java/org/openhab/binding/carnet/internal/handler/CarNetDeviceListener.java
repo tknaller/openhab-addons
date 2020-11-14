@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.carnet.internal;
+package org.openhab.binding.carnet.internal.handler;
 
 import java.util.List;
 
