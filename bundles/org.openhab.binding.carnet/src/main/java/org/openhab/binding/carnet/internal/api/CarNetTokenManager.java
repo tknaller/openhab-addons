@@ -263,12 +263,16 @@ public class CarNetTokenManager {
             data.put("scope", "sc2:fal");
             json = http.post(CNAPI_URL_GET_SEC_TOKEN, headers, data, false);
             token = gson.fromJson(json, CNApiToken.class);
-            if ((token.accessToken == null) || token.accessToken.isEmpty()) {
-                throw new CarNetException("Authentication failed: Unable to get access token!");
+            if (token != null) {
+                if ((token.accessToken == null) || token.accessToken.isEmpty()) {
+                    throw new CarNetException("Authentication failed: Unable to get access token!");
+                }
+                tokens.vwToken = new CarNetToken(token);
+                updateTokenSet(config.tokenSetId, tokens);
+                return tokens.vwToken.accessToken;
+            } else {
+                throw new CarNetException("Unable to parse token information from JSON");
             }
-            tokens.vwToken = new CarNetToken(token);
-            updateTokenSet(config.tokenSetId, tokens);
-            return tokens.vwToken.accessToken;
         } catch (CarNetException e) {
             throw new CarNetException("Unable to create API access token", e);
         }
@@ -335,7 +339,11 @@ public class CarNetTokenManager {
         json = http.post(
                 "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/security-pin-auth-completed",
                 headers, data);
-        CarNetToken securityToken = new CarNetToken(gson.fromJson(json, CNApiToken.class));
+        CNApiToken t = gson.fromJson(json, CNApiToken.class);
+        if (t == null) {
+            throw new CarNetException("Unable to parse token information from JSON");
+        }
+        CarNetToken securityToken = new CarNetToken(t);
         if (securityToken.securityToken.isEmpty()) {
             throw new CarNetException("Authentication failed: Unable to get access token!");
         }
@@ -415,6 +423,9 @@ public class CarNetTokenManager {
                 data.put("scope", "sc2%3Afal");
                 String json = http.post(url, http.fillRefreshHeaders(), data, false);
                 CNApiToken newToken = gson.fromJson(json, CNApiToken.class);
+                if (newToken == null) {
+                    throw new CarNetException("Unable to parse token information from JSON");
+                }
                 tokens.vwToken = new CarNetToken(newToken);
                 updateTokenSet(config.tokenSetId, tokens);
                 return true;
@@ -433,7 +444,7 @@ public class CarNetTokenManager {
 
     /**
      * Create new tokenSet identified by tokenSetId
-     * 
+     *
      * @param tokenSetId UUID to manage the token set
      * @return successful yes/no
      */
@@ -446,8 +457,9 @@ public class CarNetTokenManager {
     }
 
     TokenSet getTokenSet(String tokenSetId) {
-        if (accountTokens.containsKey(tokenSetId)) {
-            return accountTokens.get(tokenSetId);
+        TokenSet ts = accountTokens.get(tokenSetId);
+        if (ts != null) {
+            return ts;
         }
         throw new IllegalArgumentException("tokenSetId is invalid");
     }

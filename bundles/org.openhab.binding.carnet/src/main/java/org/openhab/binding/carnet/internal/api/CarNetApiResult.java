@@ -104,13 +104,20 @@ public class CarNetApiResult {
                 Gson gson = new Gson();
                 try {
                     if (response.contains("\"error_code\": ")) {
-                        apiError = gson.fromJson(response, CarNetApiErrorDTO.class);
+                        CarNetApiErrorDTO error = gson.fromJson(response, CarNetApiErrorDTO.class);
+                        if (error != null) {
+                            apiError = error;
+                        }
                     } else {
-                        apiError = new CarNetApiErrorDTO(gson.fromJson(response, CNApiError2.class));
+                        CNApiError2 error2 = gson.fromJson(response, CNApiError2.class);
+                        if (error2 != null) {
+                            apiError = new CarNetApiErrorDTO(error2);
+                        }
                     }
                 } catch (JsonParseException e) {
                     apiError.error = "Unable to parse '" + response + "'";
-                    apiError.description = e.getMessage();
+                    String message = e.getMessage();
+                    apiError.description = message != null ? message : "";
                 }
             }
         }

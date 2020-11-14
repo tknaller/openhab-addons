@@ -59,14 +59,14 @@ public class CarNetException extends Exception {
     }
 
     @Override
-    public String getMessage() {
+    public @Nullable String getMessage() {
         return super.getMessage();
     }
 
-    @SuppressWarnings({ "null", "unused" })
+    @SuppressWarnings("null")
     @Override
     public String toString() {
-        String message = super.getMessage();
+        String message = nonNullString(super.getMessage());
         if (e != null) {
             if (e.getClass() == UnknownHostException.class) {
                 String[] string = message.split(": "); // java.net.UnknownHostException: api.rach.io
@@ -119,12 +119,13 @@ public class CarNetException extends Exception {
     public boolean isTimeout() {
         Class<?> extype = !isEmpty() ? getCauseClass() : null;
         return (extype != null) && ((extype == TimeoutException.class) || (extype == ExecutionException.class)
-                || (extype == InterruptedException.class) || getMessage().toLowerCase().contains("timeout"));
+                || (extype == InterruptedException.class)
+                || nonNullString(getMessage()).toLowerCase().contains("timeout"));
     }
 
     private Class<?> getCauseClass() {
         Throwable cause = getCause();
-        if (getCause() != null) {
+        if (cause != null) {
             return cause.getClass();
         }
         return CarNetException.class;

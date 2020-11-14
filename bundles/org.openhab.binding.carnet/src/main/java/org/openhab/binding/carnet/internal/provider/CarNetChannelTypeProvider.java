@@ -22,12 +22,12 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupType;
+import org.eclipse.smarthome.core.thing.type.ChannelGroupTypeProvider;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupTypeUID;
 import org.eclipse.smarthome.core.thing.type.ChannelType;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeBuilder;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeProvider;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
-import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -40,16 +40,13 @@ import org.osgi.service.component.annotations.Reference;
  */
 @NonNullByDefault
 @Component(service = { ChannelTypeProvider.class, CarNetChannelTypeProvider.class })
-public class CarNetChannelTypeProvider implements ChannelTypeProvider {
-    private final CarNetTextResources resources;
+public class CarNetChannelTypeProvider implements ChannelTypeProvider, ChannelGroupTypeProvider {
     private final CarNetIChanneldMapper channelIdMapper;
     private List<ChannelType> channelTypes = new CopyOnWriteArrayList<ChannelType>();
     private List<ChannelGroupType> channelGroupTypes = new CopyOnWriteArrayList<ChannelGroupType>();
 
     @Activate
-    public CarNetChannelTypeProvider(@Reference CarNetTextResources resources,
-            @Reference CarNetIChanneldMapper channelIdMapper) {
-        this.resources = resources;
+    public CarNetChannelTypeProvider(@Reference CarNetIChanneldMapper channelIdMapper) {
         this.channelIdMapper = channelIdMapper;
     }
 
@@ -88,6 +85,7 @@ public class CarNetChannelTypeProvider implements ChannelTypeProvider {
 
     @Override
     public @Nullable ChannelGroupType getChannelGroupType(ChannelGroupTypeUID channelGroupTypeUID,
+
             @Nullable Locale locale) {
         for (ChannelGroupType channelGroupType : channelGroupTypes) {
             if (channelGroupType.getUID().equals(channelGroupTypeUID)) {

@@ -149,7 +149,11 @@ public class CarNetApi {
         headers.put(HttpHeader.CONTENT_TYPE.toString(), "application/x-www-form-urlencoded");
         String json = http.get(url, headers);
         config.oidcDate = http.getResponseDate();
-        return gson.fromJson(json, CarNetOidcConfig.class);
+        CarNetOidcConfig config = gson.fromJson(json, CarNetOidcConfig.class);
+        if (config == null) {
+            throw new CarNetException("Unable to parse CarNetOidcConfig from JSON");
+        }
+        return config;
     }
 
     public CarNetServiceAvailability getServiceAvailability(CarNetOperationList operation) throws CarNetException {
@@ -188,6 +192,9 @@ public class CarNetApi {
         String url = "/rolesrights/permissions/v1/{0}/{1}/vehicles/{2}/fetched-role";
         String json = http.get(url, fillAppHeaders());
         CNRoleRights r = gson.fromJson(json, CNRoleRights.class);
+        if (r == null) {
+            throw new CarNetException("Unable to parse CNRoleRights from JSON");
+        }
         return r.role;
     }
 
@@ -200,6 +207,9 @@ public class CarNetApi {
             Map<String, String> headers = fillActionHeaders("", createVwToken());
             String json = http.get(url, headers);
             CarNetHomeRegion region = gson.fromJson(json, CarNetHomeRegion.class);
+            if (region == null) {
+                throw new CarNetException("Unable to parse CarNetHomeRegion from JSON");
+            }
             config.vehicle.homeRegionUrl = substringBefore(region.homeRegion.baseUri.content, "/api") + "/fs-car/";
             return config.vehicle.homeRegionUrl;
         } catch (CarNetException e) {
@@ -211,24 +221,36 @@ public class CarNetApi {
     public CarNetVehicleList getVehicles() throws CarNetException {
         String json = http.get(CNAPI_URI_VEHICLE_LIST, fillAppHeaders());
         CarNetVehicleList vehiceList = gson.fromJson(json, CarNetVehicleList.class);
+        if (vehiceList == null) {
+            throw new CarNetException("Unable to parse CarNetVehicleList from JSON");
+        }
         return vehiceList;
     }
 
     public CarNetVehicleDetails getVehicleDetails(String vin) throws CarNetException {
         String json = http.get(CNAPI_URI_VEHICLE_DETAILS, vin, fillAppHeaders());
         CarNetVehicleDetails details = gson.fromJson(json, CarNetVehicleDetails.class);
+        if (details == null) {
+            throw new CarNetException("Unable to parse CarNetVehicleDetails from JSON");
+        }
         return details;
     }
 
     public CarNetVehicleStatus getVehicleStatus() throws CarNetException {
         String json = callApi(CNAPI_URI_VEHICLE_STATUS, "getVehicleStatus");
         CarNetVehicleStatus status = gson.fromJson(json, CarNetVehicleStatus.class);
+        if (status == null) {
+            throw new CarNetException("Unable to parse CarNetVehicleStatus from JSON");
+        }
         return status;
     }
 
     public CarNetVehiclePosition getVehiclePosition() throws CarNetException {
         String json = callApi(CNAPI_URI_VEHICLE_POSITION, "getVehiclePosition");
         CarNetVehiclePosition position = gson.fromJson(json, CarNetVehiclePosition.class);
+        if (position == null) {
+            throw new CarNetException("Unable to parse CarNetVehiclePosition from JSON");
+        }
         return position;
     }
 
@@ -240,6 +262,9 @@ public class CarNetApi {
     public CarNetVehiclePosition getStoredPosition() throws CarNetException {
         String json = callApi(CNAPI_VWURL_STORED_POS, "getStoredPosition");
         CarNetVehiclePosition position = gson.fromJson(json, CarNetVehiclePosition.class);
+        if (position == null) {
+            throw new CarNetException("Unable to parse CarNetVehiclePosition from JSON");
+        }
         return position;
     }
 
@@ -254,10 +279,9 @@ public class CarNetApi {
             }
         }
         CNDestinations dest = gson.fromJson(json, CNDestinations.class);
-        if (dest.destinations != null) {
+        if ((dest != null) && (dest.destinations != null)) {
             return dest.destinations;
         }
-
         CarNetDestinationList empty = new CarNetDestinationList();
         empty.destination = new ArrayList<>();
         return empty; // return empty list
@@ -271,6 +295,9 @@ public class CarNetApi {
     public CarNetClimaterStatus getClimaterStatus() throws CarNetException {
         String json = callApi(CNAPI_VWURL_CLIMATE_STATUS, "climaterStatus");
         CNClimater cs = gson.fromJson(json, CNClimater.class);
+        if (cs == null) {
+            throw new CarNetException("Unable to parse CNClimater from JSON");
+        }
         return cs.climater;
     }
 
@@ -282,6 +309,9 @@ public class CarNetApi {
     public CarNetChargerStatus getChargerStatus() throws CarNetException {
         String json = callApi(CNAPI_URI_CHARGER_STATUS, "chargerStatus");
         CNChargerInfo ci = gson.fromJson(json, CNChargerInfo.class);
+        if (ci == null) {
+            throw new CarNetException("Unable to parse CNChargerInfo from JSON");
+        }
         return ci.charger;
     }
 
@@ -342,9 +372,14 @@ public class CarNetApi {
         return null;
     }
 
-    public @Nullable CarNetOperationList getOperationList() throws CarNetException {
+    public CarNetOperationList getOperationList() throws CarNetException {
         String json = http.get(CNAPI_VWURL_OPERATIONS, fillAppHeaders());
-        return gson.fromJson(json, CNOperationList.class).operationList;
+        CNOperationList list = gson.fromJson(json, CNOperationList.class);
+        if ((list == null) || (list.operationList == null)) {
+            throw new CarNetException("Unable to parse CNOperationList from JSON");
+
+        }
+        return list.operationList;
     }
 
     public @Nullable String getVehicleUsers() throws CarNetException {
@@ -419,18 +454,30 @@ public class CarNetApi {
     public CarNetPairingInfo getPairingStatus() throws CarNetException {
         String json = callApi(CNAPI_URI_GET_USERINFO, "");
         CNPairingInfo pi = gson.fromJson(json, CNPairingInfo.class);
+        if (pi == null) {
+            throw new CarNetException("Unable to parse CNPairingInfo from JSON");
+
+        }
         return pi.pairingInfo;
     }
 
     public CarNetVehicleData getVehicleManagementInfo() throws CarNetException {
         String json = callApi(CNAPI_URI_VEHICLE_MANAGEMENT, "");
         CNVehicleData vd = gson.fromJson(json, CNVehicleData.class);
+        if (vd == null) {
+            throw new CarNetException("Unable to parse CNVehicleData from JSON");
+
+        }
         return vd.vehicleData;
     }
 
     public CarNetRluHistory getRluActionHistory() throws CarNetException {
         String json = callApi(CNAPI_URL_RLU_ACTIONS, "rluActionHistory");
         CNEluActionHistory ah = gson.fromJson(json, CNEluActionHistory.class);
+        if (ah == null) {
+            throw new CarNetException("Unable to parse CNEluActionHistory from JSON");
+
+        }
         return ah.actionsResponse;
     }
 
@@ -451,21 +498,6 @@ public class CarNetApi {
     private String callApi(String uri, String function) throws CarNetException {
         try {
             return http.get(uri, fillAppHeaders());
-        } catch (CarNetException e) {
-            CarNetApiResult res = e.getApiResult();
-            logger.debug("{}: API call {} failed: HTTP {}, {}", config.vehicle.vin, function, res.httpCode,
-                    e.toString());
-            String json = loadJson(function);
-            if (json == null) {
-                throw e;
-            }
-            return json;
-        }
-    }
-
-    private String callActionApi(String uri, String function) throws CarNetException {
-        try {
-            return http.get(uri, fillActionHeaders());
         } catch (CarNetException e) {
             CarNetApiResult res = e.getApiResult();
             logger.debug("{}: API call {} failed: HTTP {}, {}", config.vehicle.vin, function, res.httpCode,
@@ -504,9 +536,11 @@ public class CarNetApi {
 
     private void queuePendingAction(String responseJson, String service, String action) {
         CarNetActionResponse in = gson.fromJson(responseJson, CarNetActionResponse.class);
-        CarNetPendingRequest rsp = new CarNetPendingRequest(service, action, in);
-        logger.debug("{}: Request for {}.{} accepted, requestId={}", rsp.vin, service, action, rsp.requestId);
-        pendingRequest.put(rsp.requestId, rsp);
+        if (in != null) {
+            CarNetPendingRequest rsp = new CarNetPendingRequest(service, action, in);
+            logger.debug("{}: Request for {}.{} accepted, requestId={}", rsp.vin, service, action, rsp.requestId);
+            pendingRequest.put(rsp.requestId, rsp);
+        }
     }
 
     private void initBrandData() {
@@ -581,10 +615,6 @@ public class CarNetApi {
 
     private Map<String, String> fillActionHeaders(String contentType, String securityToken) throws CarNetException {
         return CarNetHttpClient.fillActionHeaders(new HashMap<>(), contentType, createVwToken(), securityToken);
-    }
-
-    private Map<String, String> fillActionHeaders() throws CarNetException {
-        return fillActionHeaders("", "");
     }
 
     public Map<String, String> fillAppHeaders() throws CarNetException {
