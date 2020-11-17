@@ -174,7 +174,7 @@ public class CarNetHttpClient {
                 logger.debug("HTTP {} -> {}", code, loc);
             }
             if (response.contains("\"error\":")) {
-                throw new CarNetException("Authentication failed", apiResult);
+                throw new CarNetException("API returned error", apiResult);
             }
             if ((code != HttpStatus.OK_200) && (code != HttpStatus.ACCEPTED_202) && (code != HttpStatus.NO_CONTENT_204)
                     && (code != HttpStatus.FOUND_302) && (code != HttpStatus.SEE_OTHER_303)) {
@@ -346,11 +346,16 @@ public class CarNetHttpClient {
 
     /**
      * Build URL base depending on brand
-     * 
+     *
      * @return URL prefix/base url
      * @throws MalformedURLException
      */
     private String getBaseUrl() throws MalformedURLException {
+        /*
+         * if (!config.vehicle.homeRegionUrl.isEmpty()) {
+         * return config.vehicle.homeRegionUrl + "/fs-car";
+         * }
+         */
         if (config.account.brand.equalsIgnoreCase(CNAPI_BRAND_AUDI)) {
             return CNAPI_BASE_URL_AUDI;
         }
@@ -365,7 +370,7 @@ public class CarNetHttpClient {
 
     /**
      * Get parameter value from URL string
-     * 
+     *
      * @param input URL string
      * @param parameter Parameter name
      * @return Extracted value
@@ -386,7 +391,7 @@ public class CarNetHttpClient {
 
     /**
      * Encode fields for URL string
-     * 
+     *
      * @param s Field value
      * @return URL encoded value
      */
@@ -400,7 +405,7 @@ public class CarNetHttpClient {
 
     /**
      * Generate a NONCE value
-     * 
+     *
      * @return new NONCE
      */
     public static String generateNonce() {

@@ -40,8 +40,7 @@ public class CarNetApiConstants {
     public static final String CNAPI_HEADER_APP_MYAUDI = "myAudi";
     public static final String CNAPI_HEADER_VERS = "X-App-Version";
     public static final String CNAPI_HEADER_VERS_VALUE = "1.0.0";
-    public static final String CNAPI_HEADER_USER_AGENT = "okhttp/2.3.0";
-    public static final String CNAPI_AUTH_AUDI_VERS = "1";
+    public static final String CNAPI_HEADER_USER_AGENT = "okhttp/3.7.0";
     public static final String CNAPI_HEADER_AUTHORIZATION = "Authorization";
     public static final String CNAPI_HEADER_CLIENTID = "X-Client-Id";
     public static final String CNAPI_HEADER_HOST = "Host";
@@ -64,7 +63,6 @@ public class CarNetApiConstants {
     public static final String CNAPI_URI_VEHICLE_DATA = "bs/vsr/v1/{0}/{1}/vehicles/{2}/requests";
     public static final String CNAPI_URI_VEHICLE_STATUS = "bs/vsr/v1/{0}/{1}/vehicles/{2}/status";
     public static final String CNAPI_URI_VEHICLE_POSITION = "bs/cf/v1/{0}/{1}/vehicles/{2}/position";
-    public static final String CNAPI_URI_CLIMATER_STATUS = "bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater";
     public static final String CNAPI_URI_CLIMATER_TIMER = "bs/departuretimer/v1/{0}/{1}/vehicles/{2}/timer";
     public static final String CNAPI_URI_CHARGER_STATUS = "bs/batterycharge/v1/{0}/{1}/vehicles/{2}/charger";
     public static final String CNAPI_URI_STORED_POS = "bs/cf/v1/{0}/{1}/vehicles/{2}/position";
@@ -73,21 +71,23 @@ public class CarNetApiConstants {
     public static final String CNAPI_URI_CMD_HONK = "bs/rhf/v1/{0}/{1}/vehicles/{2}/honkAndFlash";
     public static final String CNAPI_URI_GETTRIP = "bs/tripstatistics/v1/{0}/{1}/vehicles/{2}/tripdata/{3}?type={4}";
 
-    public static final String CNAPI_VWURL_CLIMATE_STATUS = VWPRE + CNAPI_URI_CLIMATER_STATUS;
     public static final String CNAPI_VWURL_CHARGER_STATUS = VWPRE + CNAPI_URI_CHARGER_STATUS;
     public static final String CNAPI_VWURL_STORED_POS = VWPRE + CNAPI_URI_STORED_POS;
     public static final String CNAPI_VWURL_TIMER = VWPRE + CNAPI_URI_CLIMATER_TIMER;
     public static final String CNAPI_VWURL_TRIP_DATA = VWPRE + CNAPI_URI_GETTRIP;
     public static final String CNAPI_VWURL_CHARGER = VWPRE + CNAPI_URI_CHARGER_STATUS;
 
+    public static final String CNAPI_VWG_CONNECT = "https://mal-1a.prd.ece.vwg-connect.com/api/";
     public static final String CNAPI_URL_GET_SEC_TOKEN = "https://mbboauth-1d.prd.ece.vwg-connect.com/mbbcoauth/mobile/oauth2/v1/token";
-    public static final String CNAPI_URL_GET_CHALLENGE = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/vehicles/";
-    public static final String CNAPI_URL_ACK_CHALLENGE = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/security-pin-auth-completed";
-    public static final String CNAPI_VWURL_HOMEREGION = "https://mal-1a.prd.ece.vwg-connect.com/api/cs/vds/v1/vehicles/{2}/homeRegion";
-    public static final String CNAPI_VWURL_OPERATIONS = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/operationlist/v3/vehicles/{2}";
+    public static final String CNAPI_URL_GET_CHALLENGE = CNAPI_VWG_CONNECT + "rolesrights/authorization/v2/vehicles/";
+    public static final String CNAPI_URL_ACK_CHALLENGE = CNAPI_VWG_CONNECT
+            + "rolesrights/authorization/v2/security-pin-auth-completed";
+    public static final String CNAPI_VWURL_OPERATIONS = CNAPI_VWG_CONNECT + "rolesrights/operationlist/v3/vehicles/{2}";
+    public static final String CNAPI_VWURL_HOMEREGION = CNAPI_VWG_CONNECT + "cs/vds/v1/vehicles/{2}/homeRegion";
 
     public static final String CNAPI_OAUTH_BASE_URL = "https://identity.vwgroup.io";
     public static final String CNAPI_OAUTH_AUTHORIZE_URL = CNAPI_OAUTH_BASE_URL + "/oidc/v1/authorize";
+    public static final String CNAPI_OIDC_CONFIG_URL = "https://app-api.my.audi.com/myaudiappidk/v1/openid-configuration";
     public static final String CNAPI_AUDI_TOKEN_URL = "https://app-api.my.audi.com/myaudiappidk/v1/token";
     public static final String CNAPI_VW_TOKEN_URL = "https://mbboauth-1d.prd.ece.vwg-connect.com/mbbcoauth/mobile/oauth2/v1/token";
 
@@ -105,7 +105,6 @@ public class CarNetApiConstants {
     public static final String CNAPI_SERVICE_DESTINATIONS = "zieleinspeisung_v1";
     public static final String CNAPI_SERVICE_TRIPDATA = "trip_statistic_v1";
 
-    public static final String CNAPI_URL_RLU_ACTIONS = "bs/rlu/v1/{0}/{1}/vehicles/{2}/actions";
     public static final String CNAPI_RLU_LOCK = "LOCK";
     public static final String CNAPI_RLU_UNLOCK = "UNLOCK";
     public static final String CNAPI_SERVICE_CLIMATISATION = "climatisation";
@@ -115,6 +114,11 @@ public class CarNetApiConstants {
     public static final String CNAPI_SERVICE_TRIPSTATS = "tripstatistics";
     public static final String CNAPI_TRIP_SHORT_TERM = "shortTerm";
     public static final String CNAPI_TRIP_LONG_TERM = "longTerm";
+
+    public static final String CNAPI_REQUEST_SUCCESSFUL = "request_successful";
+    public static final String CNAPI_REQUEST_IN_PROGRESS = "request_in_progress";
+    public static final String CNAPI_REQUEST_NOT_FOUND = "request_not_found";
+    public static final String CNAPI_REQUEST_ERROR = "api_error";
 
     public static final String UTF_8 = StandardCharsets.UTF_8.name();
 }

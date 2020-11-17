@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.carnet.internal.api;
 
+import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.API_STATUS_CLASS_SECURUTY;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO.CNApiError2.CNErrorMessage2;
@@ -61,6 +63,18 @@ public class CarNetApiErrorDTO {
 
     public boolean isError() {
         return !code.isEmpty() || !error.isEmpty();
+    }
+
+    public boolean isTechValidationError() {
+        return code.contains("technical.9026");
+    }
+
+    public boolean isOpAlreadyInProgress() {
+        return code.contains("business.1003");
+    }
+
+    public boolean isSecurityClass() {
+        return description.contains(API_STATUS_CLASS_SECURUTY);
     }
 
     @Override

@@ -48,6 +48,7 @@ import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApi.CarNetPendingRequest;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO.CNErrorMessage2Details;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNOperationList.CarNetOperationList;
@@ -81,8 +82,6 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDeviceListener {
-    private static int POLL_INTERVAL = 3; // poll cycle evey 5sec
-
     private final Logger logger = LoggerFactory.getLogger(CarNetVehicleHandler.class);
     private final CarNetTextResources resources;
     private final CarNetIChanneldMapper idMapper;
@@ -156,7 +155,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
             config.vehicle = getConfigAs(CarNetVehicleConfiguration.class);
             Map<String, String> properties = getThing().getProperties();
-            skipCount = Math.max(config.vehicle.refreshInterval / POLL_INTERVAL, 2);
+            skipCount = Math.max(config.vehicle.refreshInterval / POLL_INTERVAL_SEC, 2);
             channelsCreated = false;
 
             String vin = "";
@@ -170,8 +169,9 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 return false;
             }
             config.vehicle.vin = vin.toUpperCase();
-            api.setConfig(config);
+            api.setConfig(config); // required to pass VIN to CarNetApi
             config.vehicle.homeRegionUrl = api.getHomeReguionUrl();
+            api.setConfig(config);
 
             serviceAvailability = new CarNetServiceAvailability(); // init all to true
             CarNetOperationList ol = api.getOperationList();
@@ -293,7 +293,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         if (!error.isEmpty()) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
         } else {
-            updateStatus(ThingStatus.ONLINE);
+            // updateStatus(ThingStatus.ONLINE);
         }
         return successful;
     }
@@ -327,6 +327,9 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         String channelId = channelUID.getIdWithoutGroup();
         String error = "";
         boolean sendOffOnError = false;
+        String action = "";
+        String actionStatus = "";
+        boolean switchOn = (command instanceof OnOffType) && (OnOffType) command == OnOffType.ON;
         try {
             switch (channelId) {
                 case CHANNEL_CONTROL_UPDATE:
@@ -335,26 +338,49 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     break;
                 case CHANNEL_CONTROL_LOCK:
                     sendOffOnError = true;
-                    api.lockDoor((OnOffType) command == OnOffType.ON);
+                    action = switchOn ? "lock" : "unlock";
+                    actionStatus = api.controlLock(switchOn);
                     break;
                 case CHANNEL_CONTROL_CLIMATER:
                     sendOffOnError = true;
-                    api.controlClimater((OnOffType) command == OnOffType.ON);
+                    action = switchOn ? "startClimater" : "stopClimater";
+                    actionStatus = api.controlClimater(switchOn);
+                    break;
+                case CHANNEL_CONTROL_CHARGER:
+                    sendOffOnError = true;
+                    action = switchOn ? "startCharging" : "stopCharging";
+                    actionStatus = api.controlCharger(switchOn);
                     break;
                 case CHANNEL_CONTROL_WINHEAT:
                     sendOffOnError = true;
-                    api.controlWindowHeating((OnOffType) command == OnOffType.ON);
+                    action = switchOn ? "startWindowHeat" : "stopWindowHeat";
+                    actionStatus = api.controlWindowHeating(switchOn);
                     break;
                 case CHANNEL_CONTROL_PREHEAT:
                     sendOffOnError = true;
-                    api.controlPreHeating((OnOffType) command == OnOffType.ON);
+                    action = switchOn ? "startPreHeat" : "stopPreHeat";
+                    actionStatus = api.controlPreHeating(switchOn);
+                    break;
+                case CHANNEL_CONTROL_VENT:
+                    sendOffOnError = true;
+                    action = switchOn ? "startVentilation" : "stopVentilation";
+                    actionStatus = api.controlVentilation(switchOn, 15);
                     break;
                 default:
+                    logger.info("{}: Channel {} is unknown, command {} ignored", thingId, channelId, command);
                     break;
             }
+
+            updateActionStatus(action, actionStatus);
+            forceUpdate = true; // update on successful command
         } catch (CarNetException e) {
-            error = getError(e);
-            logger.warn("{}: {}", thingId, error.toString());
+            CarNetApiErrorDTO res = e.getApiResult().getApiError();
+            if (res.isOpAlreadyInProgress()) {
+                logger.warn("{}: \"An operation is already in progress, request was rejected!\"", thingId);
+            } else {
+                error = getError(e);
+                logger.warn("{}: {}", thingId, error.toString());
+            }
         } catch (RuntimeException e) {
             error = "General Error: " + getString(e.getMessage());
             logger.warn("{}: {}", thingId, error, e);
@@ -365,6 +391,19 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 updateState(channelUID.getId(), OnOffType.OFF);
             }
             // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, error);
+        }
+    }
+
+    private void updateActionStatus(String action, String actionStatus) {
+        if (!actionStatus.isEmpty()) {
+            if (!action.isEmpty()) {
+                updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_ACTION, getStringType(action));
+            }
+            updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_ACTION_STATUS, getStringType(actionStatus));
+            boolean inProgress = actionStatus.equalsIgnoreCase(CNAPI_REQUEST_IN_PROGRESS);
+            updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_ACTION_PENDING,
+                    inProgress ? OnOffType.ON : OnOffType.OFF);
+            updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_UPDATED, getTimestamp());
         }
     }
 
@@ -390,6 +429,23 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         return updated;
     }
 
+    public void checkPendingRequests() {
+        for (Map.Entry<String, CarNetPendingRequest> e : api.getPendingRequests().entrySet()) {
+            CarNetPendingRequest request = e.getValue();
+            String status = "";
+            try {
+                status = api.getRequestStatus(request.requestId);
+            } catch (CarNetException ex) {
+                CarNetApiErrorDTO error = ex.getApiResult().getApiError();
+                if (error.isTechValidationError()) {
+                    // Id is no longer valid
+                    status = CNAPI_REQUEST_ERROR;
+                }
+            }
+            updateActionStatus("", status);
+        }
+    }
+
     /**
      * Sets up a polling job (using the scheduler) with the given interval.
      *
@@ -401,7 +457,14 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         logger.debug("Setting up polling job with an interval of {} seconds", config.vehicle.refreshInterval);
 
         pollingJob = scheduler.scheduleWithFixedDelay(() -> {
-            if (forceUpdate || (++updateCounter % skipCount == 0)) {
+            ++updateCounter;
+
+            if (updateCounter % API_REQUEST_CHECK_INT == 0) {
+                // Check results for pending requests, remove expires ones from the list
+                checkPendingRequests();
+            }
+
+            if (forceUpdate || (updateCounter % skipCount == 0)) {
                 if ((accountHandler != null) && (accountHandler.getThing().getStatus() == ThingStatus.ONLINE)) {
                     String error = "";
                     try {
@@ -411,6 +474,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                             initializeThing();
                         }
                         updateVehicleStatus();
+
+                        updateStatus(ThingStatus.ONLINE); // on success thing must be online
                     } catch (CarNetException e) {
                         error = getError(e);
                     } catch (RuntimeException e) {
@@ -424,7 +489,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                 }
             }
 
-        }, 1, POLL_INTERVAL, TimeUnit.SECONDS);
+        }, 1, POLL_INTERVAL_SEC, TimeUnit.SECONDS);
     }
 
     private boolean createChannels(List<ChannelIdMapEntry> channels) {
@@ -485,32 +550,39 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             return "";
         }
 
+        String reason = "";
         CarNetApiErrorDTO error = e.getApiResult().getApiError();
         if (!error.isError()) {
-            logger.info("{}: API Call failed", thingId);
+            return getString(e.getMessage());
         } else {
             logger.info("{}: API Call failed: {}", thingId, error);
-            String reason = getReason(error);
+            reason = getReason(error);
             if (!reason.isEmpty()) {
                 logger.debug("{}: {}", thingId, reason);
             }
         }
-        if (error.description.contains(API_STATUS_CLASS_SECURUTY)) {
-            // Status service in the vehicle is disabled
+        if (error.isSecurityClass()) {
             String message = getApiStatus(error.description, API_STATUS_CLASS_SECURUTY);
             logger.debug("{}: {}({})", thingId, message, error.description);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING, message);
         }
-        if (!error.code.isEmpty()) {
-            String message = resources.get(API_STATUS_MSG_PREFIX + "." + error.code);
-            logger.debug("{}: {}({} - {})", thingId, message, error.code, error.description);
-        }
+
+        String response = "";
         CarNetApiResult http = e.getApiResult();
         if (!http.isHttpOk() && !http.response.isEmpty()) {
             logger.debug("{}: HTTP response: {}", thingId, http.response);
         }
-        logger.debug("{}: {}", thingId, e.toString());
-        return "Unknown Error";
+        String message = "";
+        if (!error.code.isEmpty()) {
+            String msgId = API_STATUS_MSG_PREFIX + "." + error.code;
+            message = resources.get(msgId);
+            if (message.equals(msgId)) {
+                // No user friendly message for this code was found, so output the raw description
+                message = message + " - " + error.description;
+            }
+        }
+        logger.debug("{}: {}", thingId, message);
+        return message;
     }
 
     private String getChannelAttribute(String channelId, String attribute) {

@@ -100,8 +100,7 @@ public class CarNetVehicleServiceRLU extends CarNetVehicleBaseService {
         return false;
     }
 
-    public boolean lockDoors(OnOffType onOff) throws CarNetException {
-        api.lockDoor(onOff == OnOffType.ON);
-        return true;
+    public String lockDoors(OnOffType onOff) throws CarNetException {
+        return api.controlLock(onOff == OnOffType.ON);
     }
 }

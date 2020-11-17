@@ -42,7 +42,6 @@ public class CarNetToken {
         this.accessToken = accessToken;
         this.authType = authType;
         setValidity(validity);
-        setValidity(60);
     }
 
     public CarNetToken(CNApiToken token) {
@@ -88,7 +87,7 @@ public class CarNetToken {
 
     /**
      * Check token validity
-     * 
+     *
      * @return true=token still valid, false=token has expired
      */
     public boolean isValid() {

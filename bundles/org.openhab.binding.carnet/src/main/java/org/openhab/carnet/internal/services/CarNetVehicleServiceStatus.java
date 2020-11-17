@@ -86,6 +86,11 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
                 }
             }
         }
+
+        addChannel(channels, CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_ACTION, ITEMT_STRING, null, false, true);
+        addChannel(channels, CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_ACTION_STATUS, ITEMT_STRING, null, false, true);
+        addChannel(channels, CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_ACTION_PENDING, ITEMT_SWITCH, null, false, true);
+
         return updated;
     }
 

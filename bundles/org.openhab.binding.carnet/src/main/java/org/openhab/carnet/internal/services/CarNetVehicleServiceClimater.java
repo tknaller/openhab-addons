@@ -84,7 +84,7 @@ public class CarNetVehicleServiceClimater extends CarNetVehicleBaseService {
                 // convert temp from dK to C
                 Double temp = getDouble(cs.settings.targetTemperature.content).doubleValue();
                 BigDecimal bd = new BigDecimal(DKELVIN.getConverterToAny(SIUnits.CELSIUS).convert(temp).doubleValue());
-                bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP);
+                bd = bd.setScale(1, BigDecimal.ROUND_HALF_UP);
                 updateChannel(group, CHANNEL_CLIMATER_TARGET_TEMP,
                         toQuantityType(bd.doubleValue(), 1, SIUnits.CELSIUS));
                 updateChannel(group, CHANNEL_CLIMATER_HEAT_SOURCE, getStringType(cs.settings.heaterSource.content));

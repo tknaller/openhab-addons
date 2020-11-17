@@ -57,13 +57,18 @@ public class CarNetBindingConstants {
     public static final String CHANNEL_GENERAL_MAINTREQ = "maintenanceRequired";
     public static final String CHANNEL_GENERAL_WINCLOSED = "windowsClosed";
     public static final String CHANNEL_GENERAL_TIRESOK = "tiresOk";
+    public static final String CHANNEL_GENERAL_ACTION = "lastAction";
+    public static final String CHANNEL_GENERAL_ACTION_STATUS = "lastActionStatus";
+    public static final String CHANNEL_GENERAL_ACTION_PENDING = "lastActionPending";
 
     public static final String CHANNEL_GROUP_CONTROL = "control";
+    public static final String CHANNEL_CONTROL_UPDATE = "update";
     public static final String CHANNEL_CONTROL_LOCK = "lock";
+    public static final String CHANNEL_CONTROL_CHARGER = "charge";
     public static final String CHANNEL_CONTROL_CLIMATER = "climater";
     public static final String CHANNEL_CONTROL_WINHEAT = "windowHeat";
     public static final String CHANNEL_CONTROL_PREHEAT = "preHeater";
-    public static final String CHANNEL_CONTROL_UPDATE = "update";
+    public static final String CHANNEL_CONTROL_VENT = "ventilation";
 
     public static final String CHANNEL_GROUP_LOCATION = "location";
     public static final String CHANNEL_LOCATTION_GEO = "position";
@@ -155,8 +160,10 @@ public class CarNetBindingConstants {
     public static final String ITEMT_VOLT = "Number:ElectricPotential";
     public static final String ITEMT_AMP = "Number:ElectricPotential";
 
+    public static int POLL_INTERVAL_SEC = 3; // poll cycle evey 3sec
     public static final int API_TOKEN_REFRESH_INTERVAL_SEC = 5 * 60; // interval to check for valid token
-    public static final int API_REQUEST_TIMEOUT = 60;
+    public static final int API_REQUEST_TIMEOUT_SEC = 60 + 5;
+    public static final int API_REQUEST_CHECK_INT = 15 / POLL_INTERVAL_SEC; // interval for checking pending requests
 
     public static final Unit<Length> KILOMETRE = MetricPrefix.KILO(SIUnits.METRE);
     public static final Unit<Power> KWATT = MetricPrefix.KILO(SmartHomeUnits.WATT);
