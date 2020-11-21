@@ -162,7 +162,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             if (properties.containsKey(PROPERTY_VIN)) {
                 vin = properties.get(PROPERTY_VIN);
             }
-            if (vin.isEmpty()) {
+            if ((vin == null) || vin.isEmpty()) {
                 logger.info("VIN not set (Thing properties)");
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                         "VIN not set (Thing properties)");

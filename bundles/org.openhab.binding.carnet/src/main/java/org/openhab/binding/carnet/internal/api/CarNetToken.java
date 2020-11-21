@@ -57,7 +57,8 @@ public class CarNetToken {
 
     public void setValidity(int validity) {
         creationTime = new Date();
-        this.validity = validity - new Double(validity * 0.8).intValue(); // reduce by 20% treshhold
+        double offset = validity * 0.8;
+        this.validity = validity - (int) offset; // reduce by 20% treshhold
         if (!isValid()) {
             invalidate();
         }

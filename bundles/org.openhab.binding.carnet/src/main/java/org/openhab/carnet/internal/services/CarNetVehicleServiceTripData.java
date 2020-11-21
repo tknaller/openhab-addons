@@ -32,8 +32,6 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData.C
 import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link CarNetVehicleServiceTripData} implements the drip data service (short-term + long-term).
@@ -42,8 +40,6 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class CarNetVehicleServiceTripData extends CarNetVehicleBaseService {
-    private final Logger logger = LoggerFactory.getLogger(CarNetVehicleServiceTripData.class);
-
     public CarNetVehicleServiceTripData(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
         serviceId = CNAPI_SERVICE_REMOTE_TRIP_STATISTICS;

@@ -28,8 +28,6 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.Ca
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus.CNChargerStatus.CarNetChargerStatusData;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link CarNetVehicleServiceCharger} implements the charger service.
@@ -38,8 +36,6 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class CarNetVehicleServiceCharger extends CarNetVehicleBaseService {
-    private final Logger logger = LoggerFactory.getLogger(CarNetVehicleServiceCharger.class);
-
     public CarNetVehicleServiceCharger(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
         serviceId = CNAPI_SERVICE_REMOTE_BATTERY_CHARGE;
@@ -49,21 +45,17 @@ public class CarNetVehicleServiceCharger extends CarNetVehicleBaseService {
     public boolean createChannels(Map<String, ChannelIdMapEntry> ch) throws CarNetException {
         try {
             CarNetChargerStatus cs = api.getChargerStatus();
-            if (cs != null) {
-                // addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CURRENT, ITEMT_NUMBER, null, true, true);
-                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_STATUS, ITEMT_STRING, null, false, true);
-                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PWR_STATE, ITEMT_STRING, null, false, true);
-                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CHG_STATE, ITEMT_STRING, null, false, true);
-                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_FLOW, ITEMT_STRING, null, false, true);
-                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_BAT_STATE, ITEMT_PERCENT, null, false, true);
-                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_REMAINING, ITEMT_TIME, QMINUTES, false, true);
-                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PLUG_STATE, ITEMT_STRING, null, false, true);
-                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_LOCK_STATE, ITEMT_STRING, null, false, true);
-                addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_ERROR, ITEMT_NUMBER, null, false, true);
-                return true;
-            }
+            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_STATUS, ITEMT_STRING, null, false, true);
+            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PWR_STATE, ITEMT_STRING, null, false, true);
+            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CHG_STATE, ITEMT_STRING, null, false, true);
+            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_FLOW, ITEMT_STRING, null, false, true);
+            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_BAT_STATE, ITEMT_PERCENT, null, false, true);
+            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_REMAINING, ITEMT_TIME, QMINUTES, false, true);
+            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PLUG_STATE, ITEMT_STRING, null, false, true);
+            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_LOCK_STATE, ITEMT_STRING, null, false, true);
+            addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_ERROR, ITEMT_NUMBER, null, false, true);
+            return true;
         } catch (CarNetException e) {
-
         }
         return false;
     }

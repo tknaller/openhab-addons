@@ -32,8 +32,6 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNe
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus.CNClimaterStatus.CarNetClimaterStatusData.CarNetClimaterZoneState;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link CarNetVehicleServiceClimater} implements climater service.
@@ -42,8 +40,6 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class CarNetVehicleServiceClimater extends CarNetVehicleBaseService {
-    private final Logger logger = LoggerFactory.getLogger(CarNetVehicleServiceClimater.class);
-
     public CarNetVehicleServiceClimater(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
         serviceId = CNAPI_SERVICE_REMOTE_PRETRIP_CLIMATISATION;
@@ -53,7 +49,7 @@ public class CarNetVehicleServiceClimater extends CarNetVehicleBaseService {
     public boolean createChannels(Map<String, ChannelIdMapEntry> ch) throws CarNetException {
         try {
             CarNetClimaterStatus cs = api.getClimaterStatus();
-            if ((cs != null) && (cs.status.climatisationStatusData != null)) {
+            if (cs.status.climatisationStatusData != null) {
                 addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CLIMATER, ITEMT_SWITCH, null, false, false);
                 addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_WINHEAT, ITEMT_SWITCH, null, false, false);
                 addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_PREHEAT, ITEMT_SWITCH, null, false, false);

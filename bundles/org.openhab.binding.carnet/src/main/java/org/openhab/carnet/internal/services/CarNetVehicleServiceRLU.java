@@ -27,8 +27,6 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHisto
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHistory.CarNetRluHistory.CarNetRluLockActionList.CarNetRluLockAction;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link CarNetVehicleServiceRLU} implements remote vehicle lock/unlock and history.
@@ -37,8 +35,6 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class CarNetVehicleServiceRLU extends CarNetVehicleBaseService {
-    private final Logger logger = LoggerFactory.getLogger(CarNetVehicleServiceRLU.class);
-
     public CarNetVehicleServiceRLU(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
         serviceId = CNAPI_SERVICE_REMOTE_LOCK_UNLOCK;
@@ -74,24 +70,21 @@ public class CarNetVehicleServiceRLU extends CarNetVehicleBaseService {
     private boolean update(@Nullable Map<String, ChannelIdMapEntry> channels) throws CarNetException {
         try {
             CarNetRluHistory hist = api.getRluActionHistory();
-            if (hist != null) {
-                int num = getConfig().vehicle.numActionHistory;
-                int i = hist.actions.action.size() - 1; // latest first
-                int l = 1;
-                while ((i > 0) && (l <= num)) {
-                    if (channels != null) {
-                        createChannels(channels, l);
-                    } else {
-                        CarNetRluLockAction entry = hist.actions.action.get(i);
-                        String group = CHANNEL_GROUP_RLUHIST + l;
-                        updateChannel(group, CHANNEL_RLUHIST_TS, getDateTime(getString(entry.timestamp)));
-                        updateChannel(group, CHANNEL_RLUHIST_OP, getStringType(entry.operation));
-                        updateChannel(group, CHANNEL_RLUHIST_RES, getStringType(entry.rluResult));
-                    }
-                    i--;
-                    l++;
+            int num = getConfig().vehicle.numActionHistory;
+            int i = hist.actions.action.size() - 1; // latest first
+            int l = 1;
+            while ((i > 0) && (l <= num)) {
+                if (channels != null) {
+                    createChannels(channels, l);
+                } else {
+                    CarNetRluLockAction entry = hist.actions.action.get(i);
+                    String group = CHANNEL_GROUP_RLUHIST + l;
+                    updateChannel(group, CHANNEL_RLUHIST_TS, getDateTime(getString(entry.timestamp)));
+                    updateChannel(group, CHANNEL_RLUHIST_OP, getStringType(entry.operation));
+                    updateChannel(group, CHANNEL_RLUHIST_RES, getStringType(entry.rluResult));
                 }
-
+                i--;
+                l++;
                 return true;
             }
         } catch (CarNetException e) {

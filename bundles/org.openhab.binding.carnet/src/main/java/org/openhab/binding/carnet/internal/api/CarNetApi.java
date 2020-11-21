@@ -546,6 +546,9 @@ public class CarNetApi {
         boolean remove = false;
         String status = rstatus;
         CarNetPendingRequest request = pendingRequests.get(requestId);
+        if (request == null) {
+            return "";
+        }
         if (request.isExpired()) {
             logger.info("{}: Request {} for action {}.{} has been expired, remove", config.vehicle.vin,
                     request.requestId, request.service, request.action);

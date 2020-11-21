@@ -30,8 +30,6 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNDestinations.C
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNDestinations.CarNetDestinationList;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link CarNetVehicleServiceDestinations} implements the destination hostory
@@ -39,8 +37,6 @@ import org.slf4j.LoggerFactory;
  * @author Markus Michels - Initial contribution
  */
 public class CarNetVehicleServiceDestinations extends CarNetVehicleBaseService {
-    private final Logger logger = LoggerFactory.getLogger(CarNetVehicleServiceDestinations.class);
-
     public CarNetVehicleServiceDestinations(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
         serviceId = CNAPI_SERVICE_MY_AUDI_DESTINATIONS;
