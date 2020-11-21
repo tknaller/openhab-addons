@@ -14,7 +14,7 @@ package org.openhab.carnet.internal.services;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.*;
-import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_REMOTELOCK;
+import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_REMOTE_LOCK_UNLOCK;
 
 import java.util.Map;
 
@@ -41,7 +41,7 @@ public class CarNetVehicleServiceRLU extends CarNetVehicleBaseService {
 
     public CarNetVehicleServiceRLU(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
-        serviceId = CNAPI_SERVICE_REMOTELOCK;
+        serviceId = CNAPI_SERVICE_REMOTE_LOCK_UNLOCK;
     }
 
     @Override

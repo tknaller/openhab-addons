@@ -14,7 +14,7 @@ package org.openhab.carnet.internal.services;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.getString;
-import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_CARFINDER;
+import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_CAR_FINDER;
 
 import java.util.Map;
 
@@ -44,7 +44,7 @@ public class CarNetVehicleServiceCarFinder extends CarNetVehicleBaseService {
 
     public CarNetVehicleServiceCarFinder(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
-        serviceId = CNAPI_SERVICE_CARFINDER;
+        serviceId = CNAPI_SERVICE_CAR_FINDER;
     }
 
     @Override

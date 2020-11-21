@@ -14,7 +14,7 @@ package org.openhab.carnet.internal.services;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.*;
-import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_CHARGER;
+import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_REMOTE_BATTERY_CHARGE;
 
 import java.util.Map;
 
@@ -42,7 +42,7 @@ public class CarNetVehicleServiceCharger extends CarNetVehicleBaseService {
 
     public CarNetVehicleServiceCharger(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
-        serviceId = CNAPI_SERVICE_CHARGER;
+        serviceId = CNAPI_SERVICE_REMOTE_BATTERY_CHARGE;
     }
 
     @Override
@@ -81,23 +81,38 @@ public class CarNetVehicleServiceCharger extends CarNetVehicleBaseService {
                 updateChannel(group, CHANNEL_CHARGER_CURRENT,
                         cs.settings != null ? getDecimal(cs.settings.maxChargeCurrent.content) : UnDefType.UNDEF,
                         SmartHomeUnits.AMPERE);
-                updateChannel(group, CHANNEL_CHARGER_STATUS, getStringType(sd.chargingState.content));
-                updateChannel(group, CHANNEL_CHARGER_ERROR, getDecimal(sd.chargingStateErrorCode.content));
-                updateChannel(group, CHANNEL_CHARGER_PWR_STATE, getStringType(sd.externalPowerSupplyState.content));
-                updateChannel(group, CHANNEL_CHARGER_CHG_STATE, getStringType(sd.chargingState.content));
-                updateChannel(group, CHANNEL_CHARGER_FLOW, getStringType(sd.energyFlow.content));
-                updateChannel(group, CHANNEL_CHARGER_BAT_STATE,
-                        new QuantityType<>(getInteger(cs.status.batteryStatusData.stateOfCharge.content), PERCENT));
-                int remaining = getDecimal(cs.status.batteryStatusData.remainingChargingTime.content).intValue();
-                updateChannel(group, CHANNEL_CHARGER_REMAINING,
-                        remaining == 65535 ? UnDefType.UNDEF
-                                : new QuantityType<>(
-                                        getDecimal(cs.status.batteryStatusData.remainingChargingTime.content),
-                                        QMINUTES));
-                updateChannel(group, CHANNEL_CHARGER_PLUG_STATE,
-                        getStringType(cs.status.plugStatusData.plugState.content));
-                updateChannel(group, CHANNEL_CHARGER_LOCK_STATE,
-                        getStringType(cs.status.plugStatusData.lockState.content));
+                if (sd.chargingState != null) {
+                    updateChannel(group, CHANNEL_CHARGER_CHG_STATE, getStringType(sd.chargingState.content));
+                    updateChannel(group, CHANNEL_CHARGER_STATUS, getStringType(sd.chargingState.content));
+                }
+                if (sd.chargingStateErrorCode != null) {
+                    updateChannel(group, CHANNEL_CHARGER_ERROR, getDecimal(sd.chargingStateErrorCode.content));
+                }
+                if (sd.externalPowerSupplyState != null) {
+                    updateChannel(group, CHANNEL_CHARGER_PWR_STATE, getStringType(sd.externalPowerSupplyState.content));
+                }
+                if (sd.energyFlow != null) {
+                    updateChannel(group, CHANNEL_CHARGER_FLOW, getStringType(sd.energyFlow.content));
+                }
+                if (cs.status.batteryStatusData != null) {
+                    updateChannel(group, CHANNEL_CHARGER_BAT_STATE,
+                            new QuantityType<>(getInteger(cs.status.batteryStatusData.stateOfCharge.content), PERCENT));
+                    if (cs.status.batteryStatusData.remainingChargingTime != null) {
+                        int remaining = getDecimal(cs.status.batteryStatusData.remainingChargingTime.content)
+                                .intValue();
+                        updateChannel(group, CHANNEL_CHARGER_REMAINING,
+                                remaining == 65535 ? UnDefType.UNDEF
+                                        : new QuantityType<>(
+                                                getDecimal(cs.status.batteryStatusData.remainingChargingTime.content),
+                                                QMINUTES));
+                    }
+                }
+                if (cs.status.plugStatusData != null) {
+                    updateChannel(group, CHANNEL_CHARGER_PLUG_STATE,
+                            getStringType(cs.status.plugStatusData.plugState.content));
+                    updateChannel(group, CHANNEL_CHARGER_LOCK_STATE,
+                            getStringType(cs.status.plugStatusData.lockState.content));
+                }
                 return true;
             }
         } catch (CarNetException e) {

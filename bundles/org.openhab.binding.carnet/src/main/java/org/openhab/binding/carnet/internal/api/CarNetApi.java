@@ -13,7 +13,7 @@
 package org.openhab.binding.carnet.internal.api;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_REQUEST_TIMEOUT_SEC;
-import static org.openhab.binding.carnet.internal.CarNetUtils.getString;
+import static org.openhab.binding.carnet.internal.CarNetUtils.*;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
 import java.io.File;
@@ -31,6 +31,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.util.UrlEncoded;
 import org.openhab.binding.carnet.internal.CarNetException;
+import org.openhab.binding.carnet.internal.CarNetUtils;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater;
@@ -64,7 +65,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.internal.Primitives;
 
 /**
@@ -89,25 +89,30 @@ public class CarNetApi {
         public String action = "";
         public String checkUrl = "";
         public String requestId = "";
+        public String status = "";
         public Date creationTime = new Date();
 
         public CarNetPendingRequest(String service, String action, CNActionResponse rsp) {
             // normalize the resonse type
             this.service = service;
             this.action = action;
-            if (rsp.rluActionResponse != null) {
-                this.vin = rsp.rluActionResponse.vin;
-                this.requestId = rsp.rluActionResponse.requestId;
-            }
 
             switch (service) {
-                case CNAPI_SERVICE_REMOTELOCK:
+                case CNAPI_SERVICE_REMOTE_LOCK_UNLOCK:
+                    if (rsp.rluActionResponse != null) {
+                        this.vin = rsp.rluActionResponse.vin;
+                        this.requestId = rsp.rluActionResponse.requestId;
+                    }
                     checkUrl = "bs/rlu/v1/{0}/{1}/vehicles/{2}/requests/" + requestId + "/status";
                     break;
-                case CNAPI_SERVICE_PREHEATING:
+                case CNAPI_SERVICE_REMOTE_HEATING:
                     checkUrl = "bs/rs/v1/{0}/{1}/vehicles/{2}/climater/actions/" + requestId;
                     break;
-                case CNAPI_SERVICE_CLIMATISATION:
+                case CNAPI_SERVICE_REMOTE_PRETRIP_CLIMATISATION:
+                    if (rsp.action != null) {
+                        this.requestId = rsp.action.actionId;
+                        this.status = rsp.action.actionState;
+                    }
                     checkUrl = "bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions/" + requestId;
                     break;
             }
@@ -164,11 +169,7 @@ public class CarNetApi {
         headers.put(HttpHeader.CONTENT_TYPE.toString(), CNAPI_CONTENTT_FORM_URLENC);
         String json = http.get(url, headers);
         config.oidcDate = http.getResponseDate();
-        CarNetOidcConfig config = gson.fromJson(json, CarNetOidcConfig.class);
-        if (config == null) {
-            throw new CarNetException("Unable to parse CarNetOidcConfig from JSON");
-        }
-        return config;
+        return CarNetUtils.fromJson(gson, json, CarNetOidcConfig.class);
     }
 
     public CarNetServiceAvailability getServiceAvailability(CarNetOperationList operation) throws CarNetException {
@@ -178,24 +179,24 @@ public class CarNetApi {
             boolean enabled = si.serviceStatus.status.equalsIgnoreCase("Enabled")
                     && (!si.licenseRequired || si.cumulatedLicense.status.equalsIgnoreCase("ACTIVATED"));
             switch (si.serviceId) {
-                case CNAPI_SERVICE_VEHICLE_STATUS:
+                case CNAPI_SERVICE_VEHICLE_STATUS_REPORT:
                     serviceStatus.statusData = enabled;
                     break;
-                case CNAPI_SERVICE_REMOTELOCK:
+                case CNAPI_SERVICE_REMOTE_LOCK_UNLOCK:
                     serviceStatus.rlu = enabled;
-                case CNAPI_SERVICE_CLIMATER:
+                case CNAPI_SERVICE_REMOTE_PRETRIP_CLIMATISATION:
                     serviceStatus.clima = enabled;
                     break;
-                case CNAPI_SERVICE_CHARGER:
+                case CNAPI_SERVICE_REMOTE_BATTERY_CHARGE:
                     serviceStatus.charger = enabled;
                     break;
-                case CNAPI_SERVICE_CARFINDER:
+                case CNAPI_SERVICE_CAR_FINDER:
                     serviceStatus.carFinder = enabled;
                     break;
-                case CNAPI_SERVICE_DESTINATIONS:
+                case CNAPI_SERVICE_MY_AUDI_DESTINATIONS:
                     serviceStatus.destinations = enabled;
                     break;
-                case CNAPI_SERVICE_TRIPDATA:
+                case CNAPI_SERVICE_REMOTE_TRIP_STATISTICS:
                     serviceStatus.tripData = enabled;
                     break;
             }
@@ -218,7 +219,6 @@ public class CarNetApi {
             config.vehicle.homeRegionUrl = getString(region.homeRegion.baseUri.content);
             return config.vehicle.homeRegionUrl;
         } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
         }
         return "";
     }
@@ -235,9 +235,8 @@ public class CarNetApi {
         return callApi(CNAPI_URI_VEHICLE_STATUS, "getVehicleStatus", CarNetVehicleStatus.class);
     }
 
-    public boolean getVehicleRequets() throws CarNetException {
-        String json = http.post("bs/vsr/v1/{0}/{1}/vehicles/{2}/requests", fillAppHeaders(), "", "");
-        return false;
+    public String getVehicleRequets() throws CarNetException {
+        return http.post("bs/vsr/v1/{0}/{1}/vehicles/{2}/requests", fillAppHeaders(), "", "");
     }
 
     public CarNetVehiclePosition getVehiclePosition() throws CarNetException {
@@ -263,7 +262,7 @@ public class CarNetApi {
                 json = test;
             }
         }
-        CNDestinations dest = gson.fromJson(json, CNDestinations.class);
+        CNDestinations dest = fromJson(gson, json, CNDestinations.class, false);
         if ((dest != null) && (dest.destinations != null)) {
             return dest.destinations;
         }
@@ -288,17 +287,15 @@ public class CarNetApi {
             String url = CNAPI_VWURL_TRIP_DATA.replace("{3}", type).replace("{4}", action);
             json = http.get(url, fillAppHeaders());
         } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
-        } catch (Exception e) {
+            logger.debug("{}: API call getTripData failed: {}", config.vehicle.vin, e.toString());
+        } catch (RuntimeException e) {
+            logger.debug("{}: API call getTripData failed", config.vehicle.vin, e);
         }
 
         if (json.isEmpty()) {
             json = loadJson("tripData" + type);
         }
-        if (json != null) {
-            return gson.fromJson(json, CarNetTripData.class);
-        }
-        return null;
+        return fromJson(gson, json, CarNetTripData.class, false);
     }
 
     public @Nullable String getPersonalData() throws CarNetException {
@@ -331,9 +328,9 @@ public class CarNetApi {
             json = http.get(url, headers, createVwToken());
             return json;
         } catch (CarNetException e) {
-            logger.debug("{}: API call failed: {}", config.vehicle.vin, e.toString());
-        } catch (Exception e) {
-
+            logger.debug("{}: API call getPersonalData failed: {}", config.vehicle.vin, e.toString());
+        } catch (RuntimeException e) {
+            logger.debug("{}: API call getPersonalData failed", config.vehicle.vin, e);
         }
         return null;
     }
@@ -348,12 +345,12 @@ public class CarNetApi {
     }
 
     public String controlLock(boolean lock) throws CarNetException {
+        String action = lock ? CNAPI_ACTION_REMOTE_LOCK_UNLOCK_LOCK : CNAPI_ACTION_REMOTE_LOCK_UNLOCK_UNLOCK;
         String data = "<?xml version=\"1.0\" encoding= \"UTF-8\" ?>"
-                + "<rluAction xmlns=\"http://audi.de/connect/rlu\">" + "<action>"
-                + (lock ? CNAPI_RLU_LOCK : CNAPI_RLU_UNLOCK).toLowerCase() + "</action></rluAction>";
-        return sendAction("bs/rlu/v1/{0}/{1}/vehicles/{2}/actions", CNAPI_SERVICE_REMOTELOCK,
-                lock ? CNAPI_RLU_LOCK : CNAPI_RLU_UNLOCK, true, "application/vnd.vwg.mbb.RemoteLockUnlock_v1_0_0+xml",
-                data);
+                + "<rluAction xmlns=\"http://audi.de/connect/rlu\">" + "<action>" + action.toLowerCase()
+                + "</action></rluAction>";
+        return sendAction("bs/rlu/v1/{0}/{1}/vehicles/{2}/actions", CNAPI_SERVICE_REMOTE_LOCK_UNLOCK, action, true,
+                "application/vnd.vwg.mbb.RemoteLockUnlock_v1_0_0+xml", data);
     }
 
     public CarNetRluHistory getRluActionHistory() throws CarNetException {
@@ -363,40 +360,43 @@ public class CarNetApi {
 
     public String controlClimater(boolean start) throws CarNetException {
         String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" + (start
-                ? "<action><type>startClimatisation</type>"
-                        + "<settings><heaterSource>electric</heaterSource></settings>" + "</action>"
+                ? "<action><type>startClimatisation</type>" + "<settings><heaterSource>" + CNAPI_HEATER_SOURCE_ELECTRIC
+                        + "</heaterSource></settings>" + "</action>"
                 : "<action><type>stopClimatisation</type></action>");
-        return sendAction("bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", CNAPI_SERVICE_PREHEATING,
-                CNAPI_RHEATING_ACTION, false, "application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml;charset=utf-8", data);
+        return sendAction("bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions",
+                CNAPI_SERVICE_REMOTE_PRETRIP_CLIMATISATION, CNAPI_ACTION_REMOTE_HEATING_QUICK_START, false,
+                "application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml;charset=utf-8", data);
     }
 
     public String controlClimaterTemp(double tempC) throws CarNetException {
         int tempdK = 2950;
         String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<action><type>setSettings</type><settings>"
                 + "<targetTemperature>" + tempdK + "</targetTemperature>"
-                + "<climatisationWithoutHVpower>false</climatisationWithoutHVpower>"
-                + "<heaterSource>electric</heaterSource>" + "</settings></action>";
-        return sendAction("bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", CNAPI_SERVICE_PREHEATING,
-                CNAPI_RHEATING_ACTION, false, "application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml;charset=utf-8", data);
+                + "<climatisationWithoutHVpower>false</climatisationWithoutHVpower>" + "<heaterSource>"
+                + CNAPI_HEATER_SOURCE_ELECTRIC + "</heaterSource>" + "</settings></action>";
+        return sendAction("bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", CNAPI_SERVICE_REMOTE_HEATING,
+                CNAPI_ACTION_REMOTE_HEATING_QUICK_START, false,
+                "application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml;charset=utf-8", data);
     }
 
     public String controlPreHeating(boolean start) throws CarNetException {
-        final String action = start ? "start" : "stop";
+        final String action = start ? CNAPI_ACTION_REMOTE_HEATING_QUICK_START : CNAPI_ACTION_REMOTE_HEATING_QUICK_STOP;
         String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
                 + "<performAction xmlns=\"http://audi.de/connect/rs\"><quickstart>" + "<active>"
                 + (start ? "true" : "false") + "</active>" + "</quickstart></performAction>";
-        return sendAction("bs/rs/v1/{0}/{1}/vehicles/{2}/climater/actions", CNAPI_SERVICE_PREHEATING,
-                CNAPI_RHEATING_ACTION, true, "application/vnd.vwg.mbb.RemoteStandheizung_v2_0_0+xml", data);
+        return sendAction("bs/rs/v1/{0}/{1}/vehicles/{2}/climater/actions", CNAPI_SERVICE_REMOTE_HEATING, action, true,
+                "application/vnd.vwg.mbb.RemoteStandheizung_v2_0_0+xml", data);
     }
 
     public String controlVentilation(boolean start, int duration) throws CarNetException {
+        final String action = start ? CNAPI_ACTION_REMOTE_HEATING_QUICK_START : CNAPI_ACTION_REMOTE_HEATING_QUICK_STOP;
         String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><performAction xmlns=\"http://audi.de/connect/rs\">"
-                + (start ? "<quickstart><active>true</active><climatisationDuration>" + duration
-                        + "</climatisationDuration><startMode>true</startMode></quickstart>"
+                + (start ? "<quickstart><active>true</active>" + "<climatisationDuration>" + duration
+                        + "</climatisationDuration>" + "<startMode>ventilation</startMode></quickstart>"
                         : "<quickstop><active>false</active></quickstop>")
                 + "</performAction>";
-        return sendAction("bs/rs/v1/{0}/{1}/vehicles/{2}/climater/actions", CNAPI_SERVICE_PREHEATING,
-                CNAPI_RHEATING_ACTION, true, "application/vnd.vwg.mbb.RemoteStandheizung_v2_0_0+xml", data);
+        return sendAction("bs/rs/v1/{0}/{1}/vehicles/{2}/climater/actions", CNAPI_SERVICE_REMOTE_HEATING, action, true,
+                "application/vnd.vwg.mbb.RemoteStandheizung_v2_0_0+xml", data);
     }
 
     public String controlCharger(boolean start) throws CarNetException {
@@ -420,15 +420,19 @@ public class CarNetApi {
     public String controlWindowHeating(boolean start) throws CarNetException {
         final String action = start ? "startWindowHeating" : "stopWindowHeating";
         String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><action><type>" + action + "</type></action>";
-        return sendAction("bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", CNAPI_SERVICE_CLIMATISATION,
-                action, false, "application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml", data);
+        return sendAction("bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions",
+                CNAPI_SERVICE_REMOTE_PRETRIP_CLIMATISATION, action, false,
+                "application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml", data);
     }
 
     private String sendAction(String uri, String service, String action, boolean reqSecToken, String contentType,
             String body) throws CarNetException {
+        logger.debug("{}: Sending action request for {}.{}, reqSecToken={}, contentType={}", config.vehicle.vin,
+                service, action, reqSecToken, contentType);
         Map<String, String> headers = fillActionHeaders(contentType,
                 reqSecToken ? createSecurityToken(service, action) : createVwToken());
         String json = http.post(uri, headers, body);
+        logger.debug("{}: Action response={}", config.vehicle.vin, json);
         return queuePendingAction(json, service, action);
     }
 
@@ -474,29 +478,19 @@ public class CarNetApi {
             json = http.get(uri, vin, fillAppHeaders());
         } catch (CarNetException e) {
             CarNetApiResult res = e.getApiResult();
-            logger.debug("{}: API call {} failed: {}", config.vehicle.vin, function, res.toString());
+            logger.debug("{}: API call {} failed: {}", config.vehicle.vin, function, e.toString());
             if (res.isHttpUnauthorized()) {
                 json = loadJson(function);
             }
+        } catch (RuntimeException e) {
+            logger.debug("{}: API call {} failed", config.vehicle.vin, function, e);
         }
 
         if (classOfT.isInstance(json)) {
+            // special case on target class == String (return raw info)
             return Primitives.wrap(classOfT).cast(json);
-        } else if ((json == null) || json.isEmpty()) {
-            throw new CarNetException("Can't create object of type " + classOfT.getClass() + "from empty JSON");
-        } else {
-            try {
-                T obj = gson.fromJson(json, classOfT);
-                if (obj == null) { // new in OH3: fromJson may return null
-                    throw new CarNetException(
-                            "Can't create object of type " + classOfT.getClass() + "from JSON: " + json);
-                }
-                return obj;
-            } catch (JsonSyntaxException e) {
-                throw new CarNetException("Can't create object of type " + classOfT.getClass() + "from JSON: " + json,
-                        e);
-            }
         }
+        return fromJson(gson, json, classOfT);
     }
 
     private @Nullable String loadJson(String filename) {
@@ -524,17 +518,18 @@ public class CarNetApi {
     }
 
     private String queuePendingAction(String json, String service, String action) throws CarNetException {
-        CNActionResponse in = gson.fromJson(json, CNActionResponse.class);
+        CNActionResponse in = fromJson(gson, json, CNActionResponse.class, false);
         if (in != null) {
             CarNetPendingRequest rsp = new CarNetPendingRequest(service, action, in);
-            logger.debug("{}: Request for {}.{} accepted, requestId={}", rsp.vin, service, action, rsp.requestId);
+            logger.debug("{}: Request for {}.{} accepted, requestId={}", config.vehicle.vin, service, action,
+                    rsp.requestId);
             if (pendingRequests.containsKey(rsp.requestId)) {
                 pendingRequests.remove(rsp.requestId); // duplicate id
             }
             pendingRequests.put(rsp.requestId, rsp);
 
             // Check if action was accepted
-            return getRequestStatus(rsp.requestId);
+            return getRequestStatus(rsp.requestId, rsp.status);
         }
         return CNAPI_REQUEST_NOT_FOUND;
     }
@@ -543,13 +538,13 @@ public class CarNetApi {
         return pendingRequests;
     }
 
-    public String getRequestStatus(String requestId) throws CarNetException {
+    public String getRequestStatus(String requestId, String rstatus) throws CarNetException {
         if (!pendingRequests.containsKey(requestId)) {
             throw new IllegalArgumentException("Invalid requestId");
         }
 
         boolean remove = false;
-        String status = "";
+        String status = rstatus;
         CarNetPendingRequest request = pendingRequests.get(requestId);
         if (request.isExpired()) {
             logger.info("{}: Request {} for action {}.{} has been expired, remove", config.vehicle.vin,
@@ -557,8 +552,11 @@ public class CarNetApi {
             remove = true;
         } else {
             try {
-                CNRequestStatus rs = callApi(request.checkUrl, "getRequestStatus", CNRequestStatus.class);
-                status = rs.requestStatusResponse.status;
+                if (status.isEmpty()) {
+                    CNRequestStatus rs = callApi(request.checkUrl, "getRequestStatus", CNRequestStatus.class);
+                    status = rs.requestStatusResponse.status;
+                }
+
                 logger.debug("{}: Request {} for action {}.{} is in status {}", config.vehicle.vin, request.requestId,
                         request.service, request.action, status);
                 switch (status) {
@@ -566,8 +564,10 @@ public class CarNetApi {
                         remove = true;
                         break;
                     case CNAPI_REQUEST_IN_PROGRESS:
+                    case CNAPI_REQUEST_QUEUED:
                         break;
                     case CNAPI_REQUEST_NOT_FOUND:
+                    case CNAPI_REQUEST_FAIL:
                     case "general_error":
                         remove = true;
                         break;

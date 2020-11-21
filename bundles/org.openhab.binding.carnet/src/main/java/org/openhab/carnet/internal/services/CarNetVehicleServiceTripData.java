@@ -14,7 +14,7 @@ package org.openhab.carnet.internal.services;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.*;
-import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_TRIPDATA;
+import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_REMOTE_TRIP_STATISTICS;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -46,7 +46,7 @@ public class CarNetVehicleServiceTripData extends CarNetVehicleBaseService {
 
     public CarNetVehicleServiceTripData(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
-        serviceId = CNAPI_SERVICE_TRIPDATA;
+        serviceId = CNAPI_SERVICE_REMOTE_TRIP_STATISTICS;
     }
 
     @Override

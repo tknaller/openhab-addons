@@ -80,8 +80,6 @@ public class CarNetException extends Exception {
         } else {
             if (super.getClass() != CarNetException.class) {
                 message = MessageFormat.format("{0} {1}", super.getClass().toString(), super.getMessage());
-            } else {
-                message = super.getMessage();
             }
         }
 

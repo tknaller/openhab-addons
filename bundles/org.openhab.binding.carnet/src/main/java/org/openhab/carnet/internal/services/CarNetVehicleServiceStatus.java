@@ -14,7 +14,7 @@ package org.openhab.carnet.internal.services;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.getString;
-import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_VEHICLE_STATUS;
+import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_VEHICLE_STATUS_REPORT;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -52,7 +52,7 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
 
     public CarNetVehicleServiceStatus(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
-        serviceId = CNAPI_SERVICE_VEHICLE_STATUS;
+        serviceId = CNAPI_SERVICE_VEHICLE_STATUS_REPORT;
     }
 
     @Override

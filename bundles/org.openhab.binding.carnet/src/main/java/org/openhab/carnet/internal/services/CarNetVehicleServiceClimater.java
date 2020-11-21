@@ -14,7 +14,7 @@ package org.openhab.carnet.internal.services;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.*;
-import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_CLIMATER;
+import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_REMOTE_PRETRIP_CLIMATISATION;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -46,7 +46,7 @@ public class CarNetVehicleServiceClimater extends CarNetVehicleBaseService {
 
     public CarNetVehicleServiceClimater(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
-        serviceId = CNAPI_SERVICE_CLIMATER;
+        serviceId = CNAPI_SERVICE_REMOTE_PRETRIP_CLIMATISATION;
     }
 
     @Override
@@ -76,28 +76,46 @@ public class CarNetVehicleServiceClimater extends CarNetVehicleBaseService {
 
     @Override
     public boolean serviceUpdate() throws CarNetException {
+        boolean updated = false;
         try {
             CarNetClimaterStatus cs = api.getClimaterStatus();
-            if ((cs != null) && (cs.status != null) && (cs.status.climatisationStatusData != null)) {
-                String group = CHANNEL_GROUP_CLIMATER;
-                CarNetClimaterStatusData sd = cs.status.climatisationStatusData;
-                // convert temp from dK to C
-                Double temp = getDouble(cs.settings.targetTemperature.content).doubleValue();
-                BigDecimal bd = new BigDecimal(DKELVIN.getConverterToAny(SIUnits.CELSIUS).convert(temp).doubleValue());
-                bd = bd.setScale(1, BigDecimal.ROUND_HALF_UP);
-                updateChannel(group, CHANNEL_CLIMATER_TARGET_TEMP,
-                        toQuantityType(bd.doubleValue(), 1, SIUnits.CELSIUS));
-                updateChannel(group, CHANNEL_CLIMATER_HEAT_SOURCE, getStringType(cs.settings.heaterSource.content));
-                updateChannel(group, CHANNEL_CLIMATER_GEN_STATE, getStringType(sd.climatisationState.content));
-                updateZoneStates(sd.climatisationElementStates.zoneStates);
-                updateChannel(group, CHANNEL_CLIMATER_MIRROR_HEAT,
-                        getOnOff(sd.climatisationElementStates.isMirrorHeatingActive.content));
-                return true;
+            String group = CHANNEL_GROUP_CLIMATER;
+            if (cs.settings != null) {
+                if (cs.settings.heaterSource != null) {
+                    // convert temp from dK to C
+                    Double temp = getDouble(cs.settings.targetTemperature.content).doubleValue();
+                    BigDecimal bd = new BigDecimal(
+                            DKELVIN.getConverterToAny(SIUnits.CELSIUS).convert(temp).doubleValue());
+                    bd = bd.setScale(1, BigDecimal.ROUND_HALF_UP);
+                    updated |= updateChannel(group, CHANNEL_CLIMATER_TARGET_TEMP,
+                            toQuantityType(bd.doubleValue(), 1, SIUnits.CELSIUS));
+                    if (cs.settings.heaterSource != null) {
+                        updated |= updateChannel(group, CHANNEL_CLIMATER_HEAT_SOURCE,
+                                getStringType(cs.settings.heaterSource.content));
+                    }
+                }
+            }
+
+            if (cs.status != null) {
+                if (cs.status.climatisationStatusData != null) {
+                    CarNetClimaterStatusData sd = cs.status.climatisationStatusData;
+                    if (sd.climatisationState != null) {
+                        updated |= updateChannel(group, CHANNEL_CLIMATER_GEN_STATE,
+                                getStringType(sd.climatisationState.content));
+                    }
+                    if (sd.climatisationElementStates != null) {
+                        updateZoneStates(sd.climatisationElementStates.zoneStates);
+                        if (sd.climatisationElementStates.isMirrorHeatingActive != null) {
+                            updated |= updateChannel(group, CHANNEL_CLIMATER_MIRROR_HEAT,
+                                    getOnOff(sd.climatisationElementStates.isMirrorHeatingActive.content));
+                        }
+                    }
+                }
             }
         } catch (IncommensurableException e) {
 
         }
-        return false;
+        return updated;
     }
 
     private boolean updateZoneStates(@Nullable CarNetClimaterZoneStateList zoneList) {

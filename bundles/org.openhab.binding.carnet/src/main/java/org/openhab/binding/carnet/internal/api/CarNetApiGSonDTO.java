@@ -299,11 +299,24 @@ public class CarNetApiGSonDTO {
     public static class CarNetActionResponse {
         public class CNActionResponse {
             public class CNRluActionResponse {
-                String requestId;
-                String vin;
+                public String requestId;
+                public String vin;
+            }
+
+            public class CNRclimaActionResponse {
+                public class CNRclimaSettings {
+                    public boolean climatisationWithoutHVpower;
+                    public String heaterSource;
+                }
+
+                public String type;
+                public String actionId;
+                public String actionState;
+                CNRclimaSettings settings;
             }
 
             CNRluActionResponse rluActionResponse;
+            CNRclimaActionResponse action;
         }
 
         String requestId;

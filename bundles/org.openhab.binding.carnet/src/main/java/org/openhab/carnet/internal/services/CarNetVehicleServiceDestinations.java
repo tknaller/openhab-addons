@@ -14,7 +14,7 @@ package org.openhab.carnet.internal.services;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.getStringType;
-import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_DESTINATIONS;
+import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_MY_AUDI_DESTINATIONS;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -43,7 +43,7 @@ public class CarNetVehicleServiceDestinations extends CarNetVehicleBaseService {
 
     public CarNetVehicleServiceDestinations(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(thingHandler, api);
-        serviceId = CNAPI_SERVICE_DESTINATIONS;
+        serviceId = CNAPI_SERVICE_MY_AUDI_DESTINATIONS;
     }
 
     @Override

@@ -38,6 +38,10 @@ import org.eclipse.smarthome.core.library.types.StringType;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.UnDefType;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.internal.Primitives;
+
 /**
  * Helperfunctions
  *
@@ -46,6 +50,44 @@ import org.eclipse.smarthome.core.types.UnDefType;
  */
 @NonNullByDefault
 public class CarNetUtils {
+    private static final String PRE = "Can't create object of type ";
+
+    public static <T> T fromJson(Gson gson, @Nullable String json, Class<T> classOfT) throws CarNetException {
+        return fromJson(gson, json, classOfT, true);
+    }
+
+    @SuppressWarnings("null") // suspress warning in OH2 dev environment
+    public static @Nullable <T> T fromJson(Gson gson, @Nullable String json, Class<T> classOfT, boolean exceptionOnNull)
+            throws CarNetException {
+        String className = CarNetUtils.substringAfter(classOfT.getName(), "$");
+
+        if (json == null) {
+            if (exceptionOnNull) {
+                throw new IllegalArgumentException(PRE + className + ": json is null!");
+            } else {
+                return null;
+            }
+        }
+
+        if (classOfT.isInstance(json)) {
+            return Primitives.wrap(classOfT).cast(json);
+        } else if ((json == null) || json.isEmpty()) { // update GSON might return null
+            throw new CarNetException(PRE + className + "from empty JSON");
+        } else {
+            try {
+                T obj = gson.fromJson(json, classOfT);
+                if ((obj == null) && exceptionOnNull) { // new in OH3: fromJson may return null
+                    throw new CarNetException(PRE + className + "from JSON: " + json);
+                }
+                return obj;
+            } catch (JsonSyntaxException e) {
+                throw new CarNetException(PRE + className + "from JSON (syntax/format error): " + json, e);
+            } catch (RuntimeException e) {
+                throw new CarNetException(PRE + className + "from JSON: " + json, e);
+            }
+        }
+    }
+
     public static String getString(@Nullable String value) {
         return value != null ? value : "";
     }
