@@ -6,7 +6,7 @@
 
 	<thing-type id="shelly1">
 		<label>Shelly1 (SHSW-1)</label>
-		<description>Shelly1 device with single relay</description>
+		<description>Shelly1 device with a single relay</description>
 		<channel-groups>
 			<channel-group id="relay" typeId="relayChannel"/>
 			<channel-group id="sensors" typeId="externalSensors"/>
@@ -16,6 +16,19 @@
 		<representation-property>deviceName</representation-property>
 		<config-description-ref uri="thing-type:shelly:relay"/>
 	</thing-type>
+
+    <thing-type id="shelly1l">
+        <label>Shelly 1L (SHSW-L)</label>
+        <description>Shelly 1L device with a single relay</description>
+        <channel-groups>
+            <channel-group id="relay" typeId="relayChannel"/>
+            <channel-group id="sensors" typeId="externalSensors"/>
+            <channel-group id="device" typeId="deviceStatus"/>
+        </channel-groups>
+
+        <representation-property>deviceName</representation-property>
+        <config-description-ref uri="thing-type:shelly:relay"/>
+    </thing-type>
 
 	<thing-type id="shelly1pm">
 		<label>Shelly1PM (SHSW-PM)</label>
@@ -218,6 +231,25 @@
 		<config-description-ref uri="thing-type:shelly:relay"/>
 	</thing-type>
 
+	<thing-type id="shellyuni">
+		<label>Shelly UNI (SHUNI-2)</label>
+		<description>Embedded Shelly device</description>
+
+		<channel-groups>
+			<channel-group id="relay1" typeId="relayChannel">
+				<label>Relay 1</label>
+			</channel-group>
+			<channel-group id="relay2" typeId="relayChannel">
+				<label>Relay 2</label>
+			</channel-group>
+			<channel-group id="sensors" typeId="uniSensor"/>
+			<channel-group id="device" typeId="deviceStatus"/>
+		</channel-groups>
+
+		<representation-property>deviceName</representation-property>
+		<config-description-ref uri="thing-type:shelly:relay"/>
+	</thing-type>
+
 	<thing-type id="shellydimmer">
 		<label>Shelly Dimmer (SHDM-1)</label>
 		<description>Shelly Dimmer</description>
@@ -260,6 +292,19 @@
 		<config-description-ref uri="thing-type:shelly:relay"/>
 	</thing-type>
 
+	<thing-type id="shellyuni">
+		<label>Shelly UNI (SHUNI-1)</label>
+		<description>Shelly UNI device</description>
+		<channel-groups>
+			<channel-group id="relay1" typeId="relayChannel"/>
+			<channel-group id="relay2" typeId="relayChannel"/>
+			<channel-group id="device" typeId="deviceStatus"/>
+		</channel-groups>
+
+		<representation-property>deviceName</representation-property>
+		<config-description-ref uri="thing-type:shelly:relay"/>
+	</thing-type>
+
 	<channel-group-type id="relayChannel">
 		<label>Relay</label>
 		<description>A Shelly relay channel</description>
@@ -270,6 +315,8 @@
 			<channel id="autoOn" typeId="timerAutoOn"/>
 			<channel id="autoOff" typeId="timerAutoOff"/>
 			<channel id="timerActive" typeId="timerActive"/>
+            <channel id="lastEvent" typeId="lastEvent"/>
+            <channel id="eventCount" typeId="eventCount"/>
 		</channels>
 	</channel-group-type>
 	<channel-group-type id="relayChannelPlug">

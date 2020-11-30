@@ -80,7 +80,7 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
         int rIndex = getIdFromBlk(sen);
         String rGroup = getProfile().numRelays <= 1 ? CHANNEL_GROUP_RELAY_CONTROL
                 : CHANNEL_GROUP_RELAY_CONTROL + rIndex;
-        String mGroup = profile.numMeters == 1 ? CHANNEL_GROUP_METER
+        String mGroup = profile.numMeters <= 1 ? CHANNEL_GROUP_METER
                 : CHANNEL_GROUP_METER + (profile.isEMeter ? getIdFromBlk(sen) : rIndex);
 
         boolean processed = true;
@@ -181,19 +181,27 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
             case "3117": // S, extInput, 0/1
                 handleInput(sen, s, rGroup, updates);
                 break;
+            case "3118":
+                updateChannel(updates, mGroup, CHANNEL_SENSOR_VOLTAGE,
+                        toQuantityType(getDouble(s.value), DIGITS_VOLT, SmartHomeUnits.VOLT));
+                break;
 
-            case "4101": // relay_0: P, power, W
-            case "4201": // relay_1: P, power, W
-            case "4301": // relay_2: P, power, W
-            case "4401": // relay_3: P, power, W
+            case "4101": // relay_0/light_0: P, power, W
+            case "4201": // relay_1/light_1: P, power, W
+            case "4301": // relay_2/light_2: P, power, W
+            case "4401": // relay_3/light_3: P, power, W
             case "4105": // emeter_0: P, power, W
             case "4205": // emeter_1: P, power, W
             case "4305": // emeter_2: P, power, W
             case "4102": // roller_0: P, rollerPower, W, 0-2300, unknown -1
             case "4202": // roller_1: P, rollerPower, W, 0-2300, unknown -1
+                logger.debug("{}: Updating {}:currentWatts with {}", thingName, mGroup, s.value);
                 updateChannel(updates, mGroup, CHANNEL_METER_CURRENTWATTS,
                         toQuantityType(s.value, DIGITS_WATT, SmartHomeUnits.WATT));
-                updateChannel(updates, mGroup, CHANNEL_LAST_UPDATE, getTimestamp());
+                if (!profile.isRGBW2 && !profile.isRoller) {
+                    // only for regular, not-aggregated meters
+                    updateChannel(updates, mGroup, CHANNEL_LAST_UPDATE, getTimestamp());
+                }
                 break;
 
             case "4103": // relay_0: E, energy, Wmin, U32

@@ -30,8 +30,10 @@ import org.apache.commons.lang.time.StopWatch;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.OpenClosedType;
+import org.eclipse.smarthome.core.library.types.QuantityType;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -290,6 +292,11 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
     public void handleCommand(ChannelUID channelUID, Command command) {
         try {
             if (command instanceof RefreshType) {
+                String channelId = channelUID.getId();
+                State value = cache.getValue(channelId);
+                if (value != UnDefType.NULL) {
+                    updateState(channelId, value);
+                }
                 return;
             }
 
@@ -928,8 +935,9 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
     }
 
     public void publishState(String channelId, State value) {
-        if (!stopping) {
-            updateState(channelId.contains("$") ? substringBefore(channelId, "$") : channelId, value);
+        String id = channelId.contains("$") ? substringBefore(channelId, "$") : channelId;
+        if (!stopping && isLinked(id)) {
+            updateState(id, value);
         }
     }
 
@@ -938,12 +946,24 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
     }
 
     public boolean updateChannel(String channelId, State value, boolean force) {
-        return !stopping && (channelId.contains("$") || isLinked(channelId))
-                && cache.updateChannel(channelId, value, force);
+        return !stopping && cache.updateChannel(channelId, value, force);
     }
 
     public State getChannelValue(String group, String channel) {
         return cache.getValue(group, channel);
+    }
+
+    public double getChannelDouble(String group, String channel) {
+        State value = getChannelValue(group, channel);
+        if (value != UnDefType.NULL) {
+            if (value instanceof QuantityType) {
+                return ((QuantityType<?>) value).toBigDecimal().doubleValue();
+            }
+            if (value instanceof DecimalType) {
+                return ((DecimalType) value).doubleValue();
+            }
+        }
+        return -1;
     }
 
     /**
