@@ -16,6 +16,7 @@ import static org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.COIOT_P
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Set;
 
@@ -76,7 +77,8 @@ public class ShellyCoapServer {
         }
     }
 
-    public synchronized void start(String localIp, ShellyCoapListener listener) throws UnknownHostException {
+    public synchronized void start(String localIp, ShellyCoapListener listener)
+            throws UnknownHostException, SocketException {
         if (!started) {
             logger.debug("Initializing CoIoT listener (local IP={}:{})", localIp, COIOT_PORT);
             NetworkConfig nc = NetworkConfig.getStandard();

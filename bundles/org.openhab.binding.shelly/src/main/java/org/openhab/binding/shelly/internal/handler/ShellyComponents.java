@@ -29,6 +29,7 @@ import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsEM
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsMeter;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusSensor;
+import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusSensor.ShellyADC;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 
@@ -323,7 +324,11 @@ public class ShellyComponents {
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_PPM,
                         getDecimal(sdata.concentration.ppm));
             }
-
+            if ((sdata.adcs != null) && (sdata.adcs.size() > 0)) {
+                ShellyADC adc = sdata.adcs.get(0);
+                updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_VOLTAGE,
+                        getDecimal(adc.voltage));
+            }
             if (sdata.bat != null) { // no update for Sense
                 thingHandler.logger.trace("{}: Updating battery", thingHandler.thingName);
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LEVEL,

@@ -167,7 +167,7 @@ public class ShellyCoIoTProtocol {
         return true;
     }
 
-    protected boolean updateChannel(Map<String, State> updates, String group, String channel, State value) {
+    public static boolean updateChannel(Map<String, State> updates, String group, String channel, State value) {
         updates.put(mkChannelId(group, channel), value);
         return true;
     }
@@ -225,8 +225,8 @@ public class ShellyCoIoTProtocol {
             } else if (profile.isDimmer) {
                 group = CHANNEL_GROUP_RELAY_CONTROL;
             } else if (profile.isRGBW2) {
+                checkL = String.valueOf(id); // String.valueOf(id - 1); // id is 1-based, L is 0-based
                 group = CHANNEL_GROUP_LIGHT_CHANNEL + id;
-                checkL = String.valueOf(id - 1); // id is 1-based, L is 0-based
                 logger.trace("{}: updatePower() for L={}", thingName, checkL);
             }
 
@@ -302,7 +302,7 @@ public class ShellyCoIoTProtocol {
             CoIotDescrBlk blk = blkMap.get(sen.links);
             String desc = blk.desc.toLowerCase();
             if (desc.startsWith(SHELLY_CLASS_RELAY) || desc.startsWith(SHELLY_CLASS_ROLLER)
-                    || desc.startsWith(SHELLY_CLASS_EMETER)) {
+                    || desc.startsWith(SHELLY_CLASS_LIGHT) || desc.startsWith(SHELLY_CLASS_EMETER)) {
                 if (desc.contains("_")) { // CoAP v2
                     idx = Integer.parseInt(substringAfter(desc, "_"));
                 } else { // CoAP v1

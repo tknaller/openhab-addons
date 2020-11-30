@@ -506,11 +506,6 @@ public class ShellyApiJsonDTO {
         @SerializedName("sleep_mode")
         public ShellySensorSleepMode sleepMode; // FW 1.6
 
-        // @SerializedName("ext_temperature")
-        // public ShellyStatusSensor.ShellyExtTemperature extTemperature; // Shelly 1/1PM: sensor values
-        // @SerializedName("ext_humidity")
-        // public ShellyStatusSensor.ShellyExtHumidity extHumidity; // Shelly 1/1PM: sensor values
-
         public String timezone;
         public Double lat;
         public Double lng;
@@ -880,6 +875,10 @@ public class ShellyApiJsonDTO {
             public ShellyShortHum sensor1;
         }
 
+        public static class ShellyADC {
+            public Double voltage;
+        }
+
         public ShellySensorTmp tmp;
         public ShellySensorHum hum;
         public ShellySensorLux lux;
@@ -914,6 +913,9 @@ public class ShellyApiJsonDTO {
         @SerializedName("connect_retries")
         public Integer connectRetries;
         public ArrayList<ShellyInputState> inputs; // Firmware 1.5.6+
+
+        // Shelly UNI FW 1.9+
+        public ArrayList<ShellyADC> adcs;
     }
 
     public static class ShellySettingsSmoke {

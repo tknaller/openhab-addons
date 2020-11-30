@@ -16,6 +16,7 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,6 +34,7 @@ import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
@@ -82,18 +84,18 @@ public class ShellyCoapHandler implements ShellyCoapListener {
     private String lastPayload = "";
     private Map<String, CoIotDescrBlk> blkMap = new LinkedHashMap<>();
     private Map<String, CoIotDescrSen> sensorMap = new LinkedHashMap<>();
-    private final ShellyDeviceProfile profile;
+    private ShellyDeviceProfile profile;
 
     public ShellyCoapHandler(ShellyBaseHandler thingHandler, ShellyCoapServer coapServer) {
         this.thingHandler = thingHandler;
         this.thingName = thingHandler.thingName;
+        this.profile = thingHandler.getProfile();
         this.coapServer = coapServer;
         this.coiot = new ShellyCoIoTVersion1(thingName, thingHandler, blkMap, sensorMap); // Default
 
         gsonBuilder.registerTypeAdapter(CoIotDevDescription.class, new CoIotDevDescrTypeAdapter());
         gsonBuilder.registerTypeAdapter(CoIotGenericSensorList.class, new CoIotSensorTypeAdapter());
         gson = gsonBuilder.create();
-        profile = thingHandler.getProfile();
     }
 
     /**
@@ -107,6 +109,7 @@ public class ShellyCoapHandler implements ShellyCoapListener {
         try {
             this.thingName = thingName;
             this.config = config;
+            this.profile = thingHandler.getProfile();
             if (isStarted()) {
                 logger.trace("{}: CoAP Listener was already started", thingName);
                 stop();
@@ -116,9 +119,16 @@ public class ShellyCoapHandler implements ShellyCoapListener {
             coapServer.start(config.localIp, this);
             statusClient = new CoapClient(completeUrl(config.deviceIp, COLOIT_URI_DEVSTATUS))
                     .setTimeout((long) SHELLY_API_TIMEOUT_MS).useNONs().setEndpoint(coapServer.getEndpoint());
+            if (!statusClient.getEndpoint().isStarted()) {
+                logger.warn("{}: Unable to initialize CoAP access (network error)", thingName);
+                throw new ShellyApiException("Network initialization failed");
+            }
             discover();
+        } catch (SocketException e) {
+            logger.warn("{}: Unable to initialize CoAP access (socket exception) - {}", thingName, e.getMessage());
+            throw new ShellyApiException("Network error", e);
         } catch (UnknownHostException e) {
-            logger.debug("{}: CoAP Exception", thingName, e);
+            logger.info("{}: CoAP Exception (Unknown Host)", thingName, e);
             throw new ShellyApiException("Unknown Host: " + config.deviceIp, e);
         }
     }
@@ -427,6 +437,30 @@ public class ShellyCoapHandler implements ShellyCoapListener {
                 if (profile.isSensor || profile.isRoller) {
                     // CoAP is currently lacking the lastUpdate info, so we use host timestamp
                     thingHandler.updateChannel(profile.getControlGroup(0), CHANNEL_LAST_UPDATE, getTimestamp());
+                }
+            }
+            if ((profile.isRGBW2 && !profile.inColor) || profile.isRoller) {
+                int i = 1;
+                double totalCurrent = 0.0;
+                double totalKWH = 0.0;
+                boolean updateMeter = false;
+                while (i <= thingHandler.getProfile().numMeters) {
+                    String meter = CHANNEL_GROUP_METER + i;
+                    double current = thingHandler.getChannelDouble(meter, CHANNEL_METER_CURRENTWATTS);
+                    double total = thingHandler.getChannelDouble(meter, CHANNEL_METER_TOTALKWH);
+                    logger.debug("{}: {}#{}={}, total={}", thingName, meter, CHANNEL_METER_CURRENTWATTS, current,
+                            totalCurrent);
+                    totalCurrent += current >= 0 ? current : 0;
+                    totalKWH += total >= 0 ? total : 0;
+                    updateMeter |= current >= 0 | total >= 0;
+                    i++;
+                }
+                logger.debug("{}: totalCurrent={}, totalKWH={}, update={}", thingName, totalCurrent, totalKWH,
+                        updateMeter);
+                if (updateMeter) {
+                    thingHandler.updateChannel(CHANNEL_GROUP_METER, CHANNEL_METER_CURRENTWATTS,
+                            toQuantityType(totalCurrent, DIGITS_WATT, SmartHomeUnits.WATT));
+                    thingHandler.updateChannel(CHANNEL_GROUP_METER, CHANNEL_LAST_UPDATE, getTimestamp());
                 }
             }
 

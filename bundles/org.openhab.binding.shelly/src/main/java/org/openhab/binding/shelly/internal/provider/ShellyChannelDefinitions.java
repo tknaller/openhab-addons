@@ -134,6 +134,7 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_HUM, "sensorHumidity", ITEMT_PERCENT))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_LUX, "sensorLux", ITEMT_LUX))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_ILLUM, "sensorIllumination", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_VOLTAGE, "sensorADC", ITEMT_VOLT))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_CONTACT, "sensorContact", ITEMT_CONTACT))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_SSTATE, "sensorState", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_VIBRATION, "sensorVibration", ITEMT_SWITCH))
@@ -313,13 +314,17 @@ public class ShellyChannelDefinitions {
                     CHANNEL_SENSOR_ALARM_STATE);
         }
 
+        // UNI
+        addChannel(thing, newChannels, sdata.adcs != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_VOLTAGE);
+
         // Battery
         if (sdata.bat != null) {
             addChannel(thing, newChannels, sdata.bat.value != null, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LEVEL);
             addChannel(thing, newChannels, sdata.bat.value != null, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LOW);
         }
 
-        addChannel(thing, newChannels, true, profile.getControlGroup(0), CHANNEL_LAST_UPDATE);
+        // addChannel(thing, newChannels, true, profile.getControlGroup(0), CHANNEL_LAST_UPDATE);
+        addChannel(thing, newChannels, true, CHANNEL_GROUP_SENSOR, CHANNEL_LAST_UPDATE);
         return newChannels;
     }
 

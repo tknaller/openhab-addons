@@ -188,14 +188,16 @@ public class ShellyDeviceProfile {
         boolean isFlood = thingType.equals(THING_TYPE_SHELLYFLOOD_STR);
         boolean isSmoke = thingType.equals(THING_TYPE_SHELLYSMOKE_STR);
         boolean isGas = thingType.equals(THING_TYPE_SHELLYGAS_STR);
+        boolean isUNI = thingType.equals(THING_TYPE_SHELLYUNI_STR);
         isHT = thingType.equals(THING_TYPE_SHELLYHT_STR);
         isDW = thingType.equals(THING_TYPE_SHELLYDOORWIN_STR) || thingType.equals(THING_TYPE_SHELLYDOORWIN2_STR);
         isSense = thingType.equals(THING_TYPE_SHELLYSENSE_STR);
         isIX3 = thingType.equals(THING_TYPE_SHELLYIX3_STR);
         isButton = thingType.equals(THING_TYPE_SHELLYBUTTON1_STR);
-        isSensor = isHT || isFlood || isDW || isSmoke || isGas || isButton || isSense;
-        hasBattery = isHT || isFlood || isDW || isSmoke || isButton; // we assume that Sense is connected to // the
-                                                                     // charger
+        isSensor = isHT || isFlood || isDW || isSmoke || isGas || isButton || isUNI || isSense;
+        hasBattery = isHT || isFlood || isDW || isSmoke || isButton; // we assume that Sense is connected to //
+                                                                     // the
+        // charger
     }
 
     public String getControlGroup(int i) {
