@@ -179,7 +179,7 @@ public class ShellyCoIoTProtocol {
         updateChannel(updates, iGroup, iChannel, s.value == 0 ? OnOffType.OFF : OnOffType.ON);
     }
 
-    protected void handleInputEvent(CoIotDescrSen sen, String type, Integer count, Map<String, State> updates) {
+    protected void handleInputEvent(CoIotDescrSen sen, String type, int count, int serial, Map<String, State> updates) {
         int idx = getSensorNumber(sen.desc, sen.id) - 1;
         String group = profile.getInputGroup(idx);
         if (count == -1) {
@@ -190,7 +190,7 @@ public class ShellyCoIoTProtocol {
             // event count
             updateChannel(updates, group, CHANNEL_STATUS_EVENTCOUNT, getDecimal(count));
             if (profile.inButtonMode(idx) && ((profile.hasBattery && (count == 1)) || (count != lastEventCount[idx]))) {
-                if (profile.isButton || (lastEventCount[idx] != -1)) { // skip the first one if binding was restarted
+                if (profile.isButton && (serial != 0x200)) { // skip duplicate on wake-up
                     thingHandler.triggerButton(group, inputEvent[idx]);
                 }
                 lastEventCount[idx] = count;

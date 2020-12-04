@@ -17,18 +17,18 @@
 		<config-description-ref uri="thing-type:shelly:relay"/>
 	</thing-type>
 
-    <thing-type id="shelly1l">
-        <label>Shelly 1L (SHSW-L)</label>
-        <description>Shelly 1L device with a single relay</description>
-        <channel-groups>
-            <channel-group id="relay" typeId="relayChannel"/>
-            <channel-group id="sensors" typeId="externalSensors"/>
-            <channel-group id="device" typeId="deviceStatus"/>
-        </channel-groups>
+	<thing-type id="shelly1l">
+		<label>Shelly 1L (SHSW-L)</label>
+		<description>Shelly 1L device with a single relay</description>
+		<channel-groups>
+			<channel-group id="relay" typeId="relayChannel"/>
+			<channel-group id="sensors" typeId="externalSensors"/>
+			<channel-group id="device" typeId="deviceStatus"/>
+		</channel-groups>
 
-        <representation-property>deviceName</representation-property>
-        <config-description-ref uri="thing-type:shelly:relay"/>
-    </thing-type>
+		<representation-property>deviceName</representation-property>
+		<config-description-ref uri="thing-type:shelly:relay"/>
+	</thing-type>
 
 	<thing-type id="shelly1pm">
 		<label>Shelly1PM (SHSW-PM)</label>
@@ -315,8 +315,8 @@
 			<channel id="autoOn" typeId="timerAutoOn"/>
 			<channel id="autoOff" typeId="timerAutoOff"/>
 			<channel id="timerActive" typeId="timerActive"/>
-            <channel id="lastEvent" typeId="lastEvent"/>
-            <channel id="eventCount" typeId="eventCount"/>
+			<channel id="lastEvent" typeId="lastEvent"/>
+			<channel id="eventCount" typeId="eventCount"/>
 		</channels>
 	</channel-group-type>
 	<channel-group-type id="relayChannelPlug">

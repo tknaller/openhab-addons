@@ -60,14 +60,12 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
      * Process CoIoT status update message. If a status update is received, but the device description has not been
      * received yet a GET is send to query device description.
      *
-     * @param devId device id included in the status packet
-     * @param payload CoAP payload (Json format), example: {"G":[[0,112,0]]}
-     * @param serial Serial for this request. If this the the same as last serial
-     *            the update was already sent and processed so this one gets
-     *            ignored.
+     * @param sensorUpdates Complete list of sensor updates
+     * @param sen The specific sensor update to handle
+     * @param updates Resulting updates (new updates will be added to input list)
      */
     @Override
-    public boolean handleStatusUpdate(List<CoIotSensor> sensorUpdates, CoIotDescrSen sen, CoIotSensor s,
+    public boolean handleStatusUpdate(List<CoIotSensor> sensorUpdates, CoIotDescrSen sen, int serial, CoIotSensor s,
             Map<String, State> updates) {
         // first check the base implementation
         if (super.handleStatusUpdate(sensorUpdates, sen, s, updates)) {
@@ -129,13 +127,13 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
             case "2202": // Input_1: EV, inputEvent
             case "2302": // Input_2: EV, inputEvent
             case "2402": // Input_3: EV, inputEvent
-                handleInputEvent(sen, getString(s.valueStr), -1, updates);
+                handleInputEvent(sen, getString(s.valueStr), -1, serial, updates);
                 break;
             case "2103": // EVC, inputEventCnt, U16
             case "2203": // EVC, inputEventCnt, U16
             case "2303": // EVC, inputEventCnt, U16
             case "2403": // EVC, inputEventCnt, U16
-                handleInputEvent(sen, "", getInteger((int) s.value), updates);
+                handleInputEvent(sen, "", getInteger((int) s.value), serial, updates);
                 break;
             case "3101": // sensor_0: T, extTemp, C, -55/125; unknown 999
             case "3201": // sensor_1: T, extTemp, C, -55/125; unknown 999
