@@ -10,14 +10,6 @@
 			<description>Authentication settings.</description>
 		</parameter-group>
 
-		<parameter name="brand" type="text" required="true">
-			<label>Brand</label>
-			<description>CarNet Brand.</description>
-			<options>
-				<option value="Audi">Audi</option>
-			</options>
-			<default>Audi</default>
-		</parameter>
 		<parameter name="country" type="text" required="true">
 			<label>Market (Country)</label>
 			<description>Market in which is associated (must not match the country where the vehicle was bought).</description>

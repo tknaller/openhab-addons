@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.carnet.internal.services;
+package org.openhab.binding.carnet.internal.services;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.getString;
@@ -148,22 +148,22 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
         }
 
         // Update aggregated status
-        thingHandler.updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_LOCKED,
-                vehicleLocked ? OnOffType.ON : OnOffType.OFF); // Do we need this channel?
+        thingHandler.updateChannel(CHANNEL_GROUP_STATUS, CHANNEL_GENERAL_LOCKED,
+                vehicleLocked ? OnOffType.ON : OnOffType.OFF);
         thingHandler.updateChannel(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_LOCK,
                 vehicleLocked ? OnOffType.ON : OnOffType.OFF);
-        thingHandler.updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_MAINTREQ,
+        thingHandler.updateChannel(CHANNEL_GROUP_STATUS, CHANNEL_GENERAL_MAINTREQ,
                 maintenanceRequired ? OnOffType.ON : OnOffType.OFF);
-        thingHandler.updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_TIRESOK,
+        thingHandler.updateChannel(CHANNEL_GROUP_STATUS, CHANNEL_GENERAL_TIRESOK,
                 tiresOk ? OnOffType.ON : OnOffType.OFF);
-        thingHandler.updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_WINCLOSED,
+        thingHandler.updateChannel(CHANNEL_GROUP_STATUS, CHANNEL_GENERAL_WINCLOSED,
                 windowsClosed ? OnOffType.ON : OnOffType.OFF);
 
         return true;
     }
 
     private boolean checkMaintenance(CNStatusField field, ChannelIdMapEntry definition) {
-        if (definition.symbolicName.contains("MAINT_ALARM") && field.value.equals(String.valueOf(1))) {
+        if (definition.symbolicName.contains("MAINT_ALARM") && field.value.equals("1")) {
             // MAINT_ALARM_INSPECTION+MAINT_ALARM_OIL_CHANGE + MAINT_ALARM_OIL_MINIMUM
             logger.debug("{}: Maintenance required: {} has incorrect pressure", thingId, definition.symbolicName);
             return true;
@@ -220,7 +220,7 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
                         // Convert between units
                         bd = new BigDecimal(fromDef.fromUnit.getConverterToAny(definition.unit).convert(value));
                     } catch (UnconvertibleException | IncommensurableException e) {
-                        logger.debug("{}: Unable to covert value", thingId);
+                        logger.debug("{}: Unable to covert value", thingId, e);
                     }
                 }
             }

@@ -45,10 +45,14 @@ public class CarNetBindingConstants {
     public static final String BINDING_ID = "carnet";
 
     // List of all Thing Type UIDs
-    public static final ThingTypeUID THING_TYPE_ACCOUNT = new ThingTypeUID(BINDING_ID, "account");
+    public static final String THING_MYAUDI = "myaudi";
+    public static final String THING_MYVOLKSWAGEN = "myvolkswagen";
+
+    public static final ThingTypeUID THING_TYPE_MYAUDI = new ThingTypeUID(BINDING_ID, THING_MYAUDI);
+    public static final ThingTypeUID THING_TYPE_MYVOLKSWAGEN = new ThingTypeUID(BINDING_ID, THING_MYVOLKSWAGEN);
     public static final ThingTypeUID THING_TYPE_VEHICLE = new ThingTypeUID(BINDING_ID, "vehicle");
     public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections
-            .unmodifiableSet(Stream.of(THING_TYPE_ACCOUNT, THING_TYPE_VEHICLE).collect(Collectors.toSet()));
+            .unmodifiableSet(Stream.of(THING_TYPE_MYAUDI, THING_TYPE_VEHICLE).collect(Collectors.toSet()));
 
     // List of all ChannelGroups and Channels
     public static final String CHANNEL_GROUP_GENERAL = "general";

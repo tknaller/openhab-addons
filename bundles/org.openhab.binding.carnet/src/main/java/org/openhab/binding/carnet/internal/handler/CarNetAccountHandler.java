@@ -12,7 +12,9 @@
  */
 package org.openhab.binding.carnet.internal.handler;
 
-import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_TOKEN_REFRESH_INTERVAL_SEC;
+import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
+import static org.openhab.binding.carnet.internal.CarNetUtils.getString;
+import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +62,7 @@ import org.slf4j.LoggerFactory;
 public class CarNetAccountHandler extends BaseBridgeHandler {
     private final Logger logger = LoggerFactory.getLogger(CarNetAccountHandler.class);
     private final CarNetCombinedConfig config = new CarNetCombinedConfig();
+    private final CarNetTextResources messages;
     private final CarNetTokenManager tokenManager;
     private final CarNetApi api;
     private final CarNetHttpClient http;
@@ -74,9 +77,9 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
      *
      * @param bridge Bridge object representing a FRITZ!Box
      */
-    public CarNetAccountHandler(Bridge bridge, @Nullable CarNetTextResources resources,
-            CarNetTokenManager tokenManager) {
+    public CarNetAccountHandler(Bridge bridge, CarNetTextResources messages, CarNetTokenManager tokenManager) {
         super(bridge);
+        this.messages = messages;
         this.tokenManager = tokenManager;
 
         // Each instance has it's own http client. Audi requires weaked SSL attributes, other may not
@@ -91,7 +94,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
             httpClient.start();
             logger.debug("{}", httpClient.dump());
         } catch (Exception e) {
-            logger.warn("Unable to start HttpClient!");
+            logger.warn("{}", messages.get("init-fialed", "Unable to start HttpClient!"));
         }
 
         this.http = new CarNetHttpClient(httpClient);
@@ -115,7 +118,11 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
             try {
                 initializeThing();
             } catch (CarNetException e) {
-                stateChanged(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.toString());
+                String detail = e.toString();
+                if (e.isSecurityException()) {
+                    detail = messages.get("login-failed", getString(e.getMessage()));
+                }
+                stateChanged(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, detail);
             }
         });
     }
@@ -132,9 +139,22 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         Map<String, String> properties = new TreeMap<String, String>();
 
         config.account = getConfigAs(CarNetAccountConfiguration.class);
+        String type = getThing().getUID().getThingTypeUID().getId();
+        switch (type) {
+            case THING_MYAUDI:
+            default:
+                config.account.brand = CNAPI_BRAND_AUDI;
+                break;
+            case THING_MYVOLKSWAGEN:
+                config.account.brand = CNAPI_BRAND_VW;
+                break;
+        }
+
         api.setConfig(config);
-        api.initialize();
-        refreshProperties(properties);
+        if (!api.isInitialized()) {
+            api.initialize();
+            refreshProperties(properties);
+        }
 
         CarNetVehicleList vehices = api.getVehicles();
         vehicleList = new ArrayList<CarNetVehicleInformation>();
@@ -217,8 +237,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
      */
     private void setupRefreshJob(int initialWaitTime) {
         cancelRefreshJob();
-        logger.trace("Setting up token refresh job, checking every 5 minutes");
-        refreshJob = scheduler.scheduleWithFixedDelay(() -> refreshToken(), initialWaitTime,
+        refreshJob = scheduler.scheduleWithFixedDelay(() -> refreshStatus(), initialWaitTime,
                 API_TOKEN_REFRESH_INTERVAL_SEC, TimeUnit.SECONDS);
     }
 
@@ -231,10 +250,14 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         }
     }
 
-    private void refreshToken() {
-        logger.debug("Validating/refreshing tokens");
+    private void refreshStatus() {
         try {
-            api.refreshTokens();
+            if (getThing().getStatus() == ThingStatus.OFFLINE) {
+                logger.debug("CarNet: Re-initialize with account {}", config.account.user);
+                initializeThing();
+            } else {
+                api.refreshTokens();
+            }
         } catch (CarNetException e) {
             logger.debug("Unable to refresh tokens", e);
         }
@@ -271,7 +294,6 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
             }
         }
         updateProperties(thingProperties);
-        logger.trace("Properties updated");
     }
 
     @Override

@@ -10,9 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.carnet.internal.services;
-
-import static org.openhab.binding.carnet.internal.CarNetUtils.mkChannelId;
+package org.openhab.binding.carnet.internal.services;
 
 import java.util.Map;
 
@@ -55,9 +53,6 @@ public class CarNetVehicleBaseService {
         this.api = api;
     }
 
-    public void initialize() {
-    }
-
     public String getServiceId() {
         return serviceId;
     }
@@ -92,12 +87,7 @@ public class CarNetVehicleBaseService {
 
     public boolean addChannel(Map<String, ChannelIdMapEntry> channels, String group, String channel, String itemType,
             @Nullable Unit<?> unit, boolean advanced, boolean readOnly) {
-        if (!channels.containsKey(mkChannelId(group, channel))) {
-            logger.debug("{}: Adding channel definition for channel {}", thingId, mkChannelId(group, channel));
-            channels.put(mkChannelId(group, channel), idMapper.add(group, channel, itemType, unit, advanced, readOnly));
-            return true;
-        }
-        return false;
+        return thingHandler.addChannel(channels, group, channel, itemType, unit, advanced, readOnly);
     }
 
     protected boolean updateChannel(String group, String channel, State value) {

@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.carnet.internal.api;
 
-import static org.openhab.binding.carnet.internal.CarNetBindingConstants.API_REQUEST_TIMEOUT_SEC;
+import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.*;
 import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
@@ -26,10 +26,13 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.measure.IncommensurableException;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.util.UrlEncoded;
+import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetUtils;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo;
@@ -115,6 +118,9 @@ public class CarNetApi {
                     }
                     checkUrl = "bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions/" + requestId;
                     break;
+                default:
+                    logger.debug("{}: Unable to queue request, unknown service type {}}.{}", config.vehicle.vin,
+                            service, action);
             }
         }
 
@@ -172,7 +178,7 @@ public class CarNetApi {
         return CarNetUtils.fromJson(gson, json, CarNetOidcConfig.class);
     }
 
-    public CarNetServiceAvailability getServiceAvailability(CarNetOperationList operation) throws CarNetException {
+    public CarNetServiceAvailability getServiceAvailability(CarNetOperationList operation) {
         CarNetServiceAvailability serviceStatus = new CarNetServiceAvailability();
         for (CarNetServiceInfo si : operation.serviceInfo) {
             // Check service enabled status, maybe we need also to check serviceEol
@@ -209,13 +215,12 @@ public class CarNetApi {
                 CNRoleRights.class).role;
     }
 
-    public String getHomeReguionUrl() throws CarNetException {
+    public String getHomeReguionUrl() {
         try {
             if (!config.vehicle.homeRegionUrl.isEmpty()) {
                 return config.vehicle.homeRegionUrl;
             }
             CarNetHomeRegion region = callApi(CNAPI_VWURL_HOMEREGION, "getHomeRegion", CarNetHomeRegion.class);
-            // config.vehicle.homeRegionUrl = substringBefore(region.homeRegion.baseUri.content, "/api");
             config.vehicle.homeRegionUrl = getString(region.homeRegion.baseUri.content);
             return config.vehicle.homeRegionUrl;
         } catch (CarNetException e) {
@@ -288,8 +293,6 @@ public class CarNetApi {
             json = http.get(url, fillAppHeaders());
         } catch (CarNetException e) {
             logger.debug("{}: API call getTripData failed: {}", config.vehicle.vin, e.toString());
-        } catch (RuntimeException e) {
-            logger.debug("{}: API call getTripData failed", config.vehicle.vin, e);
         }
 
         if (json.isEmpty()) {
@@ -364,19 +367,24 @@ public class CarNetApi {
                         + "</heaterSource></settings>" + "</action>"
                 : "<action><type>stopClimatisation</type></action>");
         return sendAction("bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions",
-                CNAPI_SERVICE_REMOTE_PRETRIP_CLIMATISATION, CNAPI_ACTION_REMOTE_HEATING_QUICK_START, false,
+                CNAPI_SERVICE_REMOTE_PRETRIP_CLIMATISATION,
+                start ? CNAPI_ACTION_REMOTE_HEATING_QUICK_START : CNAPI_ACTION_REMOTE_HEATING_QUICK_STOP, false,
                 "application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml;charset=utf-8", data);
     }
 
     public String controlClimaterTemp(double tempC) throws CarNetException {
-        int tempdK = 2950;
-        String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<action><type>setSettings</type><settings>"
-                + "<targetTemperature>" + tempdK + "</targetTemperature>"
-                + "<climatisationWithoutHVpower>false</climatisationWithoutHVpower>" + "<heaterSource>"
-                + CNAPI_HEATER_SOURCE_ELECTRIC + "</heaterSource>" + "</settings></action>";
-        return sendAction("bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", CNAPI_SERVICE_REMOTE_HEATING,
-                CNAPI_ACTION_REMOTE_HEATING_QUICK_START, false,
-                "application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml;charset=utf-8", data);
+        try {
+            int tempdK = (int) SIUnits.CELSIUS.getConverterToAny(DKELVIN).convert(tempC);
+            String data = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<action><type>setSettings</type><settings>"
+                    + "<targetTemperature>" + tempdK + "</targetTemperature>"
+                    + "<climatisationWithoutHVpower>false</climatisationWithoutHVpower>" + "<heaterSource>"
+                    + CNAPI_HEATER_SOURCE_ELECTRIC + "</heaterSource>" + "</settings></action>";
+            return sendAction("bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater/actions", CNAPI_SERVICE_REMOTE_HEATING,
+                    CNAPI_ACTION_REMOTE_HEATING_QUICK_START, false,
+                    "application/vnd.vwg.mbb.ClimaterAction_v1_0_0+xml;charset=utf-8", data);
+        } catch (IncommensurableException e) {
+            return CNAPI_REQUEST_ERROR;
+        }
     }
 
     public String controlPreHeating(boolean start) throws CarNetException {
@@ -409,7 +417,6 @@ public class CarNetApi {
     public CarNetClimaterStatus getClimaterStatus() throws CarNetException {
         return callApi("bs/climatisation/v1/{0}/{1}/vehicles/{2}/climater", "climaterStatus",
                 CNClimater.class).climater;
-        // String json = callApi(CNAPI_VWURL_CLIMATE_STATUS, "climaterStatus");
     }
 
     public String getClimaterTimer() throws CarNetException {
@@ -477,12 +484,17 @@ public class CarNetApi {
         try {
             json = http.get(uri, vin, fillAppHeaders());
         } catch (CarNetException e) {
+            if (e.isSecurityException()) { // check for login error
+                throw e;
+            }
             CarNetApiResult res = e.getApiResult();
             logger.debug("{}: API call {} failed: {}", config.vehicle.vin, function, e.toString());
             if (res.isHttpUnauthorized()) {
                 json = loadJson(function);
             }
         } catch (RuntimeException e) {
+            logger.debug("{}: API call {} failed", config.vehicle.vin, function, e);
+        } catch (Exception e) {
             logger.debug("{}: API call {} failed", config.vehicle.vin, function, e);
         }
 
@@ -526,6 +538,7 @@ public class CarNetApi {
             if (pendingRequests.containsKey(rsp.requestId)) {
                 pendingRequests.remove(rsp.requestId); // duplicate id
             }
+            logger.debug("{}: Request {} queued for status updates", config.vehicle.vin, rsp.requestId);
             pendingRequests.put(rsp.requestId, rsp);
 
             // Check if action was accepted
@@ -550,14 +563,26 @@ public class CarNetApi {
             return "";
         }
         if (request.isExpired()) {
-            logger.info("{}: Request {} for action {}.{} has been expired, remove", config.vehicle.vin,
+            logger.debug("{}: Request {} for action {}.{} has been expired, remove", config.vehicle.vin,
                     request.requestId, request.service, request.action);
             remove = true;
         } else {
             try {
+                int error = -1;
                 if (status.isEmpty()) {
-                    CNRequestStatus rs = callApi(request.checkUrl, "getRequestStatus", CNRequestStatus.class);
-                    status = rs.requestStatusResponse.status;
+                    if (request.checkUrl.isEmpty()) {
+                        // this should not happen
+                        logger.warn("{}: Unable to check request {} status for action {}.{}; checkUrl is missing!",
+                                config.vehicle.vin, request.requestId, request.service, request.action);
+                    } else {
+                        logger.debug("{}: Check request {} status for action {}.{}; checkUrl={}", config.vehicle.vin,
+                                request.requestId, request.service, request.action, request.checkUrl);
+                        CNRequestStatus rs = callApi(request.checkUrl, "getRequestStatus", CNRequestStatus.class);
+                        status = rs.requestStatusResponse.status;
+                        if (rs.requestStatusResponse.error != null) {
+                            error = rs.requestStatusResponse.error;
+                        }
+                    }
                 }
 
                 logger.debug("{}: Request {} for action {}.{} is in status {}", config.vehicle.vin, request.requestId,
@@ -571,16 +596,23 @@ public class CarNetApi {
                         break;
                     case CNAPI_REQUEST_NOT_FOUND:
                     case CNAPI_REQUEST_FAIL:
-                    case "general_error":
+                        logger.warn("{}: Action {}.{} failed with status {}, error={} (requestId={})",
+                                config.vehicle.vin, request.service, request.action, status, error, request.requestId);
                         remove = true;
                         break;
+                    default:
+                        logger.debug("{}: Request {} has unknown status: {}", config.vehicle.vin, requestId, status);
                 }
             } catch (CarNetException e) {
                 logger.debug("{}: Unable to validate request {}, {}", config.vehicle.vin, requestId, e.toString());
+            } catch (RuntimeException e) {
+                logger.debug("{}: Unable to validate request {}", config.vehicle.vin, requestId, e);
             }
         }
 
         if (remove) {
+            logger.debug("{}: Remove request {} for action {}.{} from queue, status is {}", config.vehicle.vin,
+                    request.requestId, request.service, request.action, status);
             pendingRequests.remove(request.requestId);
         }
         return status;
