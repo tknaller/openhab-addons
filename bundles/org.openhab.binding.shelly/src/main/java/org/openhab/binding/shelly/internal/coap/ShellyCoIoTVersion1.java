@@ -65,7 +65,7 @@ public class ShellyCoIoTVersion1 extends ShellyCoIoTProtocol implements ShellyCo
      *            ignored.
      */
     @Override
-    public boolean handleStatusUpdate(List<CoIotSensor> sensorUpdates, CoIotDescrSen sen, CoIotSensor s,
+    public boolean handleStatusUpdate(List<CoIotSensor> sensorUpdates, CoIotDescrSen sen, int serial, CoIotSensor s,
             Map<String, State> updates) {
         // first check the base implementation
         if (super.handleStatusUpdate(sensorUpdates, sen, s, updates)) {
@@ -164,10 +164,10 @@ public class ShellyCoIoTVersion1 extends ShellyCoIoTProtocol implements ShellyCo
                                 toQuantityType(pos, SmartHomeUnits.PERCENT));
                         break;
                     case "input event": // Shelly Button 1
-                        handleInputEvent(sen, getString(s.valueStr), -1, updates);
+                        handleInputEvent(sen, getString(s.valueStr), -1, serial, updates);
                         break;
                     case "input event counter": // Shelly Button 1/ix3
-                        handleInputEvent(sen, "", getInteger((int) s.value), updates);
+                        handleInputEvent(sen, "", getInteger((int) s.value), serial, updates);
                         break;
                     case "flood":
                         updateChannel(updates, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_FLOOD,

@@ -415,7 +415,7 @@ public class ShellyCoapHandler implements ShellyCoapListener {
                         i, s.id, getString(s.valueStr).isEmpty() ? s.value : s.valueStr, sen.desc, sen.type, sen.range,
                         sen.links, element.desc);
 
-                if (!coiot.handleStatusUpdate(sensorUpdates, sen, s, updates)) {
+                if (!coiot.handleStatusUpdate(sensorUpdates, sen, serial, s, updates)) {
                     logger.debug("{}: CoIoT data for id {}, type {}/{} not processed, value={}; payload={}", thingName,
                             sen.id, sen.type, sen.desc, s.value, payload);
                 }
