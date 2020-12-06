@@ -34,4 +34,6 @@ public interface ShellyCoIoTInterface {
 
     public boolean handleStatusUpdate(List<CoIotSensor> sensorUpdates, CoIotDescrSen sen, int serial, CoIotSensor s,
             Map<String, State> updates);
+
+    public String getLastWakeup();
 }

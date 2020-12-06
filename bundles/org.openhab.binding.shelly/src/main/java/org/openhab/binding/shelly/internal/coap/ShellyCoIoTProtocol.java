@@ -53,6 +53,7 @@ public class ShellyCoIoTProtocol {
     protected int lastCfgCount = -1;
     protected int[] lastEventCount = { -1, -1, -1, -1, -1, -1, -1, -1 }; // 4Pro has 4 relays, so 8 should be fine
     protected String[] inputEvent = { "", "", "", "", "", "", "", "" };
+    protected String lastWakeup = "";
 
     public ShellyCoIoTProtocol(String thingName, ShellyBaseHandler thingHandler, Map<String, CoIotDescrBlk> blkMap,
             Map<String, CoIotDescrSen> sensorMap) {
@@ -351,5 +352,9 @@ public class ShellyCoIoTProtocol {
 
     public CoIotDescrSen fixDescription(CoIotDescrSen sen, Map<String, CoIotDescrBlk> blkMap) {
         return sen;
+    }
+
+    public String getLastWakeup() {
+        return lastWakeup;
     }
 }

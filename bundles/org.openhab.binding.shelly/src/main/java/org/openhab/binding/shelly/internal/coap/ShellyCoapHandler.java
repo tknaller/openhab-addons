@@ -119,7 +119,7 @@ public class ShellyCoapHandler implements ShellyCoapListener {
             coapServer.start(config.localIp, this);
             statusClient = new CoapClient(completeUrl(config.deviceIp, COLOIT_URI_DEVSTATUS))
                     .setTimeout((long) SHELLY_API_TIMEOUT_MS).useNONs().setEndpoint(coapServer.getEndpoint());
-            if (!statusClient.getEndpoint().isStarted()) {
+            if ((statusClient != null) && !statusClient.getEndpoint().isStarted()) {
                 logger.warn("{}: Unable to initialize CoAP access (network error)", thingName);
                 throw new ShellyApiException("Network initialization failed");
             }
@@ -221,8 +221,8 @@ public class ShellyCoapHandler implements ShellyCoapListener {
 
                 // The device changes the serial on every update, receiving a message with the same serial is a
                 // duplicate, excep for battery devices! Those reset the serial every time when they wake-up
-                if ((serial == lastSerial) && payload.equals(lastPayload)
-                        && (!profile.hasBattery || ((serial & 0xFF) != 0))) {
+                if ((serial == lastSerial) && payload.equals(lastPayload) && (!profile.hasBattery
+                        || coiot.getLastWakeup().equalsIgnoreCase("ext_power") || ((serial & 0xFF) != 0))) {
                     logger.debug("{}: Serial {} was already processed, ignore update", thingName, serial);
                     return;
                 }
@@ -270,6 +270,10 @@ public class ShellyCoapHandler implements ShellyCoapListener {
 
             // Decode Json
             CoIotDevDescription descr = gson.fromJson(payload, CoIotDevDescription.class);
+            if (descr == null) {
+                logger.debug("{}: Unable to decode CoIoT payload: {}", thingName, payload);
+                return;
+            }
             for (int i = 0; i < descr.blk.size(); i++) {
                 CoIotDescrBlk blk = descr.blk.get(i);
                 logger.debug("{}:    id={}: {}", thingName, blk.id, blk.desc);
@@ -381,7 +385,7 @@ public class ShellyCoapHandler implements ShellyCoapListener {
 
         // Parse Json,
         CoIotGenericSensorList list = gson.fromJson(fixJSON(payload), CoIotGenericSensorList.class);
-        if (list.generic == null) {
+        if ((list == null) || (list.generic == null)) {
             logger.debug("{}: Sensor list has invalid format! Payload: {}", devId, payload);
             return;
         }
