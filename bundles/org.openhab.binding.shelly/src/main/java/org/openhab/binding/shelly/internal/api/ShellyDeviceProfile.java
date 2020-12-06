@@ -103,7 +103,10 @@ public class ShellyDeviceProfile {
         try {
             initFromThingType(thingType);
             settingsJson = json;
-            settings = gson.fromJson(json, ShellySettingsGlobal.class);
+            ShellySettingsGlobal gs = gson.fromJson(json, ShellySettingsGlobal.class);
+            if (gs != null) {
+                settings = gs;
+            }
         } catch (IllegalArgumentException | JsonSyntaxException e) {
             throw new ShellyApiException(
                     thingName + ": Unable to transform settings JSON " + e.toString() + ", json='" + json + "'", e);
