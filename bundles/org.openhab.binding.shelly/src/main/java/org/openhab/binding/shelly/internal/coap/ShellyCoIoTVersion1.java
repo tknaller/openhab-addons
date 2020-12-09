@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.unit.ImperialUnits;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
@@ -32,8 +33,6 @@ import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyColorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import tec.uom.se.unit.Units;
 
 /**
  * The {@link ShellyCoIoTVersion1} implements the parsing for CoIoT version 1
@@ -84,7 +83,7 @@ public class ShellyCoIoTVersion1 extends ShellyCoIoTProtocol implements ShellyCo
                     case "temperature": // Sensor Temp
                         if (getString(getProfile().settings.temperatureUnits)
                                 .equalsIgnoreCase(SHELLY_TEMP_FAHRENHEIT)) {
-                            value = ImperialUnits.FAHRENHEIT.getConverterTo(Units.CELSIUS).convert(getDouble(s.value))
+                            value = ImperialUnits.FAHRENHEIT.getConverterTo(SIUnits.CELSIUS).convert(getDouble(s.value))
                                     .doubleValue();
                         }
                         updateChannel(updates, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_TEMP,
@@ -229,7 +228,7 @@ public class ShellyCoIoTVersion1 extends ShellyCoIoTProtocol implements ShellyCo
      * @return fixed Sensor description (sen)
      */
     @Override
-    public CoIotDescrSen fixDescription(CoIotDescrSen sen, Map<String, CoIotDescrBlk> blkMap) {
+    public CoIotDescrSen fixDescription(@Nullable CoIotDescrSen sen, Map<String, CoIotDescrBlk> blkMap) {
         // Shelly1: reports null descr+type "Switch" -> map to S
         // Shelly1PM: reports null descr+type "Overtemp" -> map to O
         // Shelly1PM: reports null descr+type "W" -> add description
@@ -240,6 +239,9 @@ public class ShellyCoIoTVersion1 extends ShellyCoIoTProtocol implements ShellyCo
         // Shelly Sense: Motion is reported with Desc "battery", but type "H" instead of "B"
         // Shelly Bulb: Colors are coded with Type="Red" etc. rather than Type="S" and color as Descr
         // Shelly RGBW2 is reporting Brightness, Power, VSwitch for each channel, but all with L=0
+        if (sen == null) {
+            throw new IllegalArgumentException("sen should not be null!");
+        }
         if (sen.desc == null) {
             sen.desc = "";
         }
@@ -257,8 +259,10 @@ public class ShellyCoIoTVersion1 extends ShellyCoIoTProtocol implements ShellyCo
                 CoIotDescrBlk blk = new CoIotDescrBlk();
                 CoIotDescrBlk blk0 = blkMap.get("0"); // blk 0 is always there
                 blk.id = sen.links;
-                blk.desc = blk0.desc + "_" + blk.id;
-                blkMap.put(blk.id, blk);
+                if (blk0 != null) {
+                    blk.desc = blk0.desc + "_" + blk.id;
+                    blkMap.put(blk.id, blk);
+                }
             }
         }
 

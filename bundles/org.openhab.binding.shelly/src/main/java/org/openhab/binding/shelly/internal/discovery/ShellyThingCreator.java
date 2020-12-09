@@ -101,7 +101,7 @@ public class ShellyThingCreator {
         String name = hostname.toLowerCase();
         String type = substringBefore(name, "-").toLowerCase();
         String devid = substringAfterLast(name, "-");
-        if ((devid == null) || (type == null)) {
+        if (devid.isEmpty() || type.isEmpty()) {
             throw new IllegalArgumentException("Invalid device name format: " + hostname);
         }
 
@@ -128,11 +128,15 @@ public class ShellyThingCreator {
         }
 
         // Check general mapping
-        if (!deviceType.isEmpty() && THING_TYPE_MAPPING.containsKey(deviceType)) {
-            return THING_TYPE_MAPPING.get(deviceType);
+        if (!deviceType.isEmpty()) {
+            String res = THING_TYPE_MAPPING.get(deviceType);
+            if (res != null) {
+                return res;
+            }
         }
-        if (THING_TYPE_MAPPING.containsKey(type)) {
-            return THING_TYPE_MAPPING.get(type);
+        String res = THING_TYPE_MAPPING.get(type);
+        if (res != null) {
+            return res;
         }
         return THING_TYPE_SHELLYUNKNOWN_STR;
     }

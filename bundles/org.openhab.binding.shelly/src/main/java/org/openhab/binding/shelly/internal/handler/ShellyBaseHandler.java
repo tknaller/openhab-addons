@@ -256,6 +256,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
 
         // update thing properties
         ShellySettingsStatus status = api.getStatus();
+        tmpPrf.updateFromStatus(status);
         updateProperties(tmpPrf, status);
         checkVersion(tmpPrf, status);
         if (autoCoIoT) {
@@ -370,6 +371,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
 
                 logger.trace("{}: Updating status", thingName);
                 ShellySettingsStatus status = api.getStatus();
+                profile.updateFromStatus(status);
 
                 // If status update was successful the thing must be online
                 setThingOnline();
@@ -502,8 +504,8 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         ShellyComponents.updateDeviceStatus(this, status);
 
         if (api.isInitialized() && (lastTimeoutErros != api.getTimeoutErrors())) {
-            propertyUpdates.put(PROPERTY_STATS_TIMEOUTS, new Integer(api.getTimeoutErrors()).toString());
-            propertyUpdates.put(PROPERTY_STATS_TRECOVERED, new Integer(api.getTimeoutsRecovered()).toString());
+            propertyUpdates.put(PROPERTY_STATS_TIMEOUTS, String.valueOf(api.getTimeoutErrors()));
+            propertyUpdates.put(PROPERTY_STATS_TRECOVERED, String.valueOf(api.getTimeoutsRecovered()));
             lastTimeoutErros = api.getTimeoutErrors();
         }
 
@@ -593,8 +595,8 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
                     case SHELLY_EVENT_TRIPLE_SHORTPUSH:
                     case SHELLY_EVENT_LONGPUSH:
                         if (isButton) {
-                            triggerButton(group, mapButtonEvent(event));
-                            channel = CHANNEL_BUTTON_TRIGGER;
+                            triggerButton(group, idx, mapButtonEvent(event));
+                            channel = CHANNEL_BUTTON_TRIGGER + profile.getInputSuffix(idx);
                             payload = ShellyApiJsonDTO.mapButtonEvent(event);
                         } else {
                             logger.debug("{}: Relay button is not in memontary or detached mode, ignore SHORT/LONGPUSH",
@@ -849,56 +851,65 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
      * @param status Shelly device status
      * @return true: one or more inputs were updated
      */
-    public boolean updateInputs(String groupName, ShellySettingsStatus status, int index) {
-        if ((status.input == null)) {
-            return false;
-        }
-
-        boolean updated = false;
-        if (index == 0) {
-            // RGBW2: a single int rather than an array
-            updated |= updateChannel(groupName, CHANNEL_INPUT,
-                    getInteger(status.input) == 0 ? OnOffType.OFF : OnOffType.ON);
-        } else {
-            if (profile.isDimmer || profile.isRoller) {
-                ShellyInputState state1 = status.inputs.get(0);
-                ShellyInputState state2 = status.inputs.get(1);
-                logger.trace("{}: Updating {}#input1 with {}, input2 with {}", thingName, groupName,
-                        getOnOff(state1.input), getOnOff(state2.input));
-                updated |= updateChannel(groupName, CHANNEL_INPUT + "1", getOnOff(state1.input));
-                updated |= updateChannel(groupName, CHANNEL_INPUT + "2", getOnOff(state2.input));
-            } else {
-                if (index < status.inputs.size()) {
-                    ShellyInputState state = status.inputs.get(index);
-                    updated |= updateChannel(groupName, CHANNEL_INPUT, getOnOff(state.input));
-                } else {
-                    logger.debug("{}: Unable to update input, index is out of range ({}/{})", thingName, index,
-                            status.inputs.size());
-                }
-            }
-        }
-        return updated;
-    }
-
+    /*
+     * public boolean updateInputs(String groupName, ShellySettingsStatus status, int index) {
+     * if ((status.input == null)) {
+     * return false;
+     * }
+     *
+     * boolean updated = false;
+     * if (index == 0) {
+     * // RGBW2: a single int rather than an array
+     * updated |= updateChannel(groupName, CHANNEL_INPUT,
+     * getInteger(status.input) == 0 ? OnOffType.OFF : OnOffType.ON);
+     * } else {
+     * if (profile.isDimmer || profile.isRoller) {
+     * ShellyInputState state1 = status.inputs.get(0);
+     * ShellyInputState state2 = status.inputs.get(1);
+     * logger.trace("{}: Updating {}#input1 with {}, input2 with {}", thingName, groupName,
+     * getOnOff(state1.input), getOnOff(state2.input));
+     * updated |= updateChannel(groupName, CHANNEL_INPUT + "1", getOnOff(state1.input));
+     * updated |= updateChannel(groupName, CHANNEL_INPUT + "2", getOnOff(state2.input));
+     * } else {
+     * if (index < status.inputs.size()) {
+     * ShellyInputState state = status.inputs.get(index);
+     * updated |= updateChannel(groupName, CHANNEL_INPUT, getOnOff(state.input));
+     * } else {
+     * logger.debug("{}: Unable to update input, index is out of range ({}/{})", thingName, index,
+     * status.inputs.size());
+     * }
+     * }
+     * }
+     * return updated;
+     * }
+     */
     public boolean updateInputs(ShellySettingsStatus status) {
         boolean updated = false;
-        String groupName = "";
 
-        if (status.input != null) {
-            // RGBW2: a single int rather than an array
-            return updateChannel(groupName, CHANNEL_INPUT,
-                    getInteger(status.input) == 0 ? OnOffType.OFF : OnOffType.ON);
-        }
         if (status.inputs != null) {
             int idx = 0;
+            boolean multiInput = status.inputs.size() >= 2; // device has multiple SW (inputs)
             for (ShellyInputState input : status.inputs) {
                 String group = profile.getControlGroup(idx);
-                updated |= updateChannel(group, CHANNEL_INPUT, getOnOff(input.input));
+                String suffix = multiInput ? profile.getInputSuffix(idx) : "";
+
+                if (!areChannelsCreated()) {
+                    updateChannelDefinitions(
+                            ShellyChannelDefinitions.createInputChannels(thing, profile, status.inputs, group));
+                }
+
+                updated |= updateChannel(group, CHANNEL_INPUT + suffix, getOnOff(input.input));
                 if (input.event != null) {
-                    updated |= updateChannel(group, CHANNEL_STATUS_EVENTTYPE, getStringType(input.event));
-                    updated |= updateChannel(group, CHANNEL_STATUS_EVENTCOUNT, getDecimal(input.eventCount));
+                    updated |= updateChannel(group, CHANNEL_STATUS_EVENTTYPE + suffix, getStringType(input.event));
+                    updated |= updateChannel(group, CHANNEL_STATUS_EVENTCOUNT + suffix, getDecimal(input.eventCount));
                 }
                 idx++;
+            }
+        } else {
+            if (status.input != null) {
+                // RGBW2: a single int rather than an array
+                return updateChannel(profile.getControlGroup(0), CHANNEL_INPUT,
+                        getInteger(status.input) == 0 ? OnOffType.OFF : OnOffType.ON);
             }
         }
         return updated;
@@ -919,14 +930,14 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         return changed;
     }
 
-    public void triggerButton(String group, String value) {
+    public void triggerButton(String group, int idx, String value) {
         String trigger = mapButtonEvent(value);
         if (trigger.isEmpty()) {
             return;
         }
 
         logger.debug("{}: Update button state with {}/{}", thingName, value, trigger);
-        triggerChannel(group, CHANNEL_BUTTON_TRIGGER, trigger);
+        triggerChannel(group, CHANNEL_BUTTON_TRIGGER + profile.getInputSuffix(idx), trigger);
         updateChannel(group, CHANNEL_LAST_UPDATE, getTimestamp());
         if (!profile.hasBattery) {
             // refresh status of the input channel

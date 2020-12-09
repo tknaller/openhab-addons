@@ -19,6 +19,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.CoapServer;
@@ -33,7 +34,6 @@ import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.elements.UdpMulticastConnector;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +50,7 @@ public class ShellyCoapServer {
     private CoapEndpoint statusEndpoint = new CoapEndpoint.Builder().build();
     private @Nullable UdpMulticastConnector statusConnector;
     private final CoapServer server = new CoapServer(NetworkConfig.getStandard(), COIOT_PORT);;
-    private final Set<ShellyCoapListener> coapListeners = new ConcurrentHashSet<>();
+    private final Set<ShellyCoapListener> coapListeners = ConcurrentHashMap.newKeySet();
 
     protected class ShellyStatusListener extends CoapResource {
         private ShellyCoapServer listener;

@@ -103,6 +103,7 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
         bindingConfig.updateFromProperties(componentContext.getProperties());
     }
 
+    @SuppressWarnings("deprecation")
     @Nullable
     @Override
     public DiscoveryResult createResult(final ServiceInfo service) {

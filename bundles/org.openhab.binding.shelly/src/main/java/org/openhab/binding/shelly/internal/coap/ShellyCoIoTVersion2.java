@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.OpenClosedType;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
@@ -111,7 +112,7 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
             case "1103": // roller_0: S, rollerPos, 0-100, unknown -1
                 int pos = Math.max(SHELLY_MIN_ROLLER_POS, Math.min((int) value, SHELLY_MAX_ROLLER_POS));
                 updateChannel(updates, CHANNEL_GROUP_ROL_CONTROL, CHANNEL_ROL_CONTROL_CONTROL,
-                        toQuantityType(new Double(SHELLY_MAX_ROLLER_POS - pos), SmartHomeUnits.PERCENT));
+                        toQuantityType((double) (SHELLY_MAX_ROLLER_POS - pos), SmartHomeUnits.PERCENT));
                 break;
             case "1105": // S, valvle, closed/opened/not_connected/failure/closing/opening/checking or unbknown
                 updateChannel(updates, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_VALVE, getStringType(s.valueStr));
@@ -301,7 +302,7 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
     }
 
     @Override
-    public CoIotDescrSen fixDescription(CoIotDescrSen sen, Map<String, CoIotDescrBlk> blkMap) {
-        return sen;
+    public CoIotDescrSen fixDescription(@Nullable CoIotDescrSen sen, Map<String, CoIotDescrBlk> blkMap) {
+        return super.fixDescription(sen, blkMap);
     }
 }

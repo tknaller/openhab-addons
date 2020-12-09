@@ -16,11 +16,11 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.eclipse.smarthome.core.net.HttpServiceUtil;
 import org.eclipse.smarthome.core.net.NetworkAddressService;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -58,7 +58,7 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
     private final HttpClient httpClient;
     private final ShellyTranslationProvider messages;
     private final ShellyCoapServer coapServer;
-    private final Set<ShellyBaseHandler> deviceListeners = new ConcurrentHashSet<>();
+    private final Set<ShellyBaseHandler> deviceListeners = ConcurrentHashMap.newKeySet();
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = ShellyBindingConstants.SUPPORTED_THING_TYPES_UIDS;
     private ShellyBindingConfiguration bindingConfig = new ShellyBindingConfiguration();
     private String localIP = "";
