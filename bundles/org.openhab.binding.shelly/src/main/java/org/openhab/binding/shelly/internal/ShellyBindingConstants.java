@@ -298,12 +298,18 @@ public class ShellyBindingConstants {
     // Button/xi3
     public static final String CHANNEL_GROUP_STATUS = "status";
     public static final String CHANNEL_STATUS_EVENTTYPE = "lastEvent";
+    public static final String CHANNEL_STATUS_EVENTTYPE1 = CHANNEL_STATUS_EVENTTYPE + "1";
+    public static final String CHANNEL_STATUS_EVENTTYPE2 = CHANNEL_STATUS_EVENTTYPE + "2";
     public static final String CHANNEL_STATUS_EVENTCOUNT = "eventCount";
+    public static final String CHANNEL_STATUS_EVENTCOUNT1 = CHANNEL_STATUS_EVENTCOUNT + "1";
+    public static final String CHANNEL_STATUS_EVENTCOUNT2 = CHANNEL_STATUS_EVENTCOUNT + "2";
 
     // General
     public static final String CHANNEL_LAST_UPDATE = "lastUpdate";
     public static final String CHANNEL_EVENT_TRIGGER = "event";
     public static final String CHANNEL_BUTTON_TRIGGER = "button";
+    public static final String CHANNEL_BUTTON_TRIGGER1 = CHANNEL_BUTTON_TRIGGER + "1";
+    public static final String CHANNEL_BUTTON_TRIGGER2 = CHANNEL_BUTTON_TRIGGER + "2";
 
     public static final String SERVICE_TYPE = "_http._tcp.local.";
     public static final String SHELLY_API_MIN_FWVERSION = "v1.5.7";// v1.5.7+

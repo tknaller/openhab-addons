@@ -173,13 +173,13 @@ public class ShellyColorUtils {
     }
 
     public static PercentType toPercent(Integer _value, Integer min, Integer max) {
-        Double range = max.doubleValue() - min.doubleValue();
-        Double value = _value.doubleValue();
+        double range = max.doubleValue() - min.doubleValue();
+        double value = _value.doubleValue();
         value = value < min ? min.doubleValue() : value;
         value = value > max ? max.doubleValue() : value;
-        Double percent = 0.0;
+        double percent = 0.0;
         if (range > 0) {
-            percent = new Double(Math.round((value - min) / range * 100));
+            percent = Math.round((value - min) / range * 100);
         }
         return new PercentType(new BigDecimal(percent));
     }

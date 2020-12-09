@@ -309,46 +309,62 @@
 		<label>Relay</label>
 		<description>A Shelly relay channel</description>
 		<channels>
-			<channel id="output" typeId="system.power"/>
-			<channel id="input" typeId="inputState"/>
 			<channel id="button" typeId="system.button"/>
-			<channel id="autoOn" typeId="timerAutoOn"/>
-			<channel id="autoOff" typeId="timerAutoOff"/>
-			<channel id="timerActive" typeId="timerActive"/>
-			<channel id="lastEvent" typeId="lastEvent"/>
-			<channel id="eventCount" typeId="eventCount"/>
+			<!--
+				<channel id="output" typeId="system.power"/>
+				<channel id="input" typeId="inputState"/>
+				<channel id="autoOn" typeId="timerAutoOn"/>
+				<channel id="autoOff" typeId="timerAutoOff"/>
+				<channel id="timerActive" typeId="timerActive"/>
+				<channel id="lastEvent" typeId="lastEvent"/>
+				<channel id="eventCount" typeId="eventCount"/>
+			-->
+		</channels>
+	</channel-group-type>
+	<channel-group-type id="relayChannelNew">
+		<label>Relay</label>
+		<description>A Shelly relay channel</description>
+		<channels>
+			<channel id="button" typeId="system.button"/>
 		</channels>
 	</channel-group-type>
 	<channel-group-type id="relayChannelPlug">
 		<label>Relay</label>
 		<description>A Shelly relay channel</description>
-		<channels>
+		<!--
+			<channels>
 			<channel id="output" typeId="system.power"/>
 			<channel id="autoOn" typeId="timerAutoOn"/>
 			<channel id="autoOff" typeId="timerAutoOff"/>
 			<channel id="timerActive" typeId="timerActive"/>
-		</channels>
+			</channels>
+		-->
 	</channel-group-type>
 	<channel-group-type id="dimmerChannel">
 		<label>Dimmer</label>
 		<description>A Shelly Dimmer channel</description>
 		<channels>
-			<channel id="brightness" typeId="dimmerBrightness"/>
-			<channel id="input1" typeId="inputState1"/>
-			<channel id="input2" typeId="inputState2"/>
-			<channel id="button" typeId="system.button"/>
-			<channel id="autoOn" typeId="timerAutoOn"/>
-			<channel id="autoOff" typeId="timerAutoOff"/>
+			<channel id="button1" typeId="system.button"/>
+			<channel id="button2" typeId="system.button"/>
+			<!--
+				<channel id="brightness" typeId="dimmerBrightness"/>
+				<channel id="input1" typeId="inputState1"/>
+				<channel id="input2" typeId="inputState2"/>
+				<channel id="autoOn" typeId="timerAutoOn"/>
+				<channel id="autoOff" typeId="timerAutoOff"/>
+			-->
 		</channels>
 	</channel-group-type>
 	<channel-group-type id="ix3Channel">
 		<label>Input</label>
 		<description>Input Status</description>
 		<channels>
-			<channel id="input" typeId="inputState"/>
 			<channel id="button" typeId="system.button"/>
-			<channel id="lastEvent" typeId="lastEvent"/>
-			<channel id="eventCount" typeId="eventCount"/>
+			<!--
+				<channel id="input" typeId="inputState"/>
+				<channel id="lastEvent" typeId="lastEvent"/>
+				<channel id="eventCount" typeId="eventCount"/>
+			-->
 		</channels>
 	</channel-group-type>
 	<channel-group-type id="rollerControl">

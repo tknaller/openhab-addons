@@ -32,6 +32,7 @@ import org.eclipse.californium.core.coap.Option;
 import org.eclipse.californium.core.coap.OptionNumberRegistry;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
+import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
@@ -119,7 +120,12 @@ public class ShellyCoapHandler implements ShellyCoapListener {
             coapServer.start(config.localIp, this);
             statusClient = new CoapClient(completeUrl(config.deviceIp, COLOIT_URI_DEVSTATUS))
                     .setTimeout((long) SHELLY_API_TIMEOUT_MS).useNONs().setEndpoint(coapServer.getEndpoint());
-            if ((statusClient != null) && !statusClient.getEndpoint().isStarted()) {
+            @Nullable
+            Endpoint endpoint = null;
+            if (statusClient != null) {
+                endpoint = statusClient.getEndpoint();
+            }
+            if ((endpoint == null) || !endpoint.isStarted()) {
                 logger.warn("{}: Unable to initialize CoAP access (network error)", thingName);
                 throw new ShellyApiException("Network initialization failed");
             }
@@ -230,11 +236,16 @@ public class ShellyCoapHandler implements ShellyCoapListener {
                 // fixed malformed JSON :-(
                 payload = fixJSON(payload);
 
-                if (uri.equalsIgnoreCase(COLOIT_URI_DEVDESC) || (uri.isEmpty() && payload.contains(COIOT_TAG_BLK))) {
-                    handleDeviceDescription(devId, payload);
-                } else if (uri.equalsIgnoreCase(COLOIT_URI_DEVSTATUS)
-                        || (uri.isEmpty() && payload.contains(COIOT_TAG_GENERIC))) {
-                    handleStatusUpdate(devId, payload, serial);
+                try {
+                    if (uri.equalsIgnoreCase(COLOIT_URI_DEVDESC)
+                            || (uri.isEmpty() && payload.contains(COIOT_TAG_BLK))) {
+                        handleDeviceDescription(devId, payload);
+                    } else if (uri.equalsIgnoreCase(COLOIT_URI_DEVSTATUS)
+                            || (uri.isEmpty() && payload.contains(COIOT_TAG_GENERIC))) {
+                        handleStatusUpdate(devId, payload, serial);
+                    }
+                } catch (ShellyApiException e) {
+                    logger.debug("{}: Unable to process CoIoT message: {}", thingName, e.toString());
                 }
             } else {
                 // error handling
@@ -262,18 +273,14 @@ public class ShellyCoapHandler implements ShellyCoapListener {
      * @param payload Device desciption in JSon format, example:
      *            {"blk":[{"I":0,"D":"Relay0"}],"sen":[{"I":112,"T":"Switch","R":"0/1","L":0}],"act":[{"I":211,"D":"Switch","L":0,"P":[{"I":2011,"D":"ToState","R":"0/1"}]}]}
      */
-    private void handleDeviceDescription(String devId, String payload) {
+    private void handleDeviceDescription(String devId, String payload) throws ShellyApiException {
         logger.debug("{}: CoIoT Device Description for {}: {}", thingName, devId, payload);
 
         try {
             boolean valid = true;
 
             // Decode Json
-            CoIotDevDescription descr = gson.fromJson(payload, CoIotDevDescription.class);
-            if (descr == null) {
-                logger.debug("{}: Unable to decode CoIoT payload: {}", thingName, payload);
-                return;
-            }
+            CoIotDevDescription descr = fromJson(gson, payload, CoIotDevDescription.class);
             for (int i = 0; i < descr.blk.size(); i++) {
                 CoIotDescrBlk blk = descr.blk.get(i);
                 logger.debug("{}:    id={}: {}", thingName, blk.id, blk.desc);
@@ -363,8 +370,9 @@ public class ShellyCoapHandler implements ShellyCoapListener {
      * @param serial Serial for this request. If this the the same as last serial
      *            the update was already sent and processed so this one gets
      *            ignored.
+     * @throws ShellyApiException
      */
-    private void handleStatusUpdate(String devId, String payload, int serial) {
+    private void handleStatusUpdate(String devId, String payload, int serial) throws ShellyApiException {
         logger.debug("{}: CoIoT Sensor data {} (serial={})", thingName, payload, serial);
         if (blkMap.isEmpty()) {
             // send discovery packet
@@ -384,8 +392,8 @@ public class ShellyCoapHandler implements ShellyCoapListener {
         }
 
         // Parse Json,
-        CoIotGenericSensorList list = gson.fromJson(fixJSON(payload), CoIotGenericSensorList.class);
-        if ((list == null) || (list.generic == null)) {
+        CoIotGenericSensorList list = fromJson(gson, fixJSON(payload), CoIotGenericSensorList.class);
+        if (list.generic == null) {
             logger.debug("{}: Sensor list has invalid format! Payload: {}", devId, payload);
             return;
         }
@@ -397,24 +405,15 @@ public class ShellyCoapHandler implements ShellyCoapListener {
         for (int i = 0; i < sensorUpdates.size(); i++) {
             try {
                 CoIotSensor s = sensorUpdates.get(i);
-                if (!sensorMap.containsKey(s.id)) {
-                    logger.debug("{}: Invalid id in sensor description: {}, index {}", thingName, s.id, i);
-                    failed++;
-                    continue;
-                }
                 CoIotDescrSen sen = sensorMap.get(s.id);
                 // find matching sensor definition from device description, use the Link ID as index
+                CoIotDescrBlk element = null;
                 sen = coiot.fixDescription(sen, blkMap);
-                if (!blkMap.containsKey(sen.links)) {
-                    logger.debug("{}: Invalid CoAP description: sen.links({}", thingName, getString(sen.links));
-                    continue;
-                }
-
-                if (!blkMap.containsKey(sen.links)) {
+                element = blkMap.get(sen.links);
+                if (element == null) {
                     logger.debug("{}: Unable to find BLK for link {} from sen.id={}", thingName, sen.links, sen.id);
                     continue;
                 }
-                CoIotDescrBlk element = blkMap.get(sen.links);
                 logger.trace("{}:  Sensor value[{}]: id={}, Value={} ({}, Type={}, Range={}, Link={}: {})", thingName,
                         i, s.id, getString(s.valueStr).isEmpty() ? s.value : s.valueStr, sen.desc, sen.type, sen.range,
                         sen.links, element.desc);

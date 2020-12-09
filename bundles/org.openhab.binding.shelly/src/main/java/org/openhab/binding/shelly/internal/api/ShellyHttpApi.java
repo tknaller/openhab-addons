@@ -32,6 +32,7 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.smarthome.core.library.unit.ImperialUnits;
+import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyControlRoller;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySendKeyList;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySenseKeyCode;
@@ -48,8 +49,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-
-import tec.uom.se.unit.Units;
 
 /**
  * {@link ShellyHttpApi} wraps the Shelly REST API and provides various low level function to access the device api (not
@@ -136,9 +135,9 @@ public class ShellyHttpApi {
         try {
             json = request(SHELLY_URL_STATUS);
             // Dimmer2 returns invalid json type for loaderror :-(
-            json = json.replace("\"loaderror\":0,", "\"loaderror\":false,");
-            json = json.replace("\"loaderror\":1,", "\"loaderror\":true,");
-            ShellySettingsStatus status = gson.fromJson(json, ShellySettingsStatus.class);
+            json = getString(json.replace("\"loaderror\":0,", "\"loaderror\":false,"));
+            json = getString(json.replace("\"loaderror\":1,", "\"loaderror\":true,"));
+            ShellySettingsStatus status = fromJson(gson, json, ShellySettingsStatus.class);
             status.json = json;
             return status;
         } catch (JsonSyntaxException e) {
@@ -187,11 +186,11 @@ public class ShellyHttpApi {
         if (profile.isSense) {
             // complete reported data, map C to F or vice versa: C=(F - 32) * 0.5556;
             status.tmp.tC = status.tmp.units.equals(SHELLY_TEMP_CELSIUS) ? status.tmp.value
-                    : ImperialUnits.FAHRENHEIT.getConverterTo(Units.CELSIUS).convert(getDouble(status.tmp.value))
+                    : ImperialUnits.FAHRENHEIT.getConverterTo(SIUnits.CELSIUS).convert(getDouble(status.tmp.value))
                             .doubleValue();
-            status.tmp.tF = status.tmp.units.equals(SHELLY_TEMP_FAHRENHEIT) ? status.tmp.value
-                    : Units.CELSIUS.getConverterTo(ImperialUnits.FAHRENHEIT).convert(getDouble(status.tmp.value))
-                            .doubleValue();
+            double f = (double) SIUnits.CELSIUS.getConverterTo(ImperialUnits.FAHRENHEIT)
+                    .convert(getDouble(status.tmp.value));
+            status.tmp.tF = status.tmp.units.equals(SHELLY_TEMP_FAHRENHEIT) ? status.tmp.value : f;
         }
         if ((status.charger == null) && (status.externalPower != null)) {
             // SHelly H&T uses external_power, Sense uses charger
@@ -287,11 +286,12 @@ public class ShellyHttpApi {
         keyList = keyList.replaceAll(java.util.regex.Pattern.quote("["), "{ \"id\":");
         keyList = keyList.replaceAll(java.util.regex.Pattern.quote("]"), "} ");
         String json = "{\"key_codes\" : [" + keyList + "] }";
-
-        ShellySendKeyList codes = gson.fromJson(json, ShellySendKeyList.class);
+        ShellySendKeyList codes = fromJson(gson, json, ShellySendKeyList.class);
         Map<String, String> list = new HashMap<>();
         for (ShellySenseKeyCode key : codes.keyCodes) {
-            list.put(key.id, key.name);
+            if (key != null) {
+                list.put(key.id, key.name);
+            }
         }
         return list;
     }
@@ -319,9 +319,6 @@ public class ShellyHttpApi {
             url = url + "&" + "id=" + keyCode;
         } else if (type.equals(SHELLY_IR_CODET_PRONTO)) {
             String code = Base64.getEncoder().encodeToString(keyCode.getBytes(StandardCharsets.UTF_8));
-            if (code == null) {
-                throw new IllegalArgumentException("Unable to BASE64 encode the pronto code: " + keyCode);
-            }
             url = url + "&" + SHELLY_IR_CODET_PRONTO + "=" + code;
         } else if (type.equals(SHELLY_IR_CODET_PRONTO_HEX)) {
             url = url + "&" + SHELLY_IR_CODET_PRONTO_HEX + "=" + keyCode;
@@ -471,12 +468,8 @@ public class ShellyHttpApi {
      * @param uri: URI (e.g. "/settings")
      */
     public <T> T callApi(String uri, Class<T> classOfT) throws ShellyApiException {
-        try {
-            String json = request(uri);
-            return gson.fromJson(json, classOfT);
-        } catch (JsonSyntaxException e) {
-            throw new ShellyApiException("Unable to convert JSON", e);
-        }
+        String json = request(uri);
+        return fromJson(gson, json, classOfT);
     }
 
     private String request(String uri) throws ShellyApiException {
@@ -534,7 +527,7 @@ public class ShellyHttpApi {
             if (contentResponse.getStatus() != HttpStatus.OK_200) {
                 throw new ShellyApiException(apiResult);
             }
-            if (response == null || response.isEmpty() || !response.startsWith("{") && !response.startsWith("[")) {
+            if (response.isEmpty() || !response.startsWith("{") && !response.startsWith("[")) {
                 throw new ShellyApiException("Unexpected response: " + response);
             }
         } catch (ExecutionException | InterruptedException | TimeoutException | IllegalArgumentException e) {

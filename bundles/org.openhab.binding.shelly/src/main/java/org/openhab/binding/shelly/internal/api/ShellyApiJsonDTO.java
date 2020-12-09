@@ -722,6 +722,7 @@ public class ShellyApiJsonDTO {
         public String mac; // MAC
         public ArrayList<ShellyShortStatusRelay> relays; // relay status
         public ArrayList<ShellySettingsMeter> meters; // current meter value
+        public ArrayList<ShellyInputState> inputs; // Firmware 1.5.6+
 
         @SerializedName("ext_temperature")
         public ShellyStatusSensor.ShellyExtTemperature extTemperature; // Shelly 1/1PM: sensor values

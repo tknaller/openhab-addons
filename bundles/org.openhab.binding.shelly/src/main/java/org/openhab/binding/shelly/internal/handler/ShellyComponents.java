@@ -16,8 +16,6 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
-import java.io.IOException;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.OpenClosedType;
@@ -32,8 +30,6 @@ import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusSens
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusSensor.ShellyADC;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
-
-import tec.uom.se.unit.Units;
 
 /***
  * The{@link ShellyComponents} implements updates for supplemental components
@@ -58,7 +54,7 @@ public class ShellyComponents {
 
         Integer rssi = getInteger(status.wifiSta.rssi);
         thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_UPTIME,
-                toQuantityType(new Double(getLong(status.uptime)), DIGITS_NONE, SmartHomeUnits.SECOND));
+                toQuantityType((double) getLong(status.uptime), DIGITS_NONE, SmartHomeUnits.SECOND));
         thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_RSSI, mapSignalStrength(rssi));
         if (status.tmp != null) {
             thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ITEMP,
@@ -241,7 +237,7 @@ public class ShellyComponents {
      * @param profile ShellyDeviceProfile
      * @param status Last ShellySettingsStatus
      *
-     * @throws IOException
+     * @throws ShellyApiException
      */
     public static boolean updateSensors(ShellyBaseHandler thingHandler, ShellySettingsStatus status)
             throws ShellyApiException {
@@ -278,7 +274,7 @@ public class ShellyComponents {
                         : getDouble(sdata.tmp.tF);
                 if (getString(sdata.tmp.units).toUpperCase().equals(SHELLY_TEMP_FAHRENHEIT)) {
                     // convert Fahrenheit to Celsius
-                    temp = ImperialUnits.FAHRENHEIT.getConverterTo(Units.CELSIUS).convert(temp).doubleValue();
+                    temp = ImperialUnits.FAHRENHEIT.getConverterTo(SIUnits.CELSIUS).convert(temp).doubleValue();
                 }
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_TEMP,
                         toQuantityType(temp.doubleValue(), DIGITS_TEMP, SIUnits.CELSIUS));

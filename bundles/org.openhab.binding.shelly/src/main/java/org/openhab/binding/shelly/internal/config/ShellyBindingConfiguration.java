@@ -41,9 +41,6 @@ public class ShellyBindingConfiguration {
 
     public void updateFromProperties(Map<String, Object> properties) {
         for (Map.Entry<String, Object> e : properties.entrySet()) {
-            if (e.getValue() == null) {
-                continue;
-            }
             switch (e.getKey()) {
                 case CONFIG_DEF_HTTP_USER:
                     defaultUserId = (String) e.getValue();

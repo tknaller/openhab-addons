@@ -15,6 +15,7 @@ package org.openhab.binding.shelly.internal.provider;
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -30,8 +31,11 @@ import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.binding.builder.ChannelBuilder;
+import org.eclipse.smarthome.core.thing.type.ChannelKind;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyControlRoller;
+import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyInputState;
+import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsDimmer;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsEMeter;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsMeter;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsRelay;
@@ -57,6 +61,7 @@ public class ShellyChannelDefinitions {
     public static final String ITEMT_NUMBER = "Number";
     public static final String ITEMT_SWITCH = "Switch";
     public static final String ITEMT_CONTACT = "Contact";
+    public static final String ITEMT_DIMMER = "Dimmer";
     public static final String ITEMT_LOCATION = "Location";
     public static final String ITEMT_DATETIME = "DateTime";
     public static final String ITEMT_TEMP = "Number:Temperature";
@@ -109,6 +114,18 @@ public class ShellyChannelDefinitions {
 
                 // Relay
                 .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_OUTPUT_NAME, "outputName", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_OUTPUT, "system:power", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_BUTTON_TRIGGER, "system:button", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_STATUS_EVENTTYPE, "lastEvent", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_STATUS_EVENTCOUNT, "eventCount", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_TIMER_AUTOON, "timerAutoOn", ITEMT_TIME))
+                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_TIMER_AUTOOFF, "timerAutoOff", ITEMT_TIME))
+                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_TIMER_ACTIVE, "timerActive", ITEMT_SWITCH))
+
+                // Dimmer
+                .add(new ShellyChannel(m, CHANNEL_GROUP_DIMMER_CONTROL, CHANNEL_BRIGHTNESS, "dimmerBrightness",
+                        ITEMT_DIMMER))
 
                 // Roller
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE, "rollerState", ITEMT_STRING))
@@ -152,7 +169,7 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_STATUS_EVENTTYPE, "eventType", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_STATUS_EVENTCOUNT, "eventCount", ITEMT_NUMBER))
-                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_BUTTON_TRIGGER, "system.button", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_BUTTON_TRIGGER, "system:button", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_LAST_UPDATE, "lastUpdate", ITEMT_DATETIME))
 
                 // Addon with external sensors
@@ -169,6 +186,7 @@ public class ShellyChannelDefinitions {
     public static @Nullable ShellyChannel getDefinition(String channelName) throws IllegalArgumentException {
         String group = substringBefore(channelName, "#");
         String channel = substringAfter(channelName, "#");
+
         if (group.contains(CHANNEL_GROUP_METER)) {
             group = CHANNEL_GROUP_METER; // map meter1..n to meter
         } else if (group.contains(CHANNEL_GROUP_RELAY_CONTROL)) {
@@ -178,6 +196,17 @@ public class ShellyChannelDefinitions {
         } else if (group.contains(CHANNEL_GROUP_STATUS)) {
             group = CHANNEL_GROUP_STATUS; // map status1..n to meter
         }
+
+        if (channel.startsWith(CHANNEL_INPUT)) {
+            channel = CHANNEL_INPUT;
+        } else if (channel.startsWith(CHANNEL_BUTTON_TRIGGER)) {
+            channel = CHANNEL_BUTTON_TRIGGER;
+        } else if (channel.startsWith(CHANNEL_STATUS_EVENTTYPE)) {
+            channel = CHANNEL_STATUS_EVENTTYPE;
+        } else if (channel.startsWith(CHANNEL_STATUS_EVENTCOUNT)) {
+            channel = CHANNEL_STATUS_EVENTCOUNT;
+        }
+
         String channelId = group + "#" + channel;
         return CHANNEL_DEFINITIONS.get(channelId);
     }
@@ -232,7 +261,12 @@ public class ShellyChannelDefinitions {
         String group = profile.getControlGroup(idx);
 
         ShellySettingsRelay rs = profile.settings.relays.get(idx);
+        addChannel(thing, add, rs.ison != null, group, CHANNEL_OUTPUT);
         addChannel(thing, add, rs.name != null, group, CHANNEL_OUTPUT_NAME);
+        // createInputChannels(thing, profile, relay.inputs, group, add);
+        addChannel(thing, add, rs.autoOn != null, group, CHANNEL_TIMER_AUTOON);
+        addChannel(thing, add, rs.autoOff != null, group, CHANNEL_TIMER_AUTOOFF);
+        addChannel(thing, add, rs.hasTimer != null, group, CHANNEL_TIMER_ACTIVE);
 
         // Shelly 1/1PM Addon
         if (relay.extTemperature != null) {
@@ -244,6 +278,43 @@ public class ShellyChannelDefinitions {
             addChannel(thing, add, relay.extHumidity.sensor1 != null, CHGR_SENSOR, CHANNEL_ESENDOR_HUMIDITY);
         }
 
+        return add;
+    }
+
+    public static Map<String, Channel> createDimmerChannels(final Thing thing, final ShellyDeviceProfile profile,
+            final ShellySettingsStatus dstatus, int idx) {
+        Map<String, Channel> add = new LinkedHashMap<>();
+        String group = profile.getControlGroup(idx);
+
+        // createInputChannels(thing, profile, dstatus.inputs, group, add);
+
+        // Shelly Dimmer has an additional brightness channel
+        addChannel(thing, add, profile.isDimmer, group, CHANNEL_BRIGHTNESS);
+
+        ShellySettingsDimmer ds = profile.settings.dimmers.get(idx);
+        addChannel(thing, add, ds.ison != null, group, CHANNEL_TIMER_AUTOON);
+        addChannel(thing, add, ds.ison != null, group, CHANNEL_TIMER_AUTOOFF);
+        addChannel(thing, add, ds.ison != null, group, CHANNEL_TIMER_ACTIVE);
+
+        return add;
+    }
+
+    public static Map<String, Channel> createInputChannels(final Thing thing, final ShellyDeviceProfile profile,
+            @Nullable ArrayList<ShellyInputState> inputs, String group) {
+        Map<String, Channel> add = new LinkedHashMap<>();
+        if (inputs != null) {
+            // Create channels per input. For devices with more than 1 input (Dimmer, 1L) multiple channel sets are
+            // created by adding the index to the channel name
+            boolean multi = ((profile.numRelays == 1) || profile.isDimmer) && (profile.numInputs >= 2);
+            for (int i = 0; i < profile.numInputs; i++) {
+                String suffix = multi ? String.valueOf(i + 1) : "";
+                ShellyInputState input = inputs.get(i);
+                addChannel(thing, add, true, group, CHANNEL_INPUT + suffix);
+                addChannel(thing, add, true, group, CHANNEL_BUTTON_TRIGGER + suffix);
+                addChannel(thing, add, input.event != null, group, CHANNEL_STATUS_EVENTTYPE + suffix);
+                addChannel(thing, add, input.eventCount != null, group, CHANNEL_STATUS_EVENTCOUNT + suffix);
+            }
+        }
         return add;
     }
 
@@ -332,13 +403,21 @@ public class ShellyChannelDefinitions {
             String channelName) throws IllegalArgumentException {
         if (supported) {
             String channelId = group + "#" + channelName;
-            ShellyChannel channelDef = getDefinition(channelId);
             ChannelUID channelUID = new ChannelUID(thing.getUID(), channelId);
-            ChannelTypeUID channelTypeUID = channelDef.typeId.contains("system:")
-                    ? new ChannelTypeUID(channelDef.typeId)
-                    : new ChannelTypeUID(BINDING_ID, channelDef.typeId);
-            Channel channel = ChannelBuilder.create(channelUID, channelDef.itemType).withType(channelTypeUID).build();
-            newChannels.put(channelId, channel);
+            ShellyChannel channelDef = getDefinition(channelId);
+            if (channelDef != null) {
+                ChannelTypeUID channelTypeUID = channelDef.typeId.contains("system:")
+                        ? new ChannelTypeUID(channelDef.typeId)
+                        : new ChannelTypeUID(BINDING_ID, channelDef.typeId);
+                Channel channel;
+                if (channelDef.typeId.equalsIgnoreCase("system:button")) {
+                    channel = ChannelBuilder.create(channelUID, ITEMT_STRING).withKind(ChannelKind.TRIGGER)
+                            .withType(channelTypeUID).build();
+                } else {
+                    channel = ChannelBuilder.create(channelUID, channelDef.itemType).withType(channelTypeUID).build();
+                }
+                newChannels.put(channelId, channel);
+            }
         }
     }
 

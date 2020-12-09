@@ -180,8 +180,8 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
             api.setRelayTurn(lightId, power == OnOffType.ON ? SHELLY_API_ON : SHELLY_API_OFF);
         }
         updateChannel(CHANNEL_COLOR_WHITE, CHANNEL_BRIGHTNESS + "$Switch", power);
-        updateChannel(CHANNEL_COLOR_WHITE, CHANNEL_BRIGHTNESS + "$Value", toQuantityType(
-                new Double(power == OnOffType.ON ? brightness : 0), DIGITS_NONE, SmartHomeUnits.PERCENT));
+        updateChannel(CHANNEL_COLOR_WHITE, CHANNEL_BRIGHTNESS + "$Value",
+                toQuantityType((double) (power == OnOffType.ON ? brightness : 0), DIGITS_NONE, SmartHomeUnits.PERCENT));
     }
 
     @Override
@@ -190,6 +190,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
         boolean updated = false;
         updated |= updateRelays(status);
         updated |= updateDimmers(status);
+        updated |= updateInputs(status);
         updated |= updateLed(status);
         return updated;
     }
@@ -280,6 +281,12 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
         }
     }
 
+    private void createDimmerChannels(ShellySettingsStatus dstatus, int idx) {
+        if (!areChannelsCreated()) {
+            updateChannelDefinitions(ShellyChannelDefinitions.createDimmerChannels(getThing(), profile, dstatus, idx));
+        }
+    }
+
     private void createRollerChannels(ShellyControlRoller roller) {
         if (!areChannelsCreated()) {
             updateChannelDefinitions(ShellyChannelDefinitions.createRollerChannels(getThing(), roller));
@@ -347,7 +354,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                     }
 
                     // Update input(s) state
-                    updated |= updateInputs(groupName, status, i);
+                    // updated |= updateInputs(groupName, status, i);
                 }
                 i++;
             }
@@ -375,15 +382,15 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                     if (state.equals(SHELLY_ALWD_ROLLER_TURN_STOP)) { // only valid in stop state
                         int pos = Math.max(SHELLY_MIN_ROLLER_POS, Math.min(control.currentPos, SHELLY_MAX_ROLLER_POS));
                         updated |= updateChannel(groupName, CHANNEL_ROL_CONTROL_CONTROL,
-                                toQuantityType(new Double(SHELLY_MAX_ROLLER_POS - pos), SmartHomeUnits.PERCENT));
+                                toQuantityType((double) (SHELLY_MAX_ROLLER_POS - pos), SmartHomeUnits.PERCENT));
                         updated |= updateChannel(groupName, CHANNEL_ROL_CONTROL_POS,
-                                toQuantityType(new Double(pos), SmartHomeUnits.PERCENT));
+                                toQuantityType((double) pos, SmartHomeUnits.PERCENT));
                         scheduledUpdates = 1; // one more poll and then stop
                     }
 
                     updated |= updateChannel(groupName, CHANNEL_ROL_CONTROL_STATE, new StringType(state));
                     updated |= updateChannel(groupName, CHANNEL_ROL_CONTROL_STOPR, getStringType(control.stopReason));
-                    updated |= updateInputs(groupName, status, i);
+                    // updated |= updateInputs(groupName, status, i);
 
                     i++;
                 }
@@ -408,7 +415,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
             // the same structure as lights[] from Bulb,RGBW2 and Duo. The tag gets replaced by dimmers[] so that Gson
             // maps to a different structure (ShellyShortLight).
             Gson gson = new Gson();
-            ShellySettingsStatus dstatus = gson.fromJson(ShellyApiJsonDTO.fixDimmerJson(orgStatus.json),
+            ShellySettingsStatus dstatus = fromJson(gson, ShellyApiJsonDTO.fixDimmerJson(orgStatus.json),
                     ShellySettingsStatus.class);
 
             logger.trace("{}: Updating {} dimmers(s)", thingName, dstatus.dimmers.size());
@@ -418,17 +425,19 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                 String groupName = profile.numRelays <= 1 ? CHANNEL_GROUP_DIMMER_CONTROL
                         : CHANNEL_GROUP_DIMMER_CONTROL + r.toString();
 
+                createDimmerChannels(dstatus, l);
+
                 // On a status update we map a dimmer.ison = false to brightness 0 rather than the device's brightness
                 // and send a OFF status to the same channel.
                 // When the device's brightness is > 0 we send the new value to the channel and a ON command
                 if (dimmer.ison) {
                     updated |= updateChannel(groupName, CHANNEL_BRIGHTNESS + "$Switch", OnOffType.ON);
                     updated |= updateChannel(groupName, CHANNEL_BRIGHTNESS + "$Value", toQuantityType(
-                            new Double(getInteger(dimmer.brightness)), DIGITS_NONE, SmartHomeUnits.PERCENT));
+                            (double) getInteger(dimmer.brightness), DIGITS_NONE, SmartHomeUnits.PERCENT));
                 } else {
                     updated |= updateChannel(groupName, CHANNEL_BRIGHTNESS + "$Switch", OnOffType.OFF);
                     updated |= updateChannel(groupName, CHANNEL_BRIGHTNESS + "$Value",
-                            toQuantityType(new Double(0), DIGITS_NONE, SmartHomeUnits.PERCENT));
+                            toQuantityType(0.0, DIGITS_NONE, SmartHomeUnits.PERCENT));
                 }
 
                 ShellySettingsDimmer dsettings = profile.settings.dimmers.get(l);
@@ -439,7 +448,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                             toQuantityType(getDouble(dsettings.autoOff), SmartHomeUnits.SECOND));
                 }
 
-                updated |= updateInputs(groupName, orgStatus, l);
+                // updated |= updateInputs(groupName, orgStatus, l);
                 l++;
             }
         }

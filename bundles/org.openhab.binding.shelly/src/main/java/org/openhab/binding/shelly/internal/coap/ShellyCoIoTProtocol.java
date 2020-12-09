@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.OpenClosedType;
 import org.eclipse.smarthome.core.library.types.StringType;
@@ -176,7 +177,7 @@ public class ShellyCoIoTProtocol {
     protected void handleInput(CoIotDescrSen sen, CoIotSensor s, String rGroup, Map<String, State> updates) {
         int idx = getSensorNumber(sen.desc, sen.id) - 1;
         String iGroup = profile.getInputGroup(idx);
-        String iChannel = profile.getInputChannel(idx);
+        String iChannel = CHANNEL_INPUT + profile.getInputSuffix(idx);
         updateChannel(updates, iGroup, iChannel, s.value == 0 ? OnOffType.OFF : OnOffType.ON);
     }
 
@@ -185,14 +186,14 @@ public class ShellyCoIoTProtocol {
         String group = profile.getInputGroup(idx);
         if (count == -1) {
             // event type
-            updateChannel(updates, group, CHANNEL_STATUS_EVENTTYPE, new StringType(type));
+            updateChannel(updates, group, CHANNEL_STATUS_EVENTTYPE + profile.getInputSuffix(idx), new StringType(type));
             inputEvent[idx] = type;
         } else {
             // event count
-            updateChannel(updates, group, CHANNEL_STATUS_EVENTCOUNT, getDecimal(count));
+            updateChannel(updates, group, CHANNEL_STATUS_EVENTCOUNT + profile.getInputSuffix(idx), getDecimal(count));
             if (profile.inButtonMode(idx) && ((profile.hasBattery && (count == 1)) || (count != lastEventCount[idx]))) {
-                if (profile.isButton && (serial != 0x200)) { // skip duplicate on wake-up
-                    thingHandler.triggerButton(group, inputEvent[idx]);
+                if (!profile.isButton || (profile.isButton && (serial != 0x200))) { // skip duplicate on wake-up
+                    thingHandler.triggerButton(group, idx + 1, inputEvent[idx]);
                 }
                 lastEventCount[idx] = count;
             }
@@ -233,8 +234,8 @@ public class ShellyCoIoTProtocol {
 
             // We need to update brigthtess and on/off state at the same time to avoid "flipping brightness slider" in
             // the UI
-            Double brightness = -1.0;
-            Double power = -1.0;
+            double brightness = -1.0;
+            double power = -1.0;
             for (CoIotSensor update : allUpdates) {
                 CoIotDescrSen d = fixDescription(sensorMap.get(update.id), blkMap);
                 if (!checkL.isEmpty() && !d.links.equals(checkL)) {
@@ -242,9 +243,9 @@ public class ShellyCoIoTProtocol {
                     continue;
                 }
                 if (d.desc.equalsIgnoreCase("brightness")) {
-                    brightness = new Double(update.value);
+                    brightness = update.value;
                 } else if (d.desc.equalsIgnoreCase("output") || d.desc.equalsIgnoreCase("state")) {
-                    power = new Double(update.value);
+                    power = update.value;
                 }
             }
             if (power != -1) {
@@ -299,8 +300,8 @@ public class ShellyCoIoTProtocol {
 
     protected int getIdFromBlk(CoIotDescrSen sen) {
         int idx = -1;
-        if (blkMap.containsKey(sen.links)) {
-            CoIotDescrBlk blk = blkMap.get(sen.links);
+        CoIotDescrBlk blk = blkMap.get(sen.links);
+        if (blk != null) {
             String desc = blk.desc.toLowerCase();
             if (desc.startsWith(SHELLY_CLASS_RELAY) || desc.startsWith(SHELLY_CLASS_ROLLER)
                     || desc.startsWith(SHELLY_CLASS_LIGHT) || desc.startsWith(SHELLY_CLASS_EMETER)) {
@@ -350,8 +351,8 @@ public class ShellyCoIoTProtocol {
         return profile;
     }
 
-    public CoIotDescrSen fixDescription(CoIotDescrSen sen, Map<String, CoIotDescrBlk> blkMap) {
-        return sen;
+    public CoIotDescrSen fixDescription(@Nullable CoIotDescrSen sen, Map<String, CoIotDescrBlk> blkMap) {
+        return sen != null ? sen : new CoIotDescrSen();
     }
 
     public String getLastWakeup() {

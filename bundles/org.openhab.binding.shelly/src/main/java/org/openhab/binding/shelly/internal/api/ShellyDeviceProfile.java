@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
 /**
  * The {@link ShellyDeviceProfile} creates a device profile based on the settings returned from the API's /settings
@@ -67,6 +66,7 @@ public class ShellyDeviceProfile {
     public int numRollers = 0; // number of Rollers, usually 1
     public boolean isRoller = false; // true for Shelly2 in roller mode
     public boolean isDimmer = false; // true for a Shelly Dimmer (SHDM-1)
+    public int numInputs = 0; // number of inputs
 
     public int numMeters = 0;
     public boolean isEMeter = false; // true for ShellyEM/3EM
@@ -103,11 +103,9 @@ public class ShellyDeviceProfile {
         try {
             initFromThingType(thingType);
             settingsJson = json;
-            ShellySettingsGlobal gs = gson.fromJson(json, ShellySettingsGlobal.class);
-            if (gs != null) {
-                settings = gs;
-            }
-        } catch (IllegalArgumentException | JsonSyntaxException e) {
+            ShellySettingsGlobal gs = fromJson(gson, json, ShellySettingsGlobal.class);
+            settings = gs; // only update when no exception
+        } catch (ShellyApiException e) {
             throw new ShellyApiException(
                     thingName + ": Unable to transform settings JSON " + e.toString() + ", json='" + json + "'", e);
         }
@@ -135,6 +133,7 @@ public class ShellyDeviceProfile {
         isDimmer = deviceType.equalsIgnoreCase(SHELLYDT_DIMMER) || deviceType.equalsIgnoreCase(SHELLYDT_DIMMER2);
         hasRelays = (numRelays > 0) || isDimmer;
         numRollers = getInteger(settings.device.numRollers);
+        numInputs = settings.inputs != null ? settings.inputs.size() : hasRelays ? 1 : 0;
 
         isEMeter = settings.emeters != null;
         numMeters = !isEMeter ? getInteger(settings.device.numMeters) : getInteger(settings.device.numEMeters);
@@ -203,6 +202,14 @@ public class ShellyDeviceProfile {
         // charger
     }
 
+    public void updateFromStatus(ShellySettingsStatus status) {
+        if (hasRelays) {
+            // Dimmer-2 doesn't report inputs under /settings, only on /status, we need to update that info after
+            // initialization
+            numInputs = status.inputs != null ? status.inputs.size() : 1;
+        }
+    }
+
     public String getControlGroup(int i) {
         if (i < 0) {
             logger.debug("{}: Invalid index {} for getControlGroup()", thingName, i);
@@ -243,14 +250,14 @@ public class ShellyDeviceProfile {
         }
     }
 
-    public String getInputChannel(int i) {
+    public String getInputSuffix(int i) {
         int idx = i + 1; // channel names are 1-based
         if (isRGBW2 || isIX3) {
-            return CHANNEL_INPUT; // RGBW2 has only 1 channel
+            return ""; // RGBW2 has only 1 channel
         } else if (hasRelays) {
-            return CHANNEL_INPUT + idx;
+            return numInputs >= 2 ? String.valueOf(idx) : "";
         }
-        return CHANNEL_INPUT;
+        return "";
     }
 
     public boolean inButtonMode(int idx) {
