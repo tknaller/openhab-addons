@@ -321,13 +321,6 @@
 			-->
 		</channels>
 	</channel-group-type>
-	<channel-group-type id="relayChannelNew">
-		<label>Relay</label>
-		<description>A Shelly relay channel</description>
-		<channels>
-			<channel id="button" typeId="system.button"/>
-		</channels>
-	</channel-group-type>
 	<channel-group-type id="relayChannelPlug">
 		<label>Relay</label>
 		<description>A Shelly relay channel</description>
@@ -371,12 +364,14 @@
 		<label>Roller Control</label>
 		<description>Controlling the roller mode</description>
 		<channels>
-			<channel id="control" typeId="rollerShutter"/>
-			<channel id="rollerpos" typeId="rollerPosition"/>
-			<channel id="state" typeId="rollerState"/>
-			<channel id="stopReason" typeId="rollerStop"/>
-			<channel id="input1" typeId="inputState1"/>
-			<channel id="input2" typeId="inputState2"/>
+			<!--
+				<channel id="control" typeId="rollerShutter"/>
+				<channel id="rollerpos" typeId="rollerPosition"/>
+				<channel id="state" typeId="rollerState"/>
+				<channel id="stopReason" typeId="rollerStop"/>
+				<channel id="input1" typeId="inputState1"/>
+				<channel id="input2" typeId="inputState2"/>
+			-->
 			<channel id="event" typeId="eventTrigger"/>
 		</channels>
 	</channel-group-type>

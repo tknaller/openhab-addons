@@ -334,6 +334,10 @@ public class ShellyApiJsonDTO {
         public String defaultState; // Accepted values: off, on, last, switch
         @SerializedName("btn_type")
         public String btnType; // Accepted values: momentary, toggle, edge, detached - // see SHELLY_BTNT_xxx
+        @SerializedName("btn1_type") // Shelly 1L
+        public String btnType1;
+        @SerializedName("btn2_type") // Shelly 1L
+        public String btnType2;
         @SerializedName("has_timer")
         public Boolean hasTimer; // Whether a timer is currently armed for this channel
         @SerializedName("auto_on")
@@ -390,6 +394,10 @@ public class ShellyApiJsonDTO {
         public String pushShortUrl; // short push button event
         @SerializedName("btn_type")
         public String btnType; // Accepted values: momentary, toggle, edge, detached - // see SHELLY_BTNT_xxx
+        @SerializedName("btn1_type")
+        public String btnType1; // Accepted values: momentary, toggle, edge, detached - // see SHELLY_BTNT_xxx
+        @SerializedName("btn2_type")
+        public String btnType2; // Accepted values: momentary, toggle, edge, detached - // see SHELLY_BTNT_xxx
         @SerializedName("swap_inputs")
         public Integer swapInputs; // 0=no
     }

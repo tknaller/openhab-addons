@@ -61,6 +61,7 @@ public class ShellyChannelDefinitions {
     public static final String ITEMT_NUMBER = "Number";
     public static final String ITEMT_SWITCH = "Switch";
     public static final String ITEMT_CONTACT = "Contact";
+    public static final String ITEMT_ROLLER = "Rollershutter";
     public static final String ITEMT_DIMMER = "Dimmer";
     public static final String ITEMT_LOCATION = "Location";
     public static final String ITEMT_DATETIME = "DateTime";
@@ -128,7 +129,14 @@ public class ShellyChannelDefinitions {
                         ITEMT_DIMMER))
 
                 // Roller
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_CONTROL, "rollerShutter", ITEMT_ROLLER))
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_POS, "rollerPosition", ITEMT_DIMMER))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE, "rollerState", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STOPR, "rollerStop", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_INPUT, "inputState", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_STATUS_EVENTTYPE, "lastEvent", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_STATUS_EVENTCOUNT, "eventCount", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER, "eventTrigger", "system:button"))
 
                 // RGBW2
                 .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
@@ -310,7 +318,8 @@ public class ShellyChannelDefinitions {
                 String suffix = multi ? String.valueOf(i + 1) : "";
                 ShellyInputState input = inputs.get(i);
                 addChannel(thing, add, true, group, CHANNEL_INPUT + suffix);
-                addChannel(thing, add, true, group, CHANNEL_BUTTON_TRIGGER + suffix);
+                addChannel(thing, add, true, group,
+                        (!profile.isRoller ? CHANNEL_BUTTON_TRIGGER : CHANNEL_EVENT_TRIGGER) + suffix);
                 addChannel(thing, add, input.event != null, group, CHANNEL_STATUS_EVENTTYPE + suffix);
                 addChannel(thing, add, input.eventCount != null, group, CHANNEL_STATUS_EVENTCOUNT + suffix);
             }
@@ -320,7 +329,11 @@ public class ShellyChannelDefinitions {
 
     public static Map<String, Channel> createRollerChannels(Thing thing, final ShellyControlRoller roller) {
         Map<String, Channel> add = new LinkedHashMap<>();
+        addChannel(thing, add, roller.state != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_CONTROL);
         addChannel(thing, add, roller.state != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE);
+        addChannel(thing, add, roller.state != null, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER);
+        addChannel(thing, add, roller.currentPos != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_POS);
+        addChannel(thing, add, roller.stopReason != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STOPR);
         return add;
     }
 
