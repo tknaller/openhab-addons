@@ -276,11 +276,21 @@ public class ShellyDeviceProfile {
         } else if (isDimmer) {
             if ((settings.dimmers != null) && (idx >= 0) && (idx < settings.dimmers.size())) {
                 ShellySettingsDimmer dimmer = settings.dimmers.get(idx);
-                btnType = getString(dimmer.btnType);
+                if ((numInputs == 1) && (dimmer.btnType != null)) {
+                    // only one input channel
+                    btnType = getString(dimmer.btnType);
+                } else {
+                    btnType = idx == 0 ? getString(dimmer.btnType1) : getString(dimmer.btnType2);
+                }
             }
         } else if ((settings.relays != null) && (idx >= 0) && (idx < settings.relays.size())) {
             ShellySettingsRelay relay = settings.relays.get(idx);
-            btnType = getString(relay.btnType);
+            if ((numInputs == 1) && (relay.btnType != null)) {
+                // only one input channel
+                btnType = getString(relay.btnType);
+            } else {
+                btnType = idx == 0 ? getString(relay.btnType1) : getString(relay.btnType2);
+            }
         }
 
         if (btnType.equals(SHELLY_BTNT_MOMENTARY) || btnType.equals(SHELLY_BTNT_MOM_ON_RELEASE)

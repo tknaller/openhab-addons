@@ -71,13 +71,13 @@
 			<label>Enable Roller Events (Roller only)</label>
 			<description>True if the binding should register to get Roller Events.</description>
 			<advanced>true</advanced>
-			<default>true</default>
+			<default>false</default>
 		</parameter>
 		<parameter name="eventsCoIoT" type="boolean" required="false">
 			<label>Enable CoIoT Events</label>
 			<description>If enabled, the CoAP protocol is used to receive status updates.</description>
 			<advanced>true</advanced>
-			<default>true</default>
+			<default>false</default>
 		</parameter>
 		<parameter name="updateInterval" type="integer" min="10" required="true" unit="s">
 			<label>General Update Interval</label>

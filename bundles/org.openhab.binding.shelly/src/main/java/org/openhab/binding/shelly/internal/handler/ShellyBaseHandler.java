@@ -473,6 +473,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_HEARTBEAT, getTimestamp());
         watchdog.reset();
         watchdog.start();
+        logger.trace("{}: Watchdog restarted (expires in {} sec)", thingName, profile.updatePeriod);
     }
 
     private boolean isWatchdogExpired() {
@@ -715,7 +716,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
                 config.deviceIp = saddr;
             }
         } catch (UnknownHostException e) {
-            logger.debug("{}: Unable to resolehostname {}", thingName, config.deviceIp);
+            logger.debug("{}: Unable to resolve hostname {}", thingName, config.deviceIp);
         }
 
         config.localIp = localIP;
@@ -733,6 +734,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         }
 
         skipCount = config.updateInterval / UPDATE_STATUS_INTERVAL_SECONDS;
+        logger.trace("{}: updateInterval = {}s -> skipCount = {}", thingName, config.updateInterval, skipCount);
     }
 
     private void checkVersion(ShellyDeviceProfile prf, ShellySettingsStatus status) {
