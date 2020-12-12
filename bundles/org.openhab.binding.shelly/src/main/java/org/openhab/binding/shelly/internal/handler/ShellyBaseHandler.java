@@ -87,7 +87,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
     private final ShellyCoapHandler coap;
     public boolean autoCoIoT = false;
 
-    private final ShellyTranslationProvider messages;
+    public final ShellyTranslationProvider messages;
     protected boolean stopping = false;
     private boolean channelsCreated = false;
 
@@ -755,12 +755,12 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
                 }
                 autoCoIoT = true;
             }
+            if (status.update.hasUpdate && !version.checkBeta(getString(prf.fwVersion))) {
+                logger.info("{}: {}", thingName,
+                        messages.get("versioncheck.update", status.update.oldVersion, status.update.newVersion));
+            }
         } catch (NullPointerException e) { // could be inconsistant format of beta version
             logger.debug("{}: {}", thingName, messages.get("versioncheck.failed", prf.fwVersion));
-        }
-        if (status.update.hasUpdate) {
-            logger.info("{}: {}", thingName,
-                    messages.get("versioncheck.update", status.update.oldVersion, status.update.newVersion));
         }
     }
 
@@ -939,7 +939,9 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         }
 
         logger.debug("{}: Update button state with {}/{}", thingName, value, trigger);
-        triggerChannel(group, CHANNEL_BUTTON_TRIGGER + profile.getInputSuffix(idx), trigger);
+        triggerChannel(group,
+                profile.isRoller ? CHANNEL_EVENT_TRIGGER : CHANNEL_BUTTON_TRIGGER + profile.getInputSuffix(idx),
+                trigger);
         updateChannel(group, CHANNEL_LAST_UPDATE, getTimestamp());
         if (!profile.hasBattery) {
             // refresh status of the input channel

@@ -446,6 +446,11 @@ public class ShellyApiJsonDTO {
         public Boolean positioning;
     }
 
+    public static class ShellyFavPos { // FW 1.9.2+ in roller mode
+        public String name;
+        public Integer pos;
+    }
+
     public static class ShellyInputState {
         public Integer input;
 
@@ -583,6 +588,11 @@ public class ShellyApiJsonDTO {
         public String alarmMidUrl; // URL reports middle alarm
         @SerializedName("alarm_heavy_url")
         public String alarmHeavyfUrl; // URL reports heavy alarm
+
+        // Roller with FW 1.9.2+
+        @SerializedName("favorites_enabled")
+        public Boolean favoritesEnabled;
+        public ArrayList<ShellyFavPos> favorites;
     }
 
     public static class ShellySettingsAttributes {

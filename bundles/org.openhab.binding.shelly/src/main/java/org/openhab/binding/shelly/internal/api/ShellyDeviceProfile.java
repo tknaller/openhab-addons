@@ -100,15 +100,10 @@ public class ShellyDeviceProfile {
 
         initialized = false;
 
-        try {
-            initFromThingType(thingType);
-            settingsJson = json;
-            ShellySettingsGlobal gs = fromJson(gson, json, ShellySettingsGlobal.class);
-            settings = gs; // only update when no exception
-        } catch (ShellyApiException e) {
-            throw new ShellyApiException(
-                    thingName + ": Unable to transform settings JSON " + e.toString() + ", json='" + json + "'", e);
-        }
+        initFromThingType(thingType);
+        settingsJson = json;
+        ShellySettingsGlobal gs = fromJson(gson, json, ShellySettingsGlobal.class);
+        settings = gs; // only update when no exception
 
         // General settings
         deviceType = getString(settings.device.type);
@@ -131,9 +126,10 @@ public class ShellyDeviceProfile {
             numRelays = 0;
         }
         isDimmer = deviceType.equalsIgnoreCase(SHELLYDT_DIMMER) || deviceType.equalsIgnoreCase(SHELLYDT_DIMMER2);
+        isRoller = mode.equalsIgnoreCase(SHELLY_MODE_ROLLER);
         hasRelays = (numRelays > 0) || isDimmer;
         numRollers = getInteger(settings.device.numRollers);
-        numInputs = settings.inputs != null ? settings.inputs.size() : hasRelays ? 1 : 0;
+        numInputs = settings.inputs != null ? settings.inputs.size() : hasRelays ? isRoller ? 2 : 1 : 0;
 
         isEMeter = settings.emeters != null;
         numMeters = !isEMeter ? getInteger(settings.device.numMeters) : getInteger(settings.device.numEMeters);
@@ -141,7 +137,6 @@ public class ShellyDeviceProfile {
             // RGBW2 doesn't report, but has one
             numMeters = inColor ? 1 : getInteger(settings.device.numOutputs);
         }
-        isRoller = mode.equalsIgnoreCase(SHELLY_MODE_ROLLER);
 
         if (settings.sleepMode != null) {
             // Sensor, usally 12h
@@ -261,42 +256,51 @@ public class ShellyDeviceProfile {
     }
 
     public boolean inButtonMode(int idx) {
-        if (idx < 0) {
-            logger.debug("{}: Invalid index {} for inButtonMode()", thingName, idx);
+        if (settings.inputs == null) {
+            return false; // device has no inputs
+        }
+        if ((idx < 0) || (idx >= settings.inputs.size())) {
+            logger.debug("{}: Invalid index {} for inButtonMode(), number of inputs: {}", thingName, idx,
+                    settings.inputs.size());
             return false;
         }
         String btnType = "";
         if (isButton) {
             return true;
         } else if (isIX3) {
-            if ((settings.inputs != null) && (idx >= 0) && (idx < settings.inputs.size())) {
-                ShellySettingsInput input = settings.inputs.get(idx);
-                btnType = getString(input.btnType);
-            }
+            ShellySettingsInput input = settings.inputs.get(idx);
+            btnType = getString(input.btnType);
         } else if (isDimmer) {
-            if ((settings.dimmers != null) && (idx >= 0) && (idx < settings.dimmers.size())) {
-                ShellySettingsDimmer dimmer = settings.dimmers.get(idx);
-                if ((numInputs == 1) && (dimmer.btnType != null)) {
-                    // only one input channel
-                    btnType = getString(dimmer.btnType);
-                } else {
-                    btnType = idx == 0 ? getString(dimmer.btnType1) : getString(dimmer.btnType2);
-                }
+            if (settings.dimmers != null) {
+                ShellySettingsDimmer dimmer = settings.dimmers.get(0);
+                btnType = idx == 0 ? getString(dimmer.btnType1) : getString(dimmer.btnType2);
             }
-        } else if ((settings.relays != null) && (idx >= 0) && (idx < settings.relays.size())) {
-            ShellySettingsRelay relay = settings.relays.get(idx);
-            if ((numInputs == 1) && (relay.btnType != null)) {
+        } else if (settings.relays != null) {
+            if (numRelays == 1) {
+                ShellySettingsRelay relay = settings.relays.get(0);
+                if (relay.btnType != null) {
+                    btnType = getString(relay.btnType);
+                } else {
+                    // Shelly 1L has 2 inputs
+                    btnType = idx == 0 ? getString(relay.btnType1) : getString(relay.btnType2);
+                }
+            } else if (idx < settings.relays.size()) {
                 // only one input channel
+                ShellySettingsRelay relay = settings.relays.get(idx);
                 btnType = getString(relay.btnType);
-            } else {
-                btnType = idx == 0 ? getString(relay.btnType1) : getString(relay.btnType2);
             }
         }
 
-        if (btnType.equals(SHELLY_BTNT_MOMENTARY) || btnType.equals(SHELLY_BTNT_MOM_ON_RELEASE)
-                || btnType.equals(SHELLY_BTNT_DETACHED) || btnType.equals(SHELLY_BTNT_ONE_BUTTON)) {
-            return true;
+        logger.trace("{}: Checking for trigger, button-type[{}] is {}", thingName, idx, btnType);
+        return btnType.equalsIgnoreCase(SHELLY_BTNT_MOMENTARY) || btnType.equalsIgnoreCase(SHELLY_BTNT_MOM_ON_RELEASE)
+                || btnType.equalsIgnoreCase(SHELLY_BTNT_DETACHED) || btnType.equalsIgnoreCase(SHELLY_BTNT_ONE_BUTTON);
+    }
+
+    public int getRollerFav(int id) {
+        if ((id >= 0) && getBool(settings.favoritesEnabled) && (settings.favorites != null)
+                && (id < settings.favorites.size())) {
+            return settings.favorites.get(id).pos;
         }
-        return false;
+        return -1;
     }
 }

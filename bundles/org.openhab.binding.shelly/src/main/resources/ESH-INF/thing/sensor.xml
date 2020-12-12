@@ -158,12 +158,6 @@
 	<channel-group-type id="buttonState">
 		<label>Button State</label>
 		<description>Status of the Button</description>
-		<channels>
-			<channel id="input" typeId="inputState"/>
-			<channel id="button" typeId="system.button"/>
-			<channel id="lastEvent" typeId="lastEvent"/>
-			<channel id="eventCount" typeId="eventCount"/>
-		</channels>
 	</channel-group-type>
 
 

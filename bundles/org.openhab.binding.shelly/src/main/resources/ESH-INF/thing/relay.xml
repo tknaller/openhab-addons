@@ -308,72 +308,22 @@
 	<channel-group-type id="relayChannel">
 		<label>Relay</label>
 		<description>A Shelly relay channel</description>
-		<channels>
-			<channel id="button" typeId="system.button"/>
-			<!--
-				<channel id="output" typeId="system.power"/>
-				<channel id="input" typeId="inputState"/>
-				<channel id="autoOn" typeId="timerAutoOn"/>
-				<channel id="autoOff" typeId="timerAutoOff"/>
-				<channel id="timerActive" typeId="timerActive"/>
-				<channel id="lastEvent" typeId="lastEvent"/>
-				<channel id="eventCount" typeId="eventCount"/>
-			-->
-		</channels>
 	</channel-group-type>
 	<channel-group-type id="relayChannelPlug">
 		<label>Relay</label>
 		<description>A Shelly relay channel</description>
-		<!--
-			<channels>
-			<channel id="output" typeId="system.power"/>
-			<channel id="autoOn" typeId="timerAutoOn"/>
-			<channel id="autoOff" typeId="timerAutoOff"/>
-			<channel id="timerActive" typeId="timerActive"/>
-			</channels>
-		-->
 	</channel-group-type>
 	<channel-group-type id="dimmerChannel">
 		<label>Dimmer</label>
 		<description>A Shelly Dimmer channel</description>
-		<channels>
-			<channel id="button1" typeId="system.button"/>
-			<channel id="button2" typeId="system.button"/>
-			<!--
-				<channel id="brightness" typeId="dimmerBrightness"/>
-				<channel id="input1" typeId="inputState1"/>
-				<channel id="input2" typeId="inputState2"/>
-				<channel id="autoOn" typeId="timerAutoOn"/>
-				<channel id="autoOff" typeId="timerAutoOff"/>
-			-->
-		</channels>
 	</channel-group-type>
 	<channel-group-type id="ix3Channel">
 		<label>Input</label>
 		<description>Input Status</description>
-		<channels>
-			<channel id="button" typeId="system.button"/>
-			<!--
-				<channel id="input" typeId="inputState"/>
-				<channel id="lastEvent" typeId="lastEvent"/>
-				<channel id="eventCount" typeId="eventCount"/>
-			-->
-		</channels>
 	</channel-group-type>
 	<channel-group-type id="rollerControl">
 		<label>Roller Control</label>
 		<description>Controlling the roller mode</description>
-		<channels>
-			<!--
-				<channel id="control" typeId="rollerShutter"/>
-				<channel id="rollerpos" typeId="rollerPosition"/>
-				<channel id="state" typeId="rollerState"/>
-				<channel id="stopReason" typeId="rollerStop"/>
-				<channel id="input1" typeId="inputState1"/>
-				<channel id="input2" typeId="inputState2"/>
-			-->
-			<channel id="event" typeId="eventTrigger"/>
-		</channels>
 	</channel-group-type>
 	<channel-group-type id="meter">
 		<label>Power Meter</label>
@@ -421,6 +371,12 @@
 		<label>Roller Position (100=open, 0=closed)</label>
 		<description>Position the roller (100..0 in %, where 100%=open, 0%=closed)</description>
 		<state readOnly="false" min="0" max="100"/>
+	</channel-type>
+	<channel-type id="rollerFavorite">
+		<item-type>Number</item-type>
+		<label>Position Favorite</label>
+		<description>Set roller position by selecting favorite 1-4 (needs to be defined in the Shelly App, 0=n/a)</description>
+		<state readOnly="false" min="0" max="4"/>
 	</channel-type>
 	<channel-type id="rollerState">
 		<item-type>String</item-type>
