@@ -119,6 +119,19 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                 requestUpdates(autoCoIoT ? 1 : 45 / UPDATE_STATUS_INTERVAL_SECONDS, false);
                 break;
 
+            case CHANNEL_ROL_CONTROL_FAV:
+                if (command instanceof Number) {
+                    int id = ((Number) command).intValue() - 1;
+                    int pos = profile.getRollerFav(id);
+                    if (pos > 0) {
+                        logger.debug("{}: Selecting favorite {}, position = {}", thingName, id, pos);
+                        api.setRollerPos(rIndex, pos);
+                        break;
+                    }
+                }
+                logger.debug("{}: Invalid favorite index: {}", thingName, command);
+                break;
+
             case CHANNEL_TIMER_AUTOON:
                 logger.debug("{}: Set Auto-ON timer to {}", thingName, command);
                 api.setTimer(rIndex, SHELLY_TIMER_AUTOON, getNumber(command));
@@ -223,18 +236,30 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                 }
             }
 
-            if (((command instanceof UpDownType) && UpDownType.UP.equals(command))
-                    || ((command instanceof OnOffType) && OnOffType.ON.equals(command))) {
+            if ((command instanceof UpDownType) && UpDownType.UP.equals(command)) {
                 logger.debug("{}: Open roller", thingName);
                 api.setRollerTurn(index, SHELLY_ALWD_ROLLER_TURN_OPEN);
-                position = SHELLY_MAX_ROLLER_POS;
-
+                int pos = profile.getRollerFav(config.favoriteUP - 1);
+                position = pos > 0 ? pos : SHELLY_MAX_ROLLER_POS;
+                if (pos > 0) {
+                    logger.info("{}: Use favoriteUP id {} for positioning roller({}%)", thingName, config.favoriteUP,
+                            pos);
+                }
             }
-            if (((command instanceof UpDownType) && UpDownType.DOWN.equals(command))
-                    || ((command instanceof OnOffType) && OnOffType.OFF.equals(command))) {
+            if ((command instanceof UpDownType) && UpDownType.DOWN.equals(command)) {
                 logger.debug("{}: Closing roller", thingName);
-                api.setRollerTurn(index, SHELLY_ALWD_ROLLER_TURN_CLOSE);
-                position = SHELLY_MIN_ROLLER_POS;
+                int pos = profile.getRollerFav(config.favoriteDOWN - 1);
+                if (pos > 0) {
+                    // use favorite position
+                    if (pos > 0) {
+                        logger.info("{}: Use favoriteDOWN id {} for positioning roller ({}%)", thingName,
+                                config.favoriteDOWN, pos);
+                    }
+                    api.setRollerPos(index, pos);
+                } else {
+                    api.setRollerTurn(index, SHELLY_ALWD_ROLLER_TURN_CLOSE);
+                }
+                position = SHELLY_MAX_ROLLER_POS - pos;
             }
         } else if ((command instanceof StopMoveType) && StopMoveType.STOP.equals(command)) {
             logger.debug("{}: Stop roller", thingName);
@@ -249,7 +274,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                 position = d.intValue();
             } else {
                 throw new IllegalArgumentException(
-                        "Invalid value type for roller control/posiution" + command.getClass().toString());
+                        "Invalid value type for roller control/position" + command.getClass().toString());
             }
 
             // take position from RollerShutter control and map to Shelly positon (OH:

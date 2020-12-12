@@ -206,6 +206,7 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_GROUP_ROL_CONTROL = "roller";
     public static final String CHANNEL_ROL_CONTROL_CONTROL = "control";
     public static final String CHANNEL_ROL_CONTROL_POS = "rollerpos";
+    public static final String CHANNEL_ROL_CONTROL_FAV = "rollerFav";
     public static final String CHANNEL_ROL_CONTROL_TIMER = "timer";
     public static final String CHANNEL_ROL_CONTROL_STATE = "state";
     public static final String CHANNEL_ROL_CONTROL_STOPR = "stopReason";

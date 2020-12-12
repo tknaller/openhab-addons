@@ -211,7 +211,7 @@
 		<description>blue, 0..255, only in Color Mode</description>
 		<state min="0" max="255" step="1" readOnly="false"></state>
 	</channel-type>
-	<channel-type id="colorWhite" advanced="true">
+	<channel-type id="colorWhite">
 		<item-type>Dimmer</item-type>
 		<label>White</label>
 		<description>white, 0..255, applies in Color Mode</description>

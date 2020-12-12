@@ -131,12 +131,13 @@ public class ShellyChannelDefinitions {
                 // Roller
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_CONTROL, "rollerShutter", ITEMT_ROLLER))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_POS, "rollerPosition", ITEMT_DIMMER))
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_FAV, "rollerFavorite", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE, "rollerState", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STOPR, "rollerStop", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_INPUT, "inputState", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_STATUS_EVENTTYPE, "lastEvent", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_STATUS_EVENTCOUNT, "eventCount", ITEMT_NUMBER))
-                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER, "eventTrigger", "system:button"))
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER, "system:button", "system:button"))
 
                 // RGBW2
                 .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
@@ -271,7 +272,6 @@ public class ShellyChannelDefinitions {
         ShellySettingsRelay rs = profile.settings.relays.get(idx);
         addChannel(thing, add, rs.ison != null, group, CHANNEL_OUTPUT);
         addChannel(thing, add, rs.name != null, group, CHANNEL_OUTPUT_NAME);
-        // createInputChannels(thing, profile, relay.inputs, group, add);
         addChannel(thing, add, rs.autoOn != null, group, CHANNEL_TIMER_AUTOON);
         addChannel(thing, add, rs.autoOff != null, group, CHANNEL_TIMER_AUTOOFF);
         addChannel(thing, add, rs.hasTimer != null, group, CHANNEL_TIMER_ACTIVE);
@@ -294,16 +294,12 @@ public class ShellyChannelDefinitions {
         Map<String, Channel> add = new LinkedHashMap<>();
         String group = profile.getControlGroup(idx);
 
-        // createInputChannels(thing, profile, dstatus.inputs, group, add);
-
         // Shelly Dimmer has an additional brightness channel
         addChannel(thing, add, profile.isDimmer, group, CHANNEL_BRIGHTNESS);
 
         ShellySettingsDimmer ds = profile.settings.dimmers.get(idx);
-        addChannel(thing, add, ds.ison != null, group, CHANNEL_TIMER_AUTOON);
-        addChannel(thing, add, ds.ison != null, group, CHANNEL_TIMER_AUTOOFF);
-        addChannel(thing, add, ds.ison != null, group, CHANNEL_TIMER_ACTIVE);
-
+        addChannel(thing, add, ds.autoOn != null, group, CHANNEL_TIMER_AUTOON);
+        addChannel(thing, add, ds.autoOff != null, group, CHANNEL_TIMER_AUTOOFF);
         return add;
     }
 
@@ -313,15 +309,18 @@ public class ShellyChannelDefinitions {
         if (inputs != null) {
             // Create channels per input. For devices with more than 1 input (Dimmer, 1L) multiple channel sets are
             // created by adding the index to the channel name
-            boolean multi = ((profile.numRelays == 1) || profile.isDimmer) && (profile.numInputs >= 2);
+            boolean multi = ((profile.numRelays == 1) || profile.isDimmer || profile.isRoller)
+                    && (profile.numInputs >= 2);
             for (int i = 0; i < profile.numInputs; i++) {
                 String suffix = multi ? String.valueOf(i + 1) : "";
                 ShellyInputState input = inputs.get(i);
                 addChannel(thing, add, true, group, CHANNEL_INPUT + suffix);
+                if (!profile.isRoller) {
+                    addChannel(thing, add, input.event != null, group, CHANNEL_STATUS_EVENTTYPE + suffix);
+                    addChannel(thing, add, input.eventCount != null, group, CHANNEL_STATUS_EVENTCOUNT + suffix);
+                }
                 addChannel(thing, add, true, group,
-                        (!profile.isRoller ? CHANNEL_BUTTON_TRIGGER : CHANNEL_EVENT_TRIGGER) + suffix);
-                addChannel(thing, add, input.event != null, group, CHANNEL_STATUS_EVENTTYPE + suffix);
-                addChannel(thing, add, input.eventCount != null, group, CHANNEL_STATUS_EVENTCOUNT + suffix);
+                        (!profile.isRoller ? CHANNEL_BUTTON_TRIGGER + suffix : CHANNEL_EVENT_TRIGGER));
             }
         }
         return add;
@@ -332,8 +331,9 @@ public class ShellyChannelDefinitions {
         addChannel(thing, add, roller.state != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_CONTROL);
         addChannel(thing, add, roller.state != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE);
         addChannel(thing, add, roller.state != null, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER);
-        addChannel(thing, add, roller.currentPos != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_POS);
         addChannel(thing, add, roller.stopReason != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STOPR);
+        addChannel(thing, add, roller.currentPos != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_POS);
+        addChannel(thing, add, roller.currentPos != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_FAV);
         return add;
     }
 
@@ -407,8 +407,8 @@ public class ShellyChannelDefinitions {
             addChannel(thing, newChannels, sdata.bat.value != null, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LOW);
         }
 
-        // addChannel(thing, newChannels, true, profile.getControlGroup(0), CHANNEL_LAST_UPDATE);
-        addChannel(thing, newChannels, true, CHANNEL_GROUP_SENSOR, CHANNEL_LAST_UPDATE);
+        addChannel(thing, newChannels, true, profile.isButton ? CHANNEL_GROUP_STATUS : CHANNEL_GROUP_SENSOR,
+                CHANNEL_LAST_UPDATE);
         return newChannels;
     }
 
@@ -424,7 +424,7 @@ public class ShellyChannelDefinitions {
                         : new ChannelTypeUID(BINDING_ID, channelDef.typeId);
                 Channel channel;
                 if (channelDef.typeId.equalsIgnoreCase("system:button")) {
-                    channel = ChannelBuilder.create(channelUID, ITEMT_STRING).withKind(ChannelKind.TRIGGER)
+                    channel = ChannelBuilder.create(channelUID, null).withKind(ChannelKind.TRIGGER)
                             .withType(channelTypeUID).build();
                 } else {
                     channel = ChannelBuilder.create(channelUID, channelDef.itemType).withType(channelTypeUID).build();
