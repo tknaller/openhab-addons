@@ -201,8 +201,8 @@ public class ShellyCoIoTProtocol {
                     logger.debug("{}: Trigger event {}", thingName, inputEvent[idx]);
                     thingHandler.triggerButton(group, idx + 1, inputEvent[idx]);
                 }
-                lastEventCount[idx] = count;
             }
+            lastEventCount[idx] = count;
         }
     }
 

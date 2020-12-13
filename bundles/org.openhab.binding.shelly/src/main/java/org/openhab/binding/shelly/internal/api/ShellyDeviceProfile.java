@@ -250,30 +250,26 @@ public class ShellyDeviceProfile {
         if (isRGBW2 || isIX3) {
             return ""; // RGBW2 has only 1 channel
         } else if (hasRelays) {
-            return numInputs >= 2 ? String.valueOf(idx) : "";
+            return (numRelays) == 1 && (numInputs >= 2) ? String.valueOf(idx) : "";
         }
         return "";
     }
 
     public boolean inButtonMode(int idx) {
-        if (settings.inputs == null) {
-            return false; // device has no inputs
-        }
-        if ((idx < 0) || (idx >= settings.inputs.size())) {
-            logger.debug("{}: Invalid index {} for inButtonMode(), number of inputs: {}", thingName, idx,
-                    settings.inputs.size());
+        if (idx < 0) {
+            logger.debug("{}: Invalid index {} for inButtonMode()", thingName, idx);
             return false;
         }
         String btnType = "";
         if (isButton) {
             return true;
-        } else if (isIX3) {
+        } else if (isIX3 && (settings.inputs != null) && (idx < settings.inputs.size())) {
             ShellySettingsInput input = settings.inputs.get(idx);
             btnType = getString(input.btnType);
         } else if (isDimmer) {
             if (settings.dimmers != null) {
                 ShellySettingsDimmer dimmer = settings.dimmers.get(0);
-                btnType = idx == 0 ? getString(dimmer.btnType1) : getString(dimmer.btnType2);
+                btnType = dimmer.btnType;
             }
         } else if (settings.relays != null) {
             if (numRelays == 1) {
@@ -293,7 +289,8 @@ public class ShellyDeviceProfile {
 
         logger.trace("{}: Checking for trigger, button-type[{}] is {}", thingName, idx, btnType);
         return btnType.equalsIgnoreCase(SHELLY_BTNT_MOMENTARY) || btnType.equalsIgnoreCase(SHELLY_BTNT_MOM_ON_RELEASE)
-                || btnType.equalsIgnoreCase(SHELLY_BTNT_DETACHED) || btnType.equalsIgnoreCase(SHELLY_BTNT_ONE_BUTTON);
+                || btnType.equalsIgnoreCase(SHELLY_BTNT_DETACHED) || btnType.equalsIgnoreCase(SHELLY_BTNT_ONE_BUTTON)
+                || btnType.equalsIgnoreCase(SHELLY_BTNT_TWO_BUTTON);
     }
 
     public int getRollerFav(int id) {
