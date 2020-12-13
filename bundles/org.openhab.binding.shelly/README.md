@@ -2,7 +2,7 @@
 # Shelly Binding
 
 This Binding integrates [Alterco Shelly devices](https://shelly.cloud).
-![](https://shop.shelly.cloud/image/cache/catalog/shelly_1/s1_x1-80x80.jpg =120x120))  ![](https://shop.shelly.cloud/image/cache/catalog/shelly_dimmer2/shelly_dimmer2_x1-80x80.jpg =120x120)  ![](https://shop.shelly.cloud/image/cache/catalog/shelly_vintage/shelly_vintage_A60-80x80.jpg =120x120)   ![](https://shop.shelly.cloud/image/cache/catalog/shelly_plug_s/s_plug_s_x1-80x80.jpg =120x120)   ![](https://shop.shelly.cloud/image/cache/catalog/shelly_plug_s/s_plug_s_x1-80x80.jpg =120x120)
+![](https://shop.shelly.cloud/image/cache/catalog/shelly_1/s1_x1-80x80.jpg))  ![](https://shop.shelly.cloud/image/cache/catalog/shelly_dimmer2/shelly_dimmer2_x1-80x80.jpg)  ![](https://shop.shelly.cloud/image/cache/catalog/shelly_vintage/shelly_vintage_A60-80x80.jpg)   ![](https://shop.shelly.cloud/image/cache/catalog/shelly_plug_s/s_plug_s_x1-80x80.jpg)   ![](https://shop.shelly.cloud/image/cache/catalog/shelly_plug_s/s_plug_s_x1-80x80.jpg)
 
 Alterco provides a rich set of smart home devices. All of them are WiFi enabled (2,4GHz, IPv4 only) and provide a documented API. 
 The binding is officially acknowledged by Alterco and openHAB is listed as a reference.
