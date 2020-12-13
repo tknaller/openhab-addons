@@ -2,6 +2,7 @@
 # Shelly Binding
 
 This Binding integrates [Alterco Shelly devices](https://shelly.cloud).
+![](https://shop.shelly.cloud/image/cache/catalog/shelly_1/s1_x1-1000x1000.jpg)
 
 Alterco provides a rich set of smart home devices. All of them are WiFi enabled (2,4GHz, IPv4 only) and provide a documented API. 
 The binding is officially acknowledged by Alterco and openHAB is listed as a reference.
@@ -84,6 +85,7 @@ The Web UI of the Shelly device displays the current firmware version under Sett
 |1.6.x  |First stable CoIoT implementation. AutoCoIoT is enabled when firmware version >= 1.6 is detected. |
 |1.7.x  |Add additional status update values, fixes various issues                                         |
 |1.8.0  |Brings CoIoT version 2, which fixes a lot issues and gaps of version 1.                           |
+|1.9.2  |Various improvements, roller favorites, CoAP fixes                                                |
 
 The current firmware version is reported in the Thing Properties.
 A dedicated channel (device#updateAvailable) indicates the availability of a newer firmware. Use the device's Web UI or the Shelly App to perform the update.
@@ -102,6 +104,14 @@ If you have multiple devices protected by the same credentials it's recommended 
 In this case the binding could directly access the device to retrieve the required information using those credentials.
 Otherwise a thing of type shellyprotected is created in the Inbox and you could set the credentials while adding the thing. In this case the credentials are persisted as part of the thing configuration. 
 
+### Dynamic creation of channels
+
+The Shelly series of devices has many combinations of relays, meters (different versions), sensors etc. 
+For this the binding creates various channels dynamically based on the status information provided by the device at initialization time. 
+If a channel is missing make sure the thing was discovered correctly and is ONLINE.
+If a channel is missing delete the thing and re-discover it.
+Creation of those channels takes about 5-10sec, maybe you need to reload the page to update the browser status.
+
 ### Important for battery powered devices
 
 Make sure to wake up battery powered devices, so that they show up on the network.
@@ -109,10 +119,13 @@ The device has a push button inside. Open the case, press that button and the LE
 Wait a moment and then start the discovery. The device should show up in the Inbox and can be added.
 Sometimes you need to run the discovery multiple times.
 
-### Dynamic creation of channels
+### Roller Favorites
 
-The Shelly series of devices has many combinations of relays, meters (different versions), sensors etc. For this the binding creates various channels dynamically based on the status information provided by the device at initialization time. 
-If a channel is missing make sure the thing was discovered correctly and is ONLINE. If a channel is missing delete the thing and re-discover it.
+Firmware 1.9.2 for Shelly 2.5 in roller mode supports so called favorites for positions.
+You could use the Shelly App to setup 4 different positions (percentage) and assign id 1-4.
+The channel 'roller#rollerFav' allows to select those from openHAB and the roller moves to the desired position.
+In the thing configuration you could also configure an id when the 'roller#control' channel receives UP or DOWN.
+Values 1-4 are selecting the corresponding favorite id in the Shelly App, 0 means no favorite.
 
 ### Thing Status
 
@@ -216,6 +229,9 @@ Please note: Once events are filtered they are “lost”, you can’t find them
 |eventsSwitch      |true: register event "trigger of switching the relay output"  |    no   |true                                              |
 |eventsSensorReport|true: register event "posted updated sensor data"             |    no   |true for sensor devices                           |
 |eventsCoIoT       |true: Listen for CoIoT/COAP events                            |    no   |true for battery devices, false for others        |
+|eventsRoller      |true: register event "trigger" when the roller updates status |    no   |true for roller devices                           |
+|favoriteUP        |0-4: Favorite id for UP (see Roller Favorites)                |    no   |0 = no favorite id                                |
+|favoriteDOWN      |0-4: Favorite id for DOWN (see Roller Favorites)              |    no   |0 = no favorite id                                |
 
 
 ### General Notes
@@ -507,10 +523,11 @@ The thing id is derived from the service name, so that's the reason why the thin
 |----------|-------------|---------|---------|--------------------------------------------------------------------------------------|
 |roller    |control      |Rollershutter|r/w  |can be open (0%), stop, or close (100%); could also handle ON (open) and OFF (close)  |
 |          |input        |Switch   |yes      |ON: Input/Button is powered, see General Notes on Channels                            |
+|          |event        |Trigger  |yes      |Roller event/trigger with payload ROLLER_OPEN / ROLLER_CLOSE / ROLLER_STOP            |
 |          |rollerpos    |Number   |r/w      |Roller position: 100%=open...0%=closed; gets updated when the roller stops, see Notes |
+|          |rollerFav    |Number   |r/w      |Select roller position favorite (1-4, 0=no), see Notes                                |
 |          |state        |String   |yes      |Roller state: open/close/stop                                                         |
 |          |stopReason   |String   |yes      |Last stop reasons: normal, safety_switch or obstacle                                  |
-|          |event        |Trigger  |yes      |Roller event/trigger with payload ROLLER_OPEN / ROLLER_CLOSE / ROLLER_STOP            |
 |meter     |currentWatts |Number   |yes      |Current power consumption in Watts                                                    |
 |          |lastPower1   |Number   |yes      |Accumulated energy consumption in Watts for the full last minute                      |
 |          |totalKWH     |Number   |yes      |Total energy consumption in Watts since the device powered up (reset on restart)      |
@@ -521,6 +538,8 @@ The roller positioning calibration has to be performed using the Shelly App befo
 ### Shelly 2.5 - relay mode (thing-type:shelly25-relay) 
 
 The Shelly 2.5 includes 2 meters, one for each channel.
+Firmware 1.9.2 or newer is required to use the roller position favorites, which are defined in the Shelly App.
+
 
 |Group     |Channel      |Type     |read-only|Description                                                                      |
 |----------|-------------|---------|---------|---------------------------------------------------------------------------------|
@@ -893,7 +912,47 @@ Number Shelly_Power     "Bath Room Light Power"                {channel="shelly:
 
 ### shelly.rules
 
-reading colors from color picker:
+#### Observe battery status
+
+pre-requisites:
+
+- Install Send Mail Action
+- Define a group called gBatteries
+Group   gBattery        "Batterien"         <battery>       (All)
+- Link battery channel for all you Shelly battery powered devices
+- Add battery items to group gBattery
+
+```
+val String mailTo     = "alarm@openhab.me"
+
+/* ------------- Battery Monitor ----------- */
+
+rule "Battery Monitor"
+when
+    System started or
+    Time cron "0 0 10 * * ?"
+then
+    logInfo("BatteryMon", "Check Battery state")
+
+    if (! gBattery.allMembers.filter([state < lowBatteryThreshold]).empty) {
+        message = "Battery levels:\n"
+
+        var report = gBattery.allMembers.filter([ state instanceof DecimalType ]).sortBy([ state instanceof DecimalType ]).map[ 
+        name + ": " + state.format("%d%%\n") ]
+        message = message + report
+
+        message = message + "\nBattery Level:\n"
+        gBattery?.allMembers.forEach([sw|
+            message = message + sw.name + ": " + state.format("%d%%\n")
+        ])
+
+        sendMail(mailTo, "Home: LOW Battery Alert!", message)
+    }
+    logInfo("BatteryMon", "Batteries checked.")
+end
+```
+
+#### Reading colors from color picker:
 
 ```
 import org.openhab.core.library.types.*
