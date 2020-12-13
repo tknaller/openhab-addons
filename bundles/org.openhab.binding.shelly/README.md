@@ -65,14 +65,6 @@ This mode also overrules event settings in the thing configuration.
 Disabling this feature allows granular control, which event types will be used. This is also required when the Shelly devices are not located on the same IP subnet (e.g. using a VPN).
 In this case autoCoIoT should be disabled, CoIoT events will not work, because the underlying CoAP protocol is based on Multicast IP, which usually doesn't passes a VPN or routed network.
 
-## Discovery
-
-In general devices need to be powered to be discovered by the binding.
-The binding uses mDNS to discover the Shelly devices. 
-They periodically announce their presence, which is used by the binding to find them on the local network.
-
-Sometimes you need to run the manual discovery multiple times until you see all your devices.
-
 ## Firmware
 
 The binding requires firmware version 1.7.0 or newer to enable all features.
@@ -94,6 +86,14 @@ Once you have updated the device **you should delete and re-discover** the openH
 Battery powered devices need to wake up by pressing the button.
 This makes sure that the Thing is correctly initialized and all supported channels are created. openHAB will kill the item linkage.
 At a minimum you should restart the binding on the openHAB console if you don't want to re-discover the things.
+
+## Discovery
+
+In general devices need to be powered to be discovered by the binding.
+The binding uses mDNS to discover the Shelly devices. 
+They periodically announce their presence, which is used by the binding to find them on the local network.
+
+Sometimes you need to run the manual discovery multiple times until you see all your devices.
 
 ### Password Protected Devices
 
@@ -912,6 +912,42 @@ Number Shelly_Power     "Bath Room Light Power"                {channel="shelly:
 
 ### shelly.rules
 
+#### Catch alarms
+
+```
+rule "Monitor Shelly Restartt"
+when
+    Channel "shelly:shelly2-relay:XXXXXX:device#alarm" triggered OVERTEMP
+then
+        logInfo("Shelly1", "Device is getting to hot!!")
+end
+```
+
+#### Trigger scene with Button-1
+
+```
+rule "Button-1 SHORT_PRESSED"
+when
+    Channel "shelly:shellybutton1:d8f15bXXXXXX:status#button" triggered SHORT_PRESSED
+then
+    logInfo("Button", "Shelly Button reported SHORT_PRESSED")
+    if (MyTV.state != OFF) {
+        logInfo("Button", "   switch TV OFF")
+        sendCommand(MyTV, "OFF")
+    } else {
+        logInfo("Button", "   switch TV to ON")
+        sendCommand(MyTV, ON)
+    }
+end
+
+rule "Button-1 TRIPLE_PRESSED"
+when
+    Channel "shelly:shellybutton1:d8f15bXXXXXX:status#button" triggered TRIPLE_PRESSED
+then
+    logInfo("Button", "Shelly Button reported TRIPLE_PRESSED")
+end
+```
+
 #### Observe battery status
 
 pre-requisites:
@@ -952,7 +988,52 @@ then
 end
 ```
 
-#### Reading colors from color picker:
+#### Control CCT LED stripes
+
+Usage & Requirements:
+- 4 Items per thing required. Example:
+    Group gCCT_LED        "All CCT LEDs"
+    Dimmer    LED1_brightness     "Brightness"    (gCCT_LED)
+    Dimmer    LED1_temperature    "Temperature"   (gCCT_LED)
+    Dimmer    LED1_cw         "cold white Channel"
+    Dimmer    LED1_ww         "warm white Channel"
+- Items "LED1" and "LED1_temperature" are proxy items and to be used in sitemaps. Both have to be a member of group "gCCT_LED"
+- Items "LED1_cw" and "LED_ww" are litems linked to thing channel. Not required in sitemaps. Do NOT include in this group
+- Prefix: needs to be constant per Thing.
+
+```
+val String strSuffixSeparator = "_"             //Separator: 1 unique separator
+val String strSuffixBrightness = "brightness"           //Suffix: at your choice
+val String strSuffixTemperature = "temperature"         //Suffix: at your choice
+
+rule "CCT_LED"
+when
+    Member of gCCT_LED changed
+then
+    logInfo("CCT_LED", "Item '{}' received command {}",triggeringItem.name,triggeringItem.state)
+    var Number iNewCwState     //New value for cold white channel
+    var Number iNewWwState     //New value for warm white channel
+    val String strThing = triggeringItem.name.toString.split(strSuffixSeparator).get(0)     //Get Name of "Thing", i.e. LED1 or LED2 or...
+    val String strType = triggeringItem.name.toString.split(strSuffixSeparator).get(1)      //Get Type (brightness oder temperature)
+
+    if ((strType == strSuffixBrightness) && (triggeringItem.state as Number) == 0) {        //no math required. just switch off
+        iNewCwState = 0
+        iNewWwState = 0
+    }
+    else {
+        var iBrightness = gCCT_LED.members.findFirst[ t | t.name == strThing+strSuffixSeparator+strSuffixBrightness ].state as Number
+        var iColor = gCCT_LED.members.findFirst[ t | t.name == strThing+strSuffixSeparator+strSuffixTemperature ].state as Number
+        logInfo("CCT_LED", "Setting 'Brightness' to {} and 'White Color' to {}",iBrightness,iColor)
+        iNewWwState = Math::round ((iColor / 100 * iBrightness).intValue)
+        iNewCwState = iBrightness - iNewWwState
+    }
+    logInfo("CCT_LED", "Changing channel 'Cold White' to {} and 'Warm White' to {}",iNewCwState,iNewWwState)
+    sendCommand(strThing + "_cw", iNewCwState.toString)
+    sendCommand(strThing + "_ww", iNewWwState.toString)
+end
+```
+
+#### Reading colors from Color Picker:
 
 ```
 import org.openhab.core.library.types.*
