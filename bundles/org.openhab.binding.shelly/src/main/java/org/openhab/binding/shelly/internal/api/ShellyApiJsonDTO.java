@@ -665,7 +665,7 @@ public class ShellyApiJsonDTO {
         @SerializedName("btn_type")
         public String btnType;
 
-        // included attributes not yet processed
+        // attributes not yet processed
         // public String name;
         // @SerializedName("btn_reverse")
         // public Integer btnReverse;

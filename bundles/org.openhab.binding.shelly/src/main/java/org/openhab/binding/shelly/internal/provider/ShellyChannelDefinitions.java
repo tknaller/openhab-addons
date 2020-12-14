@@ -134,7 +134,7 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_FAV, "rollerFavorite", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE, "rollerState", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STOPR, "rollerStop", ITEMT_STRING))
-                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_INPUT, "inputState", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_STATUS_EVENTTYPE, "lastEvent", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_STATUS_EVENTCOUNT, "eventCount", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER, "system:button", "system:button"))
@@ -176,7 +176,7 @@ public class ShellyChannelDefinitions {
 
                 // Button/ix3
                 .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
-                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_STATUS_EVENTTYPE, "eventType", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_STATUS_EVENTTYPE, "lastEvent", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_STATUS_EVENTCOUNT, "eventCount", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_BUTTON_TRIGGER, "system:button", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_LAST_UPDATE, "lastUpdate", ITEMT_DATETIME))
@@ -315,7 +315,7 @@ public class ShellyChannelDefinitions {
                 String suffix = multi ? String.valueOf(i + 1) : "";
                 ShellyInputState input = inputs.get(i);
                 addChannel(thing, add, true, group, CHANNEL_INPUT + suffix);
-                if (!profile.isRoller) {
+                if (profile.inButtonMode(i)) {
                     addChannel(thing, add, input.event != null, group, CHANNEL_STATUS_EVENTTYPE + suffix);
                     addChannel(thing, add, input.eventCount != null, group, CHANNEL_STATUS_EVENTCOUNT + suffix);
                 }

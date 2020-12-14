@@ -199,7 +199,7 @@ public class ShellyCoIoTProtocol {
                     || ((lastEventCount[idx] != -1) && (count != lastEventCount[idx])))) {
                 if (!profile.isButton || (profile.isButton && (serial != 0x200))) { // skip duplicate on wake-up
                     logger.debug("{}: Trigger event {}", thingName, inputEvent[idx]);
-                    thingHandler.triggerButton(group, idx + 1, inputEvent[idx]);
+                    thingHandler.triggerButton(group, idx, inputEvent[idx]);
                 }
             }
             lastEventCount[idx] = count;
@@ -238,7 +238,7 @@ public class ShellyCoIoTProtocol {
                 logger.trace("{}: updatePower() for L={}", thingName, checkL);
             }
 
-            // We need to update brigthtess and on/off state at the same time to avoid "flipping brightness slider" in
+            // We need to update brightness and on/off state at the same time to avoid "flipping brightness slider" in
             // the UI
             double brightness = -1.0;
             double power = -1.0;

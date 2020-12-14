@@ -65,12 +65,6 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
     private final HttpClient httpClient;
     private final ConfigurationAdmin configurationAdmin;
 
-    /**
-     * OSGI Service Activation
-     *
-     * @param componentContext
-     * @param localeProvider
-     */
     @Activate
     public ShellyDiscoveryParticipant(@Reference ConfigurationAdmin configurationAdmin,
             @Reference HttpClientFactory httpClientFactory, @Reference LocaleProvider localeProvider,

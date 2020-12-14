@@ -853,38 +853,6 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
      * @param status Shelly device status
      * @return true: one or more inputs were updated
      */
-    /*
-     * public boolean updateInputs(String groupName, ShellySettingsStatus status, int index) {
-     * if ((status.input == null)) {
-     * return false;
-     * }
-     *
-     * boolean updated = false;
-     * if (index == 0) {
-     * // RGBW2: a single int rather than an array
-     * updated |= updateChannel(groupName, CHANNEL_INPUT,
-     * getInteger(status.input) == 0 ? OnOffType.OFF : OnOffType.ON);
-     * } else {
-     * if (profile.isDimmer || profile.isRoller) {
-     * ShellyInputState state1 = status.inputs.get(0);
-     * ShellyInputState state2 = status.inputs.get(1);
-     * logger.trace("{}: Updating {}#input1 with {}, input2 with {}", thingName, groupName,
-     * getOnOff(state1.input), getOnOff(state2.input));
-     * updated |= updateChannel(groupName, CHANNEL_INPUT + "1", getOnOff(state1.input));
-     * updated |= updateChannel(groupName, CHANNEL_INPUT + "2", getOnOff(state2.input));
-     * } else {
-     * if (index < status.inputs.size()) {
-     * ShellyInputState state = status.inputs.get(index);
-     * updated |= updateChannel(groupName, CHANNEL_INPUT, getOnOff(state.input));
-     * } else {
-     * logger.debug("{}: Unable to update input, index is out of range ({}/{})", thingName, index,
-     * status.inputs.size());
-     * }
-     * }
-     * }
-     * return updated;
-     * }
-     */
     public boolean updateInputs(ShellySettingsStatus status) {
         boolean updated = false;
 

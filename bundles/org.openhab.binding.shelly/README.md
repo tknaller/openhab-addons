@@ -222,6 +222,7 @@ Please note: Once events are filtered they are “lost”, you can’t find them
 |deviceIp          |IP address of the Shelly device                               |    yes  |none                                              |
 |userId            |The user id used for HTTP authentication                      |    no   |none                                              |
 |password          |Password for HTTP authentication*                             |    no   |none                                              |
+|brightnessAutoOn  |true: Output will be activated when brightness > 0 is set     |    no   |true                                              |
 |lowBattery        |Threshold for battery level. Set alert when level is below.   |    no   |20 (=20%), only for battery powered devices       |
 |updateInterval    |Interval for the background status check in seconds.          |    no   |1h for battery powered devices, 60s for all others|
 |eventsButton      |true: register event "trigger when a button is pushed"        |    no   |false                                             |
@@ -613,7 +614,11 @@ The Shelly 4Pro provides 4 relays and 4 power meters.
 |          |lastUpdate   |DateTime |yes      |Timestamp of the last measurement                                                |
 
 
-The Dimmer should be calibrated using the Shelly App.
+Note: The Dimmer should be calibrated using the Shelly App.
+
+Use the thing configuration option brightnessAutoOn you could decide if the light is turned on when a brightness > 0 is set.
+true:  Brightness will be set and device output is powered = light turns on with the new brightness
+false: Brightness will be set, but output stays unchanged so light will not be switched on when it's currently off.
 
 ### Shelly ix3 (thing-type: shellyix3)
 
@@ -723,6 +728,10 @@ The Dimmer should be calibrated using the Shelly App.
 |          |effect       |Number   |r/w      |Puts the light into effect mode: 0..3)                                 |
 |          |             |         |         |0=No effect, 1=Meteor Shower, 2=Gradual Change, 3=Flash                |
 |meter     |currentWatts |Number   |yes      |Current power consumption in Watts                                     |
+
+Use the thing configuration option brightnessAutoOn you could decide if the light is turned on when a brightness > 0 is set.
+true:  Brightness will be set and device output is powered = light turns on with the new brightness
+false: Brightness will be set, but output stays unchanged so light will not be switched on when it's currently off.
 
 ### Shelly RGBW2 in White Mode (thing-type: shellyrgbw2-white)
 

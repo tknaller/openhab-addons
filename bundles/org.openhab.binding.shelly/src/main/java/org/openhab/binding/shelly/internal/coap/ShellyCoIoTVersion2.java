@@ -88,7 +88,6 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
         switch (sen.id) {
             case "3103": // H, humidity, 0-100 percent, unknown 999
             case "3106": // L, luminosity, lux, U32, -1
-            case "3109": // S, tilt, 0-180deg, -1
             case "3110": // S, luminosityLevel, dark/twilight/bright, "unknown"=unknown
             case "3111": // B, battery, 0-100%, unknown -1
             case "3112": // S, charger, 0/1
@@ -96,6 +95,7 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
             case "5101": // S, brightness, 1-100%
                 // processed by base handler
                 break;
+
             case "6109": // P, overpowerValue, W, U32
             case "9101":
                 // Relay: S, mode, relay/roller or
@@ -170,6 +170,10 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
                 } else {
                     logger.debug("{}: Sensor error reported, check device, battery and installation", thingName);
                 }
+                break;
+            case "3109": // S, tilt, 0-180deg, -1
+                updateChannel(updates, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_TILT,
+                        toQuantityType(s.value, DIGITS_NONE, SmartHomeUnits.DEGREE_ANGLE));
                 break;
             case "3113": // S, sensorOp, warmup/normal/fault
                 updateChannel(updates, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_SSTATE, getStringType(s.valueStr));
