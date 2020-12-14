@@ -379,9 +379,6 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                         updated |= updateChannel(groupName, CHANNEL_TIMER_AUTOOFF,
                                 toQuantityType(getDouble(rsettings.autoOff), SmartHomeUnits.SECOND));
                     }
-
-                    // Update input(s) state
-                    // updated |= updateInputs(groupName, status, i);
                 }
                 i++;
             }
@@ -417,7 +414,6 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
 
                     updated |= updateChannel(groupName, CHANNEL_ROL_CONTROL_STATE, new StringType(state));
                     updated |= updateChannel(groupName, CHANNEL_ROL_CONTROL_STOPR, getStringType(control.stopReason));
-                    // updated |= updateInputs(groupName, status, i);
 
                     i++;
                 }
@@ -475,7 +471,6 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                             toQuantityType(getDouble(dsettings.autoOff), SmartHomeUnits.SECOND));
                 }
 
-                // updated |= updateInputs(groupName, orgStatus, l);
                 l++;
             }
         }

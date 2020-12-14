@@ -161,7 +161,6 @@ public class ShellyCoapHandler implements ShellyCoapListener {
         String payload = "";
         String devId = "";
         String uri = "";
-        // int validity = 0;
         int serial = -1;
         try {
             if (logger.isDebugEnabled()) {

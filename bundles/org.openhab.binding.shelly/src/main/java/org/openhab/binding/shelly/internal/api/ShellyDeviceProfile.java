@@ -139,7 +139,7 @@ public class ShellyDeviceProfile {
         }
 
         if (settings.sleepMode != null) {
-            // Sensor, usally 12h
+            // Sensor, usually 12h
             updatePeriod = getString(settings.sleepMode.unit).equalsIgnoreCase("m") ? settings.sleepMode.period * 60 // minutes
                     : settings.sleepMode.period * 3600; // hours
             updatePeriod += 600; // give 10min extra
@@ -201,7 +201,12 @@ public class ShellyDeviceProfile {
         if (hasRelays) {
             // Dimmer-2 doesn't report inputs under /settings, only on /status, we need to update that info after
             // initialization
-            numInputs = status.inputs != null ? status.inputs.size() : 1;
+            if (status.inputs != null) {
+                numInputs = status.inputs.size();
+            } else if (status.input != null) {
+                // RGBW2
+                numInputs = 1;
+            }
         }
     }
 
@@ -215,6 +220,8 @@ public class ShellyDeviceProfile {
             return CHANNEL_GROUP_DIMMER_CONTROL;
         } else if (isRoller) {
             return numRollers == 1 ? CHANNEL_GROUP_ROL_CONTROL : CHANNEL_GROUP_ROL_CONTROL + idx;
+        } else if (isDimmer) {
+            return CHANNEL_GROUP_RELAY_CONTROL;
         } else if (hasRelays) {
             return numRelays == 1 ? CHANNEL_GROUP_RELAY_CONTROL : CHANNEL_GROUP_RELAY_CONTROL + idx;
         } else if (isLight) {
@@ -249,6 +256,9 @@ public class ShellyDeviceProfile {
         int idx = i + 1; // channel names are 1-based
         if (isRGBW2 || isIX3) {
             return ""; // RGBW2 has only 1 channel
+        } else if (isRoller || isDimmer) {
+            // Roller has 2 relays, but it will be mapped to 1 roller with 2 inputs
+            return String.valueOf(idx);
         } else if (hasRelays) {
             return (numRelays) == 1 && (numInputs >= 2) ? String.valueOf(idx) : "";
         }
@@ -289,8 +299,7 @@ public class ShellyDeviceProfile {
 
         logger.trace("{}: Checking for trigger, button-type[{}] is {}", thingName, idx, btnType);
         return btnType.equalsIgnoreCase(SHELLY_BTNT_MOMENTARY) || btnType.equalsIgnoreCase(SHELLY_BTNT_MOM_ON_RELEASE)
-                || btnType.equalsIgnoreCase(SHELLY_BTNT_DETACHED) || btnType.equalsIgnoreCase(SHELLY_BTNT_ONE_BUTTON)
-                || btnType.equalsIgnoreCase(SHELLY_BTNT_TWO_BUTTON);
+                || btnType.equalsIgnoreCase(SHELLY_BTNT_ONE_BUTTON) || btnType.equalsIgnoreCase(SHELLY_BTNT_TWO_BUTTON);
     }
 
     public int getRollerFav(int id) {
