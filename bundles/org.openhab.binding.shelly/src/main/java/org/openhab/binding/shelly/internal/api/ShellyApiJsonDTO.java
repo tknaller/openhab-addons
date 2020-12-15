@@ -447,6 +447,27 @@ public class ShellyApiJsonDTO {
         public Boolean positioning;
     }
 
+    public static class ShellySettingsRgbwLight {
+        public String name;
+        public Boolean ison; // true: output is ON
+        public Integer brightness;
+        public Integer transition;
+        public String default_state;
+        @SerializedName("auto_on")
+        public Double autoOn; // Automatic flip back timer, seconds. Will engage after turning Shelly1 OFF.
+        @SerializedName("auto_off")
+        public Double autoOff; // Automatic flip back timer, seconds. Will engage after turning Shelly1 ON.
+        public Boolean schedule;
+        @SerializedName("btn_type")
+        public String btnType; // Accepted values: momentary, toggle, edge, detached - // see SHELLY_BTNT_xxx
+        @SerializedName("btn_reverse")
+        public Integer btnReverse; // Accepted values: momentary, toggle, edge, detached - // see SHELLY_BTNT_xxx
+        @SerializedName("out_on_url")
+        public String outOnUrl; // output is activated
+        @SerializedName("out_off_url")
+        public String outOffUrl; // output is deactivated
+    }
+
     public static class ShellyFavPos { // FW 1.9.2+ in roller mode
         public String name;
         public Integer pos;
@@ -540,6 +561,7 @@ public class ShellyApiJsonDTO {
 
         public ArrayList<ShellySettingsRelay> relays;
         public ArrayList<ShellySettingsDimmer> dimmers;
+        public ArrayList<ShellySettingsRgbwLight> lights;
         public ArrayList<ShellySettingsEMeter> emeters;
         public ArrayList<ShellySettingsInput> inputs; // ix3
 

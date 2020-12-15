@@ -414,6 +414,13 @@
 			</options>
 		</state>
 	</channel-type>
+	<channel-type id="rollerSafety" advanced="true">
+		<item-type>Switch</item-type>
+		<label>Safety Switch</label>
+		<description>Status of the safety switch</description>
+		<state readOnly="true">
+		</state>
+	</channel-type>
 	<channel-type id="inputState">
 		<item-type>Switch</item-type>
 		<label>Input</label>

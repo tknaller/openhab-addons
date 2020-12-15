@@ -380,14 +380,9 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
                 updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_NAME, getStringType(profile.settings.name));
                 updated |= this.updateDeviceStatus(status);
                 updated |= ShellyComponents.updateDeviceStatus(this, status);
-                // if (!channelsCreated || !cache.isEnabled() || (coap.getVersion() <
-                // ShellyCoapJSonDTO.COIOT_VERSION_2)) {
+                updated |= updateInputs(status);
                 updated |= updateMeters(this, status);
                 updated |= updateSensors(this, status);
-                updated |= updateInputs(status);
-                // } else {
-                // logger.debug("Skipping Meter/Sensor/Input updates, because device is running CoIoT version 2");
-                // }
 
                 // All channels must be created after the first cycle
                 channelsCreated = true;
@@ -865,7 +860,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
 
                 if (!areChannelsCreated()) {
                     updateChannelDefinitions(
-                            ShellyChannelDefinitions.createInputChannels(thing, profile, status.inputs, group));
+                            ShellyChannelDefinitions.createInputChannels(thing, profile, status, group));
                 }
 
                 updated |= updateChannel(group, CHANNEL_INPUT + suffix, getOnOff(input.input));

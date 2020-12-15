@@ -109,12 +109,6 @@
 	<channel-group-type id="rgbw2ColorControl">
 		<label>Light Control</label>
 		<description>Control your light channels</description>
-		<channels>
-			<channel id="power" typeId="system.power"/>
-			<channel id="autoOn" typeId="timerAutoOn"/>
-			<channel id="autoOff" typeId="timerAutoOff"/>
-			<channel id="timerActive" typeId="timerActive"/>
-		</channels>
 	</channel-group-type>
 	<channel-group-type id="rgbw2WhiteControl">
 		<label>White Control</label>

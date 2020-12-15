@@ -15,7 +15,6 @@ package org.openhab.binding.shelly.internal.provider;
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -37,12 +36,14 @@ import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyControlRol
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyInputState;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsDimmer;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsEMeter;
+import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsGlobal;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsMeter;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsRelay;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusRelay;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusSensor;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
+import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -134,13 +135,23 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_FAV, "rollerFavorite", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE, "rollerState", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STOPR, "rollerStop", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_ROL_CONTROL_SAFETY, "rollerSafety", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_STATUS_EVENTTYPE, "lastEvent", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_STATUS_EVENTCOUNT, "eventCount", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER, "system:button", "system:button"))
 
                 // RGBW2
+
+                .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_LIGHT_POWER, "system_power",
+                        ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_BUTTON_TRIGGER, "system:button",
+                        ITEMT_STRING))
+                .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_STATUS_EVENTTYPE, "lastEvent",
+                        ITEMT_STRING))
+                .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_STATUS_EVENTCOUNT, "eventCount",
+                        ITEMT_NUMBER))
 
                 // Power Meter
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_CURRENTWATTS, "meterWatts", ITEMT_POWER))
@@ -304,16 +315,16 @@ public class ShellyChannelDefinitions {
     }
 
     public static Map<String, Channel> createInputChannels(final Thing thing, final ShellyDeviceProfile profile,
-            @Nullable ArrayList<ShellyInputState> inputs, String group) {
+            final ShellySettingsStatus status, String group) {
         Map<String, Channel> add = new LinkedHashMap<>();
-        if (inputs != null) {
+        if (status.inputs != null) {
             // Create channels per input. For devices with more than 1 input (Dimmer, 1L) multiple channel sets are
             // created by adding the index to the channel name
             boolean multi = ((profile.numRelays == 1) || profile.isDimmer || profile.isRoller)
                     && (profile.numInputs >= 2);
             for (int i = 0; i < profile.numInputs; i++) {
                 String suffix = multi ? String.valueOf(i + 1) : "";
-                ShellyInputState input = inputs.get(i);
+                ShellyInputState input = status.inputs.get(i);
                 addChannel(thing, add, true, group, CHANNEL_INPUT + suffix);
                 if (profile.inButtonMode(i)) {
                     addChannel(thing, add, input.event != null, group, CHANNEL_STATUS_EVENTTYPE + suffix);
@@ -322,18 +333,31 @@ public class ShellyChannelDefinitions {
                 addChannel(thing, add, true, group,
                         (!profile.isRoller ? CHANNEL_BUTTON_TRIGGER + suffix : CHANNEL_EVENT_TRIGGER));
             }
+        } else if (status.input != null) {
+            // old RGBW2 firmware
+            addChannel(thing, add, true, group, CHANNEL_INPUT);
+            addChannel(thing, add, true, group, CHANNEL_BUTTON_TRIGGER);
         }
         return add;
     }
 
     public static Map<String, Channel> createRollerChannels(Thing thing, final ShellyControlRoller roller) {
         Map<String, Channel> add = new LinkedHashMap<>();
-        addChannel(thing, add, roller.state != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_CONTROL);
-        addChannel(thing, add, roller.state != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE);
-        addChannel(thing, add, roller.state != null, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER);
-        addChannel(thing, add, roller.stopReason != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STOPR);
+        addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_CONTROL);
+        addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE);
+        addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER);
         addChannel(thing, add, roller.currentPos != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_POS);
-        addChannel(thing, add, roller.currentPos != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_FAV);
+        addChannel(thing, add, roller.stopReason != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STOPR);
+        addChannel(thing, add, roller.safetySwitch != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_SAFETY);
+
+        ShellyBaseHandler handler = (ShellyBaseHandler) thing.getHandler();
+        if (handler != null) {
+            ShellySettingsGlobal settings = handler.getProfile().settings;
+            ;
+            if (getBool(settings.favoritesEnabled) && (settings.favorites != null)) {
+                addChannel(thing, add, roller.currentPos != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_FAV);
+            }
+        }
         return add;
     }
 
@@ -536,7 +560,7 @@ public class ShellyChannelDefinitions {
     }
 
     public static class ChannelMap {
-        private final Map<String, ShellyChannel> map = new LinkedHashMap<>();
+        private final Map<String, ShellyChannel> map = new HashMap<>();
 
         private ChannelMap add(ShellyChannel def) {
             map.put(def.getChanneId(), def);
@@ -547,6 +571,9 @@ public class ShellyChannelDefinitions {
             ShellyChannel def = null;
             if (channelName.contains("#")) {
                 def = map.get(channelName);
+                if (def != null) {
+                    return def;
+                }
             }
             for (HashMap.Entry<String, ShellyChannel> entry : map.entrySet()) {
                 if (entry.getValue().channel.contains("#" + channelName)) {

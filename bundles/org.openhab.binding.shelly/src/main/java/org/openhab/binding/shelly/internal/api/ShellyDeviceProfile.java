@@ -24,6 +24,7 @@ import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsDi
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsGlobal;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsInput;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsRelay;
+import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsRgbwLight;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -203,10 +204,10 @@ public class ShellyDeviceProfile {
             // initialization
             if (status.inputs != null) {
                 numInputs = status.inputs.size();
-            } else if (status.input != null) {
-                // RGBW2
-                numInputs = 1;
             }
+        } else if (status.input != null) {
+            // RGBW2
+            numInputs = 1;
         }
     }
 
@@ -219,13 +220,13 @@ public class ShellyDeviceProfile {
         if (isDimmer) {
             return CHANNEL_GROUP_DIMMER_CONTROL;
         } else if (isRoller) {
-            return numRollers == 1 ? CHANNEL_GROUP_ROL_CONTROL : CHANNEL_GROUP_ROL_CONTROL + idx;
+            return numRollers <= 1 ? CHANNEL_GROUP_ROL_CONTROL : CHANNEL_GROUP_ROL_CONTROL + idx;
         } else if (isDimmer) {
             return CHANNEL_GROUP_RELAY_CONTROL;
         } else if (hasRelays) {
-            return numRelays == 1 ? CHANNEL_GROUP_RELAY_CONTROL : CHANNEL_GROUP_RELAY_CONTROL + idx;
+            return numRelays <= 1 ? CHANNEL_GROUP_RELAY_CONTROL : CHANNEL_GROUP_RELAY_CONTROL + idx;
         } else if (isLight) {
-            return numRelays == 1 ? CHANNEL_GROUP_LIGHT_CONTROL : CHANNEL_GROUP_LIGHT_CONTROL + idx;
+            return numRelays <= 1 ? CHANNEL_GROUP_LIGHT_CONTROL : CHANNEL_GROUP_LIGHT_CONTROL + idx;
         } else if (isButton) {
             return CHANNEL_GROUP_STATUS;
         } else if (isSensor) {
@@ -295,6 +296,9 @@ public class ShellyDeviceProfile {
                 ShellySettingsRelay relay = settings.relays.get(idx);
                 btnType = getString(relay.btnType);
             }
+        } else if (isRGBW2 && (settings.lights != null) && (idx < settings.lights.size())) {
+            ShellySettingsRgbwLight light = settings.lights.get(idx);
+            btnType = light.btnType;
         }
 
         logger.trace("{}: Checking for trigger, button-type[{}] is {}", thingName, idx, btnType);
