@@ -210,6 +210,7 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_ROL_CONTROL_TIMER = "timer";
     public static final String CHANNEL_ROL_CONTROL_STATE = "state";
     public static final String CHANNEL_ROL_CONTROL_STOPR = "stopReason";
+    public static final String CHANNEL_ROL_CONTROL_SAFETY = "safety";
 
     // Dimmer
     public static final String CHANNEL_GROUP_DIMMER_CONTROL = CHANNEL_GROUP_RELAY_CONTROL;

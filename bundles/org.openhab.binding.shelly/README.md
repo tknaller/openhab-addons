@@ -1,12 +1,11 @@
 
 # Shelly Binding
 
-This Binding integrates [Alterco Shelly devices](https://shelly.cloud).
+This Binding integrates [Shelly devices](https://shelly.cloud) devloped by Alterco.
 ![](https://shop.shelly.cloud/image/cache/catalog/shelly_1/s1_x1-80x80.jpg)  ![](https://shop.shelly.cloud/image/cache/catalog/shelly_dimmer2/shelly_dimmer2_x1-80x80.jpg)  ![](https://shop.shelly.cloud/image/cache/catalog/shelly_vintage/shelly_vintage_A60-80x80.jpg)   ![](https://shop.shelly.cloud/image/cache/catalog/shelly_plug_s/s_plug_s_x1-80x80.jpg)   ![](https://shop.shelly.cloud/image/cache/catalog/shelly_button1/shelly_button1_x1-80x80.jpg)   ![](https://shop.shelly.cloud/image/cache/catalog/shelly_gas/shelly_gas_eu-80x80.jpg)   ![](https://shop.shelly.cloud/image/cache/catalog/shelly_ht/s_ht_x1-80x80.jpg)
 
 Alterco provides a rich set of smart home devices. All of them are WiFi enabled (2,4GHz, IPv4 only) and provide a documented API. 
-The binding is officially acknowledged by Alterco and openHAB is listed as a reference.
-Alterco directly supports this project.
+The binding is officially acknowledged by Alterco and openHAB is listed as a reference and directly supports the openHAB community.
 
 The binding controls the devices independently from the Alterco Shelly Cloud (in fact it can be disabled).
 The binding co-exists with Shelly App for Smartphones, Shelly Web App, Shelly Cloud, mqqt and other 3rd party Apps.
@@ -14,6 +13,8 @@ The binding co-exists with Shelly App for Smartphones, Shelly Web App, Shelly Cl
 The binding focuses on reporting the device status and device control.
 Initial setup and device configuration has to be performed using the Shelly Apps.
 The binding gets in sync with the next status refresh.
+
+Refer to [Advanced Users](doc/AdvancedUsers.md) for more information on openHAB Shelly integration, e.g. firmware upgrade, network communication or log filtering.
 
 ## Supported Devices
 
@@ -67,20 +68,14 @@ In this case autoCoIoT should be disabled, CoIoT events will not work, because t
 
 ## Firmware
 
-The binding requires firmware version 1.7.0 or newer to enable all features.
+The binding requires firmware version 1.7.0 or newer to enable all features, version 1.9.2 is recommended.
 Some of the features are enabled dynamically or are not available depending on device type and firmware release.
 The Web UI of the Shelly device displays the current firmware version under Settings:Firmware and shows an update option when a newer version is available.
 
-|Version|Notes                                                                                             |
-|-------|--------------------------------------------------------------------------------------------------|
-|1.5.7  |Minimum supported version. Older versions work in general, but have impacts to functionality (e.g. no events for battery powered devices). The binding displays a WARNING in the log if the firmware is older.|
-|1.6.x  |First stable CoIoT implementation. AutoCoIoT is enabled when firmware version >= 1.6 is detected. |
-|1.7.x  |Add additional status update values, fixes various issues                                         |
-|1.8.0  |Brings CoIoT version 2, which fixes a lot issues and gaps of version 1.                           |
-|1.9.2  |Various improvements, roller favorites, CoAP fixes                                                |
-
 The current firmware version is reported in the Thing Properties.
 A dedicated channel (device#updateAvailable) indicates the availability of a newer firmware. Use the device's Web UI or the Shelly App to perform the update.
+
+Check [Advanced Users](doc/AdvancedUsers.md) for information how to upgrade your device.
 
 Once you have updated the device **you should delete and re-discover** the openHAB Thing.
 Battery powered devices need to wake up by pressing the button.
@@ -164,57 +159,6 @@ Once the timer expires the device switches to OFFFLINE and the bindings starts t
 
 You could also create a rule to catch those status changes or device alarms (see rule examples).
 
-## Trouble Shooting
-
-### Network Settings
-
-Shelly devices do only support IPv4. 
-This implies that the openHAB host system has IPv4 bound to the network interface.
-The binding is only able to discover devices on the local subnet. 
-Add things manually with the given IP if you have a routed network in between or using a VPN connection.
-
-The binding enables CoIoT protocol by default if the device is running firmware 1.6 or newer.
-CoIoT is based on CoAP and uses a UDP based signaling using IP Multicast (224.0.1.187, port 5683).
-Again if the device is not on the same local IP subnet you need special router/switch configurations to utilized CoAP via IP Multicast.
-Otherwise disable the Auto-CoIoT feature in the binding config (not the thing config), disable CoIoT events in the thing configuration and enable sensors events (http callback).
-Nevertheless in this setup the binding can communicate the device, but you are loosing the benefits of CoIoT.
-
-Refer to openHAB's general documentation when running openHAB in a docker container. Enabling mDNS discovery has additional setup requirements.  
-
-### Re-discover when IP address has changed
- 
-Important: The IP address should not be changed after the device is added to openHAB.
-
-This can be achieved by
-
-- assigning a static IP address (recommended for battery powered devices) or
-- using DHCP and setup the router to always assign the same IP address to the device
-
-When the IP address changes for a device you need to delete the Thing and then re-discover the device.
-In this case channel linkage gets lost and you need to re-link the channels/items.
-
-### Log optimization
-
-The binding provides channels (e.g. heartBeat, currentWatts), which might cause a log of log output, especially when having multiple dozen Shellys.
-
-openHAB has an integrated feature to filter the event log.
-This mechanism doesn't filter the event, but the log output (items still receive the updates).
-
-A configuration is added as a new section to `openhab2-userdata/etc/org.ops4j.pax.logging.cfg`
-
-Based on this you could use the following config:
-
-```
-# custom filtering rules
-log4j2.appender.event.filter.uselessevents.type = RegexFilter
-log4j2.appender.event.filter.uselessevents.regex = .*(heartBeat|LastUpdate|lastUpdate|LetzteAktualisierung|Uptime|Laufzeit|ZuletztGesehen).*
-log4j2.appender.event.filter.uselessevents.onMatch = DENY
-log4j2.appender.event.filter.uselessevents.onMisMatch = NEUTRAL
-```
-
-This filters events for items heartBeat, lastUpdate, LetzteAktualisierung, Uptime, Laufzeit, ZuletztGesehen. Replace those strings with the items you want to filter. Use a list of items to reduce logging.
-Please note: Once events are filtered they are “lost”, you can’t find them later.
-
 ## Thing Configuration
 
 |Parameter         |Description                                                   |Mandatory|Default                                           |
@@ -237,11 +181,6 @@ Please note: Once events are filtered they are “lost”, you can’t find them
 
 ### General Notes
 
-- channels `input` and `input1`/`input2` get only updated with firmware 1.5.6+.
-- channel button: Short push and long push events require firmware version 1.5.6+.
-- Use the channel `rollerpos` only if you need the inverted roller position, otherwise use the `control` channel with item type `Number`
-- The different devices have different types of power meters, which are mapped in different sets of channels.
-
 Every device has a channel group `device` with the following channels:
 
 |Group     |Channel            |Type    |read-only|Description                                                                      |
@@ -249,7 +188,7 @@ Every device has a channel group `device` with the following channels:
 |device    |deviceName         |String  |yes      |Device name as configured in the Shelly App                                      |
 |          |uptime             |Number  |yes      |Number of seconds since the device was powered up                                |
 |          |wifiSignal         |Number  |yes      |WiFi signal strength (4=excellent, 3=good, 2=not string, 1=unreliable, 0=none)   |
-|          |innerTemp          |Number  |yes      |Internal device temperature (when provided by the device)                        |
+|          |innernalTemp       |Number  |yes      |Internal device temperature (when provided by the device)                        |
 |          |selfTest           |String  |yes      |Result from device self-test (pending/not_completed/running/completed/unknown)   |
 |          |alarm              |Trigger |yes      |Self-Test result not_completed/completed/running/pending                         |
 |          |accumulatedWatts   |Number  |yes      |Accumulated power in W of the device (including all meters)                      |
@@ -284,7 +223,7 @@ The following event types could be registered when enabled in the thing configur
 |------------------|---------------------------------------------------------------------------------------------------------------|
 |eventsButton      |This event is triggered when the device is in button mode. The device reports the ON/OFF status oh the button. |
 |eventsSwitch      |This event reports the status of the relay output. This could change by the button or API calls.               |
-|eventsPush        |The device reports the short/longpush events when in  button mode momentary, momentary_on_release or detached. |
+|eventsPush        |The device reports the short/longpush events when in  button mode momentary, momentary_on_release, one_button or two_button |
 |eventsSensorReport|Sensor devices (like H&T) provide sensor updates when this action URL is enabled.                              |
 
 Important: The binding defaults to CoIoT when firmware 1.6 or newer is detected.
@@ -352,14 +291,7 @@ A new alarm will be triggered on a new condition or every 5 minutes if the condi
 |TEMP_OVER   |Above "temperature over" threshold                                                                               |
 
 
-```
-rule "Shelly Alarm"
-when
-    Channel "shelly:shelly1:XXXXXX:device#alarm" triggered
-then
-    logInfo("Shelly", "n alarm condition was detected:" + receivedEvent.toString())
-end
-```
+Refer to section Full Example:.rules for examples how to catch alarm triggers in openHAB rules
 
 ## Channels
 
@@ -529,6 +461,7 @@ The thing id is derived from the service name, so that's the reason why the thin
 |          |rollerFav    |Number   |r/w      |Select roller position favorite (1-4, 0=no), see Notes                                |
 |          |state        |String   |yes      |Roller state: open/close/stop                                                         |
 |          |stopReason   |String   |yes      |Last stop reasons: normal, safety_switch or obstacle                                  |
+|          |safety       |Switch   |yes      |Indicates status of the Safety Switch, ON=problem detected, powered off               |
 |meter     |currentWatts |Number   |yes      |Current power consumption in Watts                                                    |
 |          |lastPower1   |Number   |yes      |Accumulated energy consumption in Watts for the full last minute                      |
 |          |totalKWH     |Number   |yes      |Total energy consumption in Watts since the device powered up (reset on restart)      |
@@ -562,8 +495,10 @@ For this the binding aggregates the power consumption of both relays and include
 |          |input        |Switch   |yes      |ON: Input/Button is powered, see General Notes on Channels                           |
 |          |state        |String   |yes      |Roller state: open/close/stop                                                        |
 |          |stopReason   |String   |yes      |Last stop reasons: normal, safety_switch or obstacle                                 |
+|          |safety       |Switch   |yes      |Indicates status of the Safety Switch, ON=problem detected, powered off               |
 |          |event        |Trigger  |yes      |Roller event/trigger with payload ROLLER_OPEN / ROLLER_CLOSE / ROLLER_STOP           |
-|meter     |             |         |         |See group meter1 for Shelly 2                                                        |
+|meter1    |             |         |         |See group meter1 for Shelly 2                                                        |
+|meter2    |             |         |         |See group meter1 for Shelly 2                                                        |
 
 The roller positioning calibration has to be performed using the Shelly App before the position can be set in percent. 
 

@@ -203,7 +203,6 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
         boolean updated = false;
         updated |= updateRelays(status);
         updated |= updateDimmers(status);
-        updated |= updateInputs(status);
         updated |= updateLed(status);
         return updated;
     }
@@ -382,10 +381,8 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                 }
                 i++;
             }
-        }
-
-        // Check for Relay in Roller Mode
-        if (profile.hasRelays && profile.isRoller && (status.rollers != null)) {
+        } else if (profile.hasRelays && profile.isRoller && (status.rollers != null)) {
+            // Check for Relay in Roller Mode
             logger.trace("{}: Updating {} rollers", thingName, profile.numRollers);
             int i = 0;
 
@@ -414,6 +411,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
 
                     updated |= updateChannel(groupName, CHANNEL_ROL_CONTROL_STATE, new StringType(state));
                     updated |= updateChannel(groupName, CHANNEL_ROL_CONTROL_STOPR, getStringType(control.stopReason));
+                    updated |= updateChannel(groupName, CHANNEL_ROL_CONTROL_SAFETY, getOnOff(control.safetySwitch));
 
                     i++;
                 }
