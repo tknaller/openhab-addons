@@ -121,8 +121,8 @@ Sometimes you need to run the discovery multiple times.
 
 Firmware 1.9.2 for Shelly 2.5 in roller mode supports so called favorites for positions.
 You could use the Shelly App to setup 4 different positions (percentage) and assign id 1-4.
-The channel 'roller#rollerFav' allows to select those from openHAB and the roller moves to the desired position.
-In the Thing configuration you could also configure an id when the 'roller#control' channel receives UP or DOWN.
+The channel `roller#rollerFav` allows to select those from openHAB and the roller moves to the desired position.
+In the Thing configuration you could also configure an id when the `roller#control` channel receives UP or DOWN.
 Values 1-4 are selecting the corresponding favorite id in the Shelly App, 0 means no favorite.
 
 ### Thing Status
@@ -325,11 +325,11 @@ Depending on the device type and firmware release channels might be not availabl
 |relay     |output       |Switch   |r/w      |Controls the relay's output channel (on/off)                                     |
 |          |outputName   |String   |yes      |Logical name of this relay output as configured in the Shelly App                |
 |          |input1       |Switch   |yes      |ON: Input/Button for input 1 is powered, see general notes on channels           |
-|          |button1      |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)             |
+|          |button1      |Trigger  |yes      |Event trigger, see section Button Events                                         |
 |          |lastEvent1   |String   |yes      |Last event type (S/SS/SSS/L) for input 1                                         |
 |          |eventCount1  |String   |yes      |Event counter for input 1                                                        |
 |          |input2       |Switch   |yes      |ON: Input/Button for channel 2 is powered, see general notes on channels         |
-|          |button2      |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)             |
+|          |button2      |Trigger  |yes      |Event trigger, see section Button Events                                         |
 |          |lastEvent2   |String   |yes      |Last event type (S/SS/SSS/L) for input 2                                         |
 |          |eventCount2  |String   |yes      |Event counter for input 2                                                        |
 |          |autoOn       |Number   |r/w      |Relay #1: Sets a  timer to turn the device ON after every OFF command; in seconds|
@@ -347,7 +347,7 @@ Depending on the device type and firmware release channels might be not availabl
 |relay     |output       |Switch   |r/w      |Controls the relay's output channel (on/off)                                     |
 |          |outputName   |String   |yes      |Logical name of this relay output as configured in the Shelly App                |
 |          |input        |Switch   |yes      |ON: Input/Button is powered, see General Notes on Channels                       |
-|          |button       |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)             |
+|          |button       |Trigger  |yes      |Event trigger, see section Button Events                                         |
 |          |outputName   |String   |yes      |Logical name of this relay output as configured in the Shelly App                |
 |meter     |currentWatts |Number   |yes      |Current power consumption in Watts                                               |
 |          |lastPower1   |Number   |yes      |Energy consumption for a round minute, 1 minute  ago                   |
@@ -365,7 +365,7 @@ Depending on the device type and firmware release channels might be not availabl
 |relay     |output       |Switch   |r/w      |Controls the relay's output channel (on/off)                                     |
 |          |outputName   |String   |yes      |Logical name of this relay output as configured in the Shelly App                |
 |          |input        |Switch   |yes      |ON: Input/Button is powered, see general notes on channels                       |
-|          |button       |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)             |
+|          |button       |Trigger  |yes      |Event trigger, see section Button Events                                         |
 |          |lastEvent    |String   |yes      |Last event type (S/SS/SSS/L)                                                     |
 |          |eventCount   |String   |yes      |Event counter for                                                                |
 |          |autoOn       |Number   |r/w      |Relay #1: Sets a  timer to turn the device ON after every OFF command; in seconds|
@@ -394,7 +394,7 @@ The Thing id is derived from the service name, so that's the reason why the Thin
 |relay     |output       |Switch   |r/w      |Controls the relay's output channel (on/off)                                     |
 |          |outputName   |String   |yes      |Logical name of this relay output as configured in the Shelly App                |
 |          |input        |Switch   |yes      |ON: Input/Button is powered, see general notes on channels                       |
-|          |button       |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)             |
+|          |button       |Trigger  |yes      |Event trigger, see section Button Events                                         |
 |          |lastEvent    |String   |yes      |Last event type (S/SS/SSS/L)                                                     |
 |          |eventCount   |String   |yes      |Event counter for                                                                |
 |          |autoOn       |Number   |r/w      |Relay #1: Sets a  timer to turn the device ON after every OFF command; in seconds|
@@ -436,7 +436,7 @@ The Thing id is derived from the service name, so that's the reason why the Thin
 |          |autoOn       |Number   |r/w      |Relay #1: Sets a  timer to turn the device ON after every OFF command; in seconds|
 |          |autoOff      |Number   |r/w      |Relay #1: Sets a  timer to turn the device OFF after every ON command; in seconds|
 |          |timerActive  |Switch   |yes      |Relay #1: ON: An auto-on/off timer is active                                     |
-|          |button       |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)             |
+|          |button       |Trigger  |yes      |Event trigger, see section Button Events                                         |
 |          |outputName   |String   |yes      |Logical name of this relay output as configured in the Shelly App                |
 |relay2    |output       |Switch   |r/w      |Relay #2: Controls the relay's output channel (on/off)                           |
 |          |outputName   |String   |yes      |Logical name of this relay output as configured in the Shelly App                |
@@ -444,7 +444,7 @@ The Thing id is derived from the service name, so that's the reason why the Thin
 |          |autoOn       |Number   |r/w      |Relay #2: Sets a  timer to turn the device ON after every OFF command; in seconds|
 |          |autoOff      |Number   |r/w      |Relay #2: Sets a  timer to turn the device OFF after every ON command; in seconds|
 |          |timerActive  |Switch   |yes      |Relay #2: ON: An auto-on/off timer is active                                     |
-|          |button       |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)             |
+|          |button       |Trigger  |yes      |Event trigger, see section Button Events                                         |
 |          |outputName   |String   |yes      |Logical name of this relay output as configured in the Shelly App                |
 |meter     |currentWatts |Number   |yes      |Current power consumption in Watts                                               |
 |          |lastPower1   |Number   |yes      |Energy consumption for a round minute, 1 minute  ago                             |
@@ -498,7 +498,7 @@ For this the binding aggregates the power consumption of both relays and include
 |          |input        |Switch   |yes      |ON: Input/Button is powered, see General Notes on Channels                           |
 |          |state        |String   |yes      |Roller state: open/close/stop                                                        |
 |          |stopReason   |String   |yes      |Last stop reasons: normal, safety_switch or obstacle                                 |
-|          |safety       |Switch   |yes      |Indicates status of the Safety Switch, ON=problem detected, powered off               |
+|          |safety       |Switch   |yes      |Indicates status of the Safety Switch, ON=problem detected, powered off              |
 |          |event        |Trigger  |yes      |Roller event/trigger with payload ROLLER_OPEN / ROLLER_CLOSE / ROLLER_STOP           |
 |meter1    |             |         |         |See group meter1 for Shelly 2                                                        |
 |meter2    |             |         |         |See group meter1 for Shelly 2                                                        |
@@ -536,11 +536,11 @@ The Shelly 4Pro provides 4 relays and 4 power meters.
 |relay     |brightness   |Dimmer   |r/w      |Currently selected brightness.                                                   |
 |          |outputName   |String   |yes      |Logical name of this relay output as configured in the Shelly App                |
 |          |input1       |Switch   |yes      |ON: Input/Button for input 1 is powered, see general notes on channels           |
-|          |button1      |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)             |
+|          |button1      |Trigger  |yes      |Event trigger, see section Button Events                                         |
 |          |lastEvent1   |String   |yes      |Last event type (S/SS/SSS/L) for input 1                                         |
 |          |eventCount1  |String   |yes      |Event counter for input 1                                                        |
 |          |input2       |Switch   |yes      |ON: Input/Button for channel 2 is powered, see general notes on channels         |
-|          |button2      |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)             |
+|          |button2      |Trigger  |yes      |Event trigger, see section Button Events                                         |
 |          |lastEvent2   |String   |yes      |Last event type (S/SS/SSS/L) for input 2                                         |
 |          |eventCount2  |String   |yes      |Event counter for input 2                                                        |
 |          |autoOn       |Number   |r/w      |Relay #1: Sets a  timer to turn the device ON after every OFF command; in seconds|
@@ -552,11 +552,11 @@ The Shelly 4Pro provides 4 relays and 4 power meters.
 |          |lastUpdate   |DateTime |yes      |Timestamp of the last measurement                                                |
 
 
-'Note: The Dimmer should be calibrated using the Shelly App.'
+`Note: The Dimmer should be calibrated using the Shelly App.`
 
-Using the Thing configuration option 'brightnessAutoOn' you could decide if the light is turned on when a brightness > 0 is set.
-'true':  Brightness will be set and device output is powered = light turns on with the new brightness
-'false': Brightness will be set, but output stays unchanged so light will not be switched on when it's currently off.
+Using the Thing configuration option `brightnessAutoOn` you could decide if the light is turned on when a brightness > 0 is set.
+`true`:  Brightness will be set and device output is powered = light turns on with the new brightness
+`false`: Brightness will be set, but output stays unchanged so light will not be switched on when it's currently off.
 
 ### Shelly ix3 (thing-type: shellyix3)
 
@@ -565,26 +565,26 @@ Using the Thing configuration option 'brightnessAutoOn' you could decide if the 
 |status    |input1       |Switch   |yes      |State of Input 1                                                       |
 |          |input2       |Switch   |yes      |State of Input 2                                                       |
 |          |input3       |Switch   |yes      |State of Input 3                                                       |
-|          |button       |Trigger  |yes      |Event trigger: SHORT_PRESSED, DOUBLE_PRESSED, TRIPLE_PRESSED, LONG_PRESSED, SHORT_LONG_PRESSED or LONG_SHORT_PRESSED  |
+|          |button       |Trigger  |yes      |Event trigger: Event trigger, see section Button Events                |
 |          |lastEvent    |String   |yes      |S/SS/SSS for 1/2/3x Shortpush or L for Longpush                        |
 |          |eventCount   |Number   |yes      |Number of button events                                                |
 
 ### Shelly UNI - Low voltage sensor/actor: shellyuni)
 
-|Group     |Channel      |Type     |read-only|Description                                                                      |
-|----------|-------------|---------|---------|---------------------------------------------------------------------------------|
-|relay1    |             |         |         |See group relay1 for Shelly 2, no autoOn/autoOff/timerActive channels            |
-|relay2    |             |         |         |See group relay1 for Shelly 2, no autoOn/autoOff/timerActive channels            |
-|sensors   |temperature1 |Number   |yes      |Temperature value of external sensor #1 (if connected to temp/hum addon)         |
-|          |temperature2 |Number   |yes      |Temperature value of external sensor #2 (if connected to temp/hum addon)         |
-|          |temperature3 |Number   |yes      |Temperature value of external sensor #3 (if connected to temp/hum addon)         |
-|          |humidity     |Number   |yes      |Humidity in percent (if connected to temp/hum addon)                             |
-|          |voltage      |Number   |yes      |ADCS voltage                                                                     |
-|status    |input1       |Switch   |yes      |State of Input 1                                                                 |
-|          |input2       |Switch   |yes      |State of Input 2                                                                 |
-|          |button       |Trigger  |yes      |Event trigger: SHORT_PRESSED, DOUBLE_PRESSED, TRIPLE_PRESSED, LONG_PRESSED, SHORT_LONG_PRESSED or LONG_SHORT_PRESSED  |
-|          |lastEvent    |String   |yes      |S/SS/SSS for 1/2/3x Shortpush or L for Longpush                                  |
-|          |eventCount   |Number   |yes      |Number of button events                                                          |
+|Group     |Channel      |Type     |read-only|Description                                                                 |
+|----------|-------------|---------|---------|----------------------------------------------------------------------------|
+|relay1    |             |         |         |See group relay1 for Shelly 2, no autoOn/autoOff/timerActive channels       |
+|relay2    |             |         |         |See group relay1 for Shelly 2, no autoOn/autoOff/timerActive channels       |
+|sensors   |temperature1 |Number   |yes      |Temperature value of external sensor #1 (if connected to temp/hum addon)    |
+|          |temperature2 |Number   |yes      |Temperature value of external sensor #2 (if connected to temp/hum addon)    |
+|          |temperature3 |Number   |yes      |Temperature value of external sensor #3 (if connected to temp/hum addon)    |
+|          |humidity     |Number   |yes      |Humidity in percent (if connected to temp/hum addon)                        |
+|          |voltage      |Number   |yes      |ADCS voltage                                                                |
+|status    |input1       |Switch   |yes      |State of Input 1                                                            |
+|          |input2       |Switch   |yes      |State of Input 2                                                            |
+|          |button       |Trigger  |yes      |Event trigger, see section Button Events                                    |
+|          |lastEvent    |String   |yes      |S/SS/SSS for 1/2/3x Shortpush or L for Longpush                             |
+|          |eventCount   |Number   |yes      |Number of button events                                                     |
 
 ### Shelly Bulb (thing-type: shellybulb)
 
@@ -632,7 +632,7 @@ Using the Thing configuration option 'brightnessAutoOn' you could decide if the 
 |----------|-------------|---------|---------|-----------------------------------------------------------------------|
 |control   |autoOn       |Number   |r/w      |Sets a  timer to turn the device ON after every OFF; in sec            |
 |          |autoOff      |Number   |r/w      |Sets a  timer to turn the device OFF after every ON: in sec            |
-|          |timerActive  |Switch   |yes      |ON: An auto-on/off timer is active                                     |
+|          |timerActive  |Switch   |yes      |ON: An auto-on/off timer is active                                          |
 |white     |             |         |         |Color settings: only valid in WHITE mode                               |
 |          |brightness   |Dimmer   |         |Brightness: 0..100% or 0..100                                          |
 |meter     |currentWatts |Number   |yes      |Current power consumption in Watts                                     |
@@ -646,7 +646,7 @@ Using the Thing configuration option 'brightnessAutoOn' you could decide if the 
 |Group     |Channel      |Type     |read-only|Description                                                            |
 |----------|-------------|---------|---------|-----------------------------------------------------------------------|
 |control   |power        |Switch   |r/w      |Switch light ON/OFF                                                    |
-|          |button       |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)   |
+|          |button       |Trigger  |yes      |Event trigger, see section Button Events                               |
 |          |autoOn       |Number   |r/w      |Sets a  timer to turn the device ON after every OFF command; in seconds|
 |          |autoOff      |Number   |r/w      |Sets a  timer to turn the device OFF after every ON command; in seconds|
 |          |timerActive  |Switch   |yes      |ON: An auto-on/off timer is active                                     |
@@ -663,9 +663,9 @@ Using the Thing configuration option 'brightnessAutoOn' you could decide if the 
 |          |             |         |         |0=No effect, 1=Meteor Shower, 2=Gradual Change, 3=Flash                |
 |meter     |currentWatts |Number   |yes      |Current power consumption in Watts                                     |
 
-Using the Thing configuration option 'brightnessAutoOn' you could decide if the light is turned on when a brightness > 0 is set.
-'true':  Brightness will be set and device output is powered = light turns on with the new brightness
-'false': Brightness will be set, but output stays unchanged so light will not be switched on when it's currently off.
+Using the Thing configuration option `brightnessAutoOn` you could decide if the light is turned on when a brightness > 0 is set.
+`true`:  Brightness will be set and device output is powered = light turns on with the new brightness
+`false`: Brightness will be set, but output stays unchanged so light will not be switched on when it's currently off.
 
 ### Shelly RGBW2 in White Mode (thing-type: shellyrgbw2-white)
 
@@ -673,22 +673,22 @@ Using the Thing configuration option 'brightnessAutoOn' you could decide if the 
 |----------|-------------|---------|---------|-----------------------------------------------------------------------|
 |control   |input        |Switch   |yes      |State of Input                                                         |
 |channel1  |brightness   |Dimmer   |r/w      |Channel 1: Brightness: 0..100, control power state with ON/OFF         |
-|          |button       |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)   |
+|          |button       |Trigger  |yes      |Event trigger, see section Button Events                               |
 |          |autoOn       |Number   |r/w      |Sets a  timer to turn the device ON after every OFF command; in seconds|
 |          |autoOff      |Number   |r/w      |Sets a  timer to turn the device OFF after every ON command; in seconds|
 |          |timerActive  |Switch   |yes      |ON: An auto-on/off timer is active                                     |
 |channel2  |brightness   |Dimmer   |r/w      |Channel 2: Brightness: 0..100, control power state with ON/OFF         |
-|          |button       |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)   |
+|          |button       |Trigger  |yes      |Event trigger, see section Button Events                               |
 |          |autoOn       |Number   |r/w      |Sets a  timer to turn the device ON after every OFF command; in seconds|
 |          |autoOff      |Number   |r/w      |Sets a  timer to turn the device OFF after every ON command; in seconds|
 |          |timerActive  |Switch   |yes      |ON: An auto-on/off timer is active                                     |
 |channel3  |brightness   |Dimmer   |r/w      |Channel 3: Brightness: 0..100, control power state with ON/OFF         |
-|          |button       |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)   |
+|          |button       |Trigger  |yes      |Event trigger, see section Button Events                               |
 |          |autoOn       |Number   |r/w      |Sets a  timer to turn the device ON after every OFF command; in seconds|
 |          |autoOff      |Number   |r/w      |Sets a  timer to turn the device OFF after every ON command; in seconds|
 |          |timerActive  |Switch   |yes      |ON: An auto-on/off timer is active                                     |
 |channel4  |brightness   |Dimmer   |r/w      |Channel 5: Brightness: 0..100, control power state with ON/OFF         |
-|          |button       |Trigger  |yes      |Event trigger with payload SHORT_PRESSED or LONG_PRESSED (FW 1.5.6+)   |
+|          |button       |Trigger  |yes      |Event trigger, see section Button Events                               |
 |          |autoOn       |Number   |r/w      |Sets a  timer to turn the device ON after every OFF command; in seconds|
 |          |autoOff      |Number   |r/w      |Sets a  timer to turn the device OFF after every ON command; in seconds|
 |          |timerActive  |Switch   |yes      |ON: An auto-on/off timer is active                                     |
@@ -892,7 +892,7 @@ pre-requisites:
 
 - Install Send Mail Action
 - Define a group called gBatteries
-Group   gBattery        "Batterien"         <battery>       (All)
+'Group   gBattery        "Batterien"         <battery>       (All)'
 - Link battery channel for all your Shelly battery powered devices
 - Add battery items to group gBattery
 
@@ -930,13 +930,17 @@ end
 
 Usage & Requirements:
 - 4 Items per Thing required. Example:
-    Group gCCT_LED        "All CCT LEDs"
-    Dimmer    LED1_brightness     "Brightness"    (gCCT_LED)
-    Dimmer    LED1_temperature    "Temperature"   (gCCT_LED)
-    Dimmer    LED1_cw         "cold white Channel"
-    Dimmer    LED1_ww         "warm white Channel"
+
+```
+Group gCCT_LED        "All CCT LEDs"
+Dimmer    LED1_brightness     "Brightness"    (gCCT_LED)
+Dimmer    LED1_temperature    "Temperature"   (gCCT_LED)
+Dimmer    LED1_cw         "cold white Channel"
+Dimmer    LED1_ww         "warm white Channel"
+```
+
 - Items "LED1" and "LED1_temperature" are proxy items and to be used in sitemaps. Both have to be a member of group "gCCT_LED"
-- Items "LED1_cw" and "LED_ww" are litems linked to Thing channel. Not required in sitemaps. Do NOT include in this group
+- Items "LED1_cw" and "LED_ww" are items linked to Thing channel. Not required in sitemaps. Do NOT include in this group
 - Prefix: needs to be constant per Thing.
 
 ```

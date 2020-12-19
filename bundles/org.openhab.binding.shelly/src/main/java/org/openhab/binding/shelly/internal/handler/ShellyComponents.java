@@ -263,7 +263,7 @@ public class ShellyComponents {
                 boolean changed = thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ERROR,
                         getStringType(sdata.sensorError));
                 if (changed) {
-                    thingHandler.postEvent(sdata.sensorError, true);
+                    thingHandler.postEvent(getString(sdata.sensorError), true);
                 }
                 updated |= changed;
             }

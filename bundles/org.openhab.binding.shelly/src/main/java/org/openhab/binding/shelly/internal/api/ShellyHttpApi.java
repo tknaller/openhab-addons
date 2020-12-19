@@ -497,7 +497,7 @@ public class ShellyHttpApi {
                 logger.debug("{}: API Timeout, retry #{} ({})", thingName, timeoutErrors, e.toString());
             }
         }
-        throw new ShellyApiException("Inconsistent API result or Timeout"); // successful
+        throw new ShellyApiException("API Timeout or inconsistent result"); // successful
     }
 
     private ShellyApiResult innerRequest(HttpMethod method, String uri) throws ShellyApiException {

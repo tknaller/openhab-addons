@@ -1029,10 +1029,14 @@ public class ShellyApiJsonDTO {
         public Boolean ison;
         public Double power;
         public Boolean overpower;
-        @SerializedName("auto_on")
-        public Double autoOn; // see above
-        @SerializedName("auto_off")
-        public Double autoOff; // see above
+        @SerializedName("has_timer")
+        public Boolean hasTimer;
+        @SerializedName("timer_started")
+        public Integer timerStarted;
+        @SerializedName("timer_duration")
+        public Integer timerDuration;
+        @SerializedName("timer_remaining")
+        public Integer timerRemaining;
 
         public Integer red; // red brightness, 0..255, applies in mode="color"
         public Integer green; // green brightness, 0..255, applies in mode="color"
@@ -1047,18 +1051,10 @@ public class ShellyApiJsonDTO {
 
     public static class ShellyStatusLight {
         public Boolean ison; // Whether output channel is on or off
-        public ArrayList<ShellyStatusLightChannel> lights;
-        public ArrayList<ShellySettingsMeter> meters;
         public Integer input;
 
-        // not yet used:
-        // public String mode; // COLOR or WHITE
-        // public Boolean has_update;
-        // public ShellySettingsUpdate update;
-        // public ShellySettingsWiFiNetwork wifi_sta; // WiFi client configuration. See
-        // /settings/sta for details
-        // public ShellyStatusCloud cloud;
-        // public ShellyStatusMqtt mqtt;
+        public ArrayList<ShellyStatusLightChannel> lights;
+        public ArrayList<ShellySettingsMeter> meters;
     }
 
     public static class ShellySenseKeyCode {

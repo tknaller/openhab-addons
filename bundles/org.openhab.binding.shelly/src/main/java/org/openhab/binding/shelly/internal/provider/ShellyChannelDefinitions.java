@@ -39,7 +39,9 @@ import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsEM
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsGlobal;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsMeter;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsRelay;
+import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsRgbwLight;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsStatus;
+import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusLightChannel;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusRelay;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusSensor;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
@@ -83,6 +85,7 @@ public class ShellyChannelDefinitions {
     private static final String CHGR_DEVST = CHANNEL_GROUP_DEV_STATUS;
     private static final String CHGR_RELAY = CHANNEL_GROUP_RELAY_CONTROL;
     private static final String CHGR_ROLLER = CHANNEL_GROUP_ROL_CONTROL;
+    private static final String CHGR_LIGHT = CHANNEL_GROUP_LIGHT_CONTROL;
     private static final String CHGR_STATUS = CHANNEL_GROUP_STATUS;
     private static final String CHGR_METER = CHANNEL_GROUP_METER;
     private static final String CHGR_SENSOR = CHANNEL_GROUP_SENSOR;
@@ -142,16 +145,14 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER, "system:button", "system:button"))
 
                 // RGBW2
-
-                .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_LIGHT_POWER, "system_power",
-                        ITEMT_SWITCH))
-                .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
-                .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_BUTTON_TRIGGER, "system:button",
-                        ITEMT_STRING))
-                .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_STATUS_EVENTTYPE, "lastEvent",
-                        ITEMT_STRING))
-                .add(new ShellyChannel(m, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_STATUS_EVENTCOUNT, "eventCount",
-                        ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_LIGHT, CHANNEL_LIGHT_POWER, "system:power", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_LIGHT, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_LIGHT, CHANNEL_BUTTON_TRIGGER, "system:button", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_LIGHT, CHANNEL_STATUS_EVENTTYPE, "lastEvent", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_LIGHT, CHANNEL_STATUS_EVENTCOUNT, "eventCount", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_LIGHT, CHANNEL_TIMER_AUTOON, "timerAutoOn", ITEMT_TIME))
+                .add(new ShellyChannel(m, CHGR_LIGHT, CHANNEL_TIMER_AUTOOFF, "timerAutoOff", ITEMT_TIME))
+                .add(new ShellyChannel(m, CHGR_LIGHT, CHANNEL_TIMER_ACTIVE, "timerActive", ITEMT_SWITCH))
 
                 // Power Meter
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_CURRENTWATTS, "meterWatts", ITEMT_POWER))
@@ -248,9 +249,6 @@ public class ShellyChannelDefinitions {
                     CHANNEL_DEVST_ITEMP);
         }
 
-        // RGBW2
-        addChannel(thing, add, status.input != null, CHANNEL_GROUP_LIGHT_CONTROL, CHANNEL_INPUT);
-
         // If device has more than 1 meter the channel accumulatedWatts receives the accumulated value
         boolean accuChannel = (((status.meters != null) && (status.meters.size() > 1) && !profile.isRoller
                 && !profile.isRGBW2) || ((status.emeters != null && status.emeters.size() > 1)));
@@ -311,6 +309,20 @@ public class ShellyChannelDefinitions {
         ShellySettingsDimmer ds = profile.settings.dimmers.get(idx);
         addChannel(thing, add, ds.autoOn != null, group, CHANNEL_TIMER_AUTOON);
         addChannel(thing, add, ds.autoOff != null, group, CHANNEL_TIMER_AUTOOFF);
+        return add;
+    }
+
+    public static Map<String, Channel> createLightChannels(final Thing thing, final ShellyDeviceProfile profile,
+            final ShellyStatusLightChannel status, int idx) {
+        Map<String, Channel> add = new LinkedHashMap<>();
+        String group = profile.getControlGroup(idx);
+
+        ShellySettingsRgbwLight light = profile.settings.lights.get(idx);
+        addChannel(thing, add, light.autoOn != null, group, CHANNEL_TIMER_AUTOON);
+        addChannel(thing, add, light.autoOff != null, group, CHANNEL_TIMER_AUTOOFF);
+
+        addChannel(thing, add, status.ison != null, group, CHANNEL_LIGHT_POWER);
+        addChannel(thing, add, status.hasTimer != null, group, CHANNEL_TIMER_ACTIVE);
         return add;
     }
 
