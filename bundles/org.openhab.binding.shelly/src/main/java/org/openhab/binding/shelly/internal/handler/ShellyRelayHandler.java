@@ -187,14 +187,14 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
     }
 
     private void updateBrightnessChannel(int lightId, OnOffType power, int brightness) throws ShellyApiException {
+        updateChannel(CHANNEL_COLOR_WHITE, CHANNEL_BRIGHTNESS + "$Switch", power);
         if (brightness > 0) {
             api.setBrightness(lightId, brightness, config.brightnessAutoOn);
         } else {
             api.setRelayTurn(lightId, power == OnOffType.ON ? SHELLY_API_ON : SHELLY_API_OFF);
+            updateChannel(CHANNEL_COLOR_WHITE, CHANNEL_BRIGHTNESS + "$Value", toQuantityType(
+                    (double) (power == OnOffType.ON ? brightness : 0), DIGITS_NONE, SmartHomeUnits.PERCENT));
         }
-        updateChannel(CHANNEL_COLOR_WHITE, CHANNEL_BRIGHTNESS + "$Switch", power);
-        updateChannel(CHANNEL_COLOR_WHITE, CHANNEL_BRIGHTNESS + "$Value",
-                toQuantityType((double) (power == OnOffType.ON ? brightness : 0), DIGITS_NONE, SmartHomeUnits.PERCENT));
     }
 
     @Override

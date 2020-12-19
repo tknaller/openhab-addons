@@ -26,7 +26,6 @@ import java.util.TreeMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang.time.StopWatch;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
@@ -94,7 +93,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
     private long lastUptime = 0;
     private long lastAlarmTs = 0;
     private long lastTimeoutErros = -1;
-    private final StopWatch watchdog = new StopWatch();
+    private long watchdog = -1;
 
     private @Nullable ScheduledFuture<?> statusJob;
     public int scheduledUpdates = 0;
@@ -157,7 +156,8 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
                         "{}: Configured Events: Button: {}, Switch (on/off): {}, Push: {}, Roller: {}, Sensor: {}, CoIoT: {}, Enable AutoCoIoT: {}",
                         thingName, config.eventsButton, config.eventsSwitch, config.eventsPush, config.eventsRoller,
                         config.eventsSensorReport, config.eventsCoIoT, bindingConfig.autoCoIoT);
-                updateStatus(ThingStatus.UNKNOWN);
+                updateStatus(ThingStatus.UNKNOWN, ThingStatusDetail.CONFIGURATION_PENDING,
+                        messages.get("status.unknown.initializing"));
                 start = initializeThing();
             } catch (ShellyApiException e) {
                 ShellyApiResult res = e.getApiResult();
@@ -270,6 +270,14 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
             api.setConfig(thingName, config);
         }
 
+        if (tmpPrf.hasBattery && (tmpPrf.updatePeriod < config.updateInterval)) {
+            // Most likely Shelly H&T with USB = updates every 10min, add 1min buffer for watchdog
+            skipCount = (tmpPrf.updatePeriod + 60) / UPDATE_STATUS_INTERVAL_SECONDS;
+            logger.trace(
+                    "{}: Adjusted status refresh interval to {}s (updatePeriod = {}, configured updateInterval={})",
+                    thingName, skipCount * UPDATE_STATUS_INTERVAL_SECONDS, tmpPrf.updatePeriod, config.updateInterval);
+        }
+
         // All initialization done, so keep the profile and set Thing to ONLINE
         profile = tmpPrf;
         fillDeviceStatus(status, false);
@@ -357,9 +365,10 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         try {
             boolean updated = false;
 
+            logger.trace("{}: skipUpdate={}, watchdog={}", thingName, skipUpdate, watchdog);
+
             skipUpdate++;
             ThingStatus thingStatus = getThing().getStatus();
-
             if (refreshSettings || (scheduledUpdates > 0) || (skipUpdate % skipCount == 0)) {
                 if (!profile.isInitialized() || ((thingStatus == ThingStatus.OFFLINE))
                         || (thingStatus == ThingStatus.UNKNOWN)) {
@@ -415,6 +424,11 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
             } else if (e.isJSONException()) {
                 status = "offline.status-error-unexpected-api-result";
                 logger.debug("{}: Unable to parse API response: {}; json={}", thingName, res.getUrl(), res.response, e);
+            } else if (res.isHttpTimeout()) {
+                // Watchdog not started, e.g. device in sleep mode
+                if (isThingOnline()) { // ignore when already offline
+                    status = "offline.status-error-watchdog";
+                }
             } else {
                 status = "offline.status-error-unexpected-api-result";
                 logger.debug("{}: Unexpected API result: {}", thingName, res.response, e);
@@ -459,31 +473,30 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         if (!isThingOffline()) {
             logger.info("{}: Thing goes OFFLINE: {}", thingName, messages.get(messageKey));
             updateStatus(ThingStatus.OFFLINE, detail, "@text/" + messageKey);
-            watchdog.reset();
+            watchdog = 0;
             channelsCreated = false; // check for new channels after devices gets re-initialized (e.g. new
         }
     }
 
     public synchronized void restartWatchdog() {
+        watchdog = now();
         updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_HEARTBEAT, getTimestamp());
-        watchdog.reset();
-        watchdog.start();
         logger.trace("{}: Watchdog restarted (expires in {} sec)", thingName, profile.updatePeriod);
     }
 
     private boolean isWatchdogExpired() {
-        return watchdog.getTime() > profile.updatePeriod;
+        long timeout = profile.hasBattery ? profile.updatePeriod + 60 : profile.updatePeriod + 10;
+        long delta = now() - watchdog;
+        if ((watchdog > 0) && (delta > timeout)) {
+            logger.trace("{}: Watchdog expired after {}sec", thingName, delta);
+            return true;
+        }
+        return false;
     }
 
     private boolean isWatchdogStarted() {
-        try {
-            if (isThingOnline()) {
-                watchdog.getStartTime();
-            }
-            return true;
-        } catch (IllegalStateException e) {
-            return false;
-        }
+        logger.trace("{}: Watchdog is {}", thingName, watchdog > 0 ? "started" : "inactive");
+        return watchdog > 0;
     }
 
     public void reinitializeThing() {

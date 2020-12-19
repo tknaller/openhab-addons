@@ -94,7 +94,7 @@ public class ShellyChannelCache {
             }
         } catch (IllegalArgumentException e) {
             logger.debug("{}: Unable to update channel {} with {} (type {}): {} ({})", thingName, channelId, newValue,
-                    newValue.getClass(), ShellyUtils.getMessage(e), e.getClass());
+                    newValue.getClass(), ShellyUtils.getMessage(e), e.getClass(), e);
         }
         return false;
     }

@@ -32,6 +32,7 @@ import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.types.Command;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
+import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsRgbwLight;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyShortLightStatus;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusLight;
@@ -39,6 +40,7 @@ import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellyStatusLigh
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapServer;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
+import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -336,6 +338,7 @@ public class ShellyLightHandler extends ShellyBaseHandler {
         for (ShellyStatusLightChannel light : status.lights) {
             Integer channelId = lightId + 1;
             String controlGroup = buildControlGroupName(profile, channelId);
+            createLightChannels(light, lightId);
             // The bulb has a combined channel set for color or white mode
             // The RGBW2 uses 2 different thing types: color=1 channel, white=4 channel
             if (profile.isBulb) {
@@ -346,16 +349,11 @@ public class ShellyLightHandler extends ShellyBaseHandler {
             col.power = getOnOff(light.ison);
 
             // Channel control/timer
+            ShellySettingsRgbwLight ls = profile.settings.lights.get(lightId);
+            updated |= updateChannel(controlGroup, CHANNEL_TIMER_AUTOON, getDecimal(ls.autoOn));
+            updated |= updateChannel(controlGroup, CHANNEL_TIMER_AUTOOFF, getDecimal(ls.autoOff));
             updated |= updateChannel(controlGroup, CHANNEL_LIGHT_POWER, col.power);
-            updated |= updateChannel(controlGroup, CHANNEL_TIMER_AUTOON, getDecimal(light.autoOn));
-            updated |= updateChannel(controlGroup, CHANNEL_TIMER_AUTOOFF, getDecimal(light.autoOff));
-
-            /*
-             * if ((profile.settings.inputs != null) && (lightId < profile.settings.inputs.size())) {
-             * updated |= updateInputs(controlGroup, genericStatus, lightId);
-             * }
-             */
-            updated |= updateInputs(genericStatus);
+            updated |= updateChannel(controlGroup, CHANNEL_TIMER_ACTIVE, getOnOff(light.hasTimer));
 
             if (getBool(light.overpower)) {
                 postEvent(ALARM_TYPE_OVERPOWER, false);
@@ -404,6 +402,12 @@ public class ShellyLightHandler extends ShellyBaseHandler {
             lightId++;
         }
         return updated;
+    }
+
+    private void createLightChannels(ShellyStatusLightChannel status, int idx) {
+        if (!areChannelsCreated()) {
+            updateChannelDefinitions(ShellyChannelDefinitions.createLightChannels(getThing(), profile, status, idx));
+        }
     }
 
     private Integer setColor(Integer lightId, String colorName, Command command, Integer minValue, Integer maxValue)
