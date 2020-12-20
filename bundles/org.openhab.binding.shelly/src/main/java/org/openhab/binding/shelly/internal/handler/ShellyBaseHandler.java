@@ -93,7 +93,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
     private long lastUptime = 0;
     private long lastAlarmTs = 0;
     private long lastTimeoutErros = -1;
-    private long watchdog = -1;
+    private long watchdog = now();
 
     private @Nullable ScheduledFuture<?> statusJob;
     public int scheduledUpdates = 0;
@@ -270,14 +270,6 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
             api.setConfig(thingName, config);
         }
 
-        if (tmpPrf.hasBattery && (tmpPrf.updatePeriod < config.updateInterval)) {
-            // Most likely Shelly H&T with USB = updates every 10min, add 1min buffer for watchdog
-            skipCount = (tmpPrf.updatePeriod + 60) / UPDATE_STATUS_INTERVAL_SECONDS;
-            logger.trace(
-                    "{}: Adjusted status refresh interval to {}s (updatePeriod = {}, configured updateInterval={})",
-                    thingName, skipCount * UPDATE_STATUS_INTERVAL_SECONDS, tmpPrf.updatePeriod, config.updateInterval);
-        }
-
         // All initialization done, so keep the profile and set Thing to ONLINE
         profile = tmpPrf;
         fillDeviceStatus(status, false);
@@ -365,7 +357,13 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         try {
             boolean updated = false;
 
-            logger.trace("{}: skipUpdate={}, watchdog={}", thingName, skipUpdate, watchdog);
+            if (watchdog > 0) {
+                long delta = now() - watchdog;
+                logger.trace("{}: skipUpdate={}, watchdog={}, delta={}, remaining={}", thingName, skipUpdate, watchdog,
+                        delta, profile.updatePeriod - delta);
+            } else {
+                logger.trace("{}: skipUpdate={}, watchdog disabled", thingName, skipUpdate);
+            }
 
             skipUpdate++;
             ThingStatus thingStatus = getThing().getStatus();
@@ -411,8 +409,6 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
             if (isWatchdogStarted()) {
                 if (!isWatchdogExpired()) {
                     logger.debug("{}: Ignore API Timeout, retry later", thingName);
-                } else if (profile.hasBattery) {
-                    logger.debug("{}: Ignore API Timeout for battery powered device", thingName);
                 } else {
                     logger.debug("{}: Watchdog expired after {}sec,", thingName, profile.updatePeriod);
                     if (isThingOnline()) {
@@ -485,10 +481,10 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
     }
 
     private boolean isWatchdogExpired() {
-        long timeout = profile.hasBattery ? profile.updatePeriod + 60 : profile.updatePeriod + 10;
+        long timeout = profile.hasBattery ? profile.updatePeriod : profile.updatePeriod;
         long delta = now() - watchdog;
         if ((watchdog > 0) && (delta > timeout)) {
-            logger.trace("{}: Watchdog expired after {}sec", thingName, delta);
+            logger.trace("{}: Watchdog expired after {}sec (started={}, now={}", thingName, delta, watchdog, now());
             return true;
         }
         return false;
@@ -739,6 +735,18 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         }
         if (config.updateInterval < UPDATE_MIN_DELAY) {
             config.updateInterval = UPDATE_MIN_DELAY;
+        }
+
+        // Try to get updatePeriod from properties
+        // For battery devinities the REST call to get the settings will most likely fail, because the device is in
+        // sleep mode. Therefore we use the last saved property value as default. Will be overwritten, when device is
+        // initialized successfully by the REST call.
+        String lastPeriod = getString(properties.get(PROPERTY_UPDATE_PERIOD));
+        if (!lastPeriod.isEmpty()) {
+            int period = Integer.parseInt(lastPeriod);
+            if (period > 0) {
+                profile.updatePeriod = period;
+            }
         }
 
         skipCount = config.updateInterval / UPDATE_STATUS_INTERVAL_SECONDS;
@@ -1090,13 +1098,10 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
             properties.put(PROPERTY_NUM_RELAYS, String.valueOf(profile.numRelays));
             properties.put(PROPERTY_NUM_ROLLERS, String.valueOf(profile.numRollers));
             properties.put(PROPERTY_NUM_METER, String.valueOf(profile.numMeters));
+            properties.put(PROPERTY_UPDATE_PERIOD, String.valueOf(profile.updatePeriod));
             if (!profile.hwRev.isEmpty()) {
                 properties.put(PROPERTY_HWREV, profile.hwRev);
                 properties.put(PROPERTY_HWBATCH, profile.hwBatchId);
-            }
-
-            if (profile.updatePeriod >= 0) {
-                properties.put(PROPERTY_UPDATE_PERIOD, String.valueOf(profile.updatePeriod));
             }
         }
         return properties;

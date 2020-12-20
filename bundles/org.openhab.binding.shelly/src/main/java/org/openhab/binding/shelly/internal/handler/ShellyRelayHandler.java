@@ -192,8 +192,10 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
             api.setBrightness(lightId, brightness, config.brightnessAutoOn);
         } else {
             api.setRelayTurn(lightId, power == OnOffType.ON ? SHELLY_API_ON : SHELLY_API_OFF);
-            updateChannel(CHANNEL_COLOR_WHITE, CHANNEL_BRIGHTNESS + "$Value", toQuantityType(
-                    (double) (power == OnOffType.ON ? brightness : 0), DIGITS_NONE, SmartHomeUnits.PERCENT));
+            if (brightness >= 0) { // ignore -1
+                updateChannel(CHANNEL_COLOR_WHITE, CHANNEL_BRIGHTNESS + "$Value", toQuantityType(
+                        (double) (power == OnOffType.ON ? brightness : 0), DIGITS_NONE, SmartHomeUnits.PERCENT));
+            }
         }
     }
 
