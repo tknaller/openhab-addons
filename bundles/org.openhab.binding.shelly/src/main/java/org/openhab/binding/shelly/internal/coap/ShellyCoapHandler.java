@@ -48,6 +48,7 @@ import org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.CoIotSensor;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.CoIotSensorTypeAdapter;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
+import org.openhab.binding.shelly.internal.handler.ShellyColorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +93,7 @@ public class ShellyCoapHandler implements ShellyCoapListener {
         this.thingName = thingHandler.thingName;
         this.profile = thingHandler.getProfile();
         this.coapServer = coapServer;
-        this.coiot = new ShellyCoIoTVersion1(thingName, thingHandler, blkMap, sensorMap); // Default
+        this.coiot = new ShellyCoIoTVersion2(thingName, thingHandler, blkMap, sensorMap); // Default: V2
 
         gsonBuilder.registerTypeAdapter(CoIotDevDescription.class, new CoIotDevDescrTypeAdapter());
         gsonBuilder.registerTypeAdapter(CoIotGenericSensorList.class, new CoIotSensorTypeAdapter());
@@ -311,12 +312,13 @@ public class ShellyCoapHandler implements ShellyCoapListener {
                     valid &= addSensor(descr.sen.get(i));
                 }
             }
+            coiot.completeMissingSensorDefinition(sensorMap);
 
             if (!valid) {
                 logger.debug(
                         "{}: Incompatible device description detected for CoIoT version {} (id length mismatch), discarding!",
                         thingName, coiot.getVersion());
-                thingHandler.updateProperties(PROPERTY_COAP_DESCR, "");
+
                 discover();
                 return;
             }
@@ -342,6 +344,7 @@ public class ShellyCoapHandler implements ShellyCoapListener {
         int vers = coiot.getVersion();
         if (((vers == COIOT_VERSION_1) && (sen.id.length() > 3))
                 || ((vers >= COIOT_VERSION_2) && (sen.id.length() < 4))) {
+            logger.debug("{}: Invalid format for sensor defition detected, id={}", thingName, sen.id);
             return false;
         }
 
@@ -401,23 +404,29 @@ public class ShellyCoapHandler implements ShellyCoapListener {
         Map<String, State> updates = new TreeMap<String, State>();
         logger.debug("{}: {} CoAP sensor updates received", thingName, sensorUpdates.size());
         int failed = 0;
+        ShellyColorUtils col = new ShellyColorUtils();
         for (int i = 0; i < sensorUpdates.size(); i++) {
             try {
                 CoIotSensor s = sensorUpdates.get(i);
                 CoIotDescrSen sen = sensorMap.get(s.id);
+                if (sen == null) {
+                    logger.debug("{}: Unable to sensor definition for id={}, payload={}", thingName, s.id, payload);
+                    continue;
+                }
                 // find matching sensor definition from device description, use the Link ID as index
                 CoIotDescrBlk element = null;
                 sen = coiot.fixDescription(sen, blkMap);
                 element = blkMap.get(sen.links);
                 if (element == null) {
-                    logger.debug("{}: Unable to find BLK for link {} from sen.id={}", thingName, sen.links, sen.id);
+                    logger.debug("{}: Unable to find BLK for link {} from sen.id={}, payload={}", thingName, sen.links,
+                            sen.id, payload);
                     continue;
                 }
                 logger.trace("{}:  Sensor value[{}]: id={}, Value={} ({}, Type={}, Range={}, Link={}: {})", thingName,
                         i, s.id, getString(s.valueStr).isEmpty() ? s.value : s.valueStr, sen.desc, sen.type, sen.range,
                         sen.links, element.desc);
 
-                if (!coiot.handleStatusUpdate(sensorUpdates, sen, serial, s, updates)) {
+                if (!coiot.handleStatusUpdate(sensorUpdates, sen, serial, s, updates, col)) {
                     logger.debug("{}: CoIoT data for id {}, type {}/{} not processed, value={}; payload={}", thingName,
                             sen.id, sen.type, sen.desc, s.value, payload);
                 }
@@ -432,7 +441,8 @@ public class ShellyCoapHandler implements ShellyCoapListener {
         if (!updates.isEmpty()) {
             int updated = 0;
             for (Map.Entry<String, State> u : updates.entrySet()) {
-                updated += thingHandler.updateChannel(u.getKey(), u.getValue(), false) ? 1 : 0;
+                String key = u.getKey();
+                updated += thingHandler.updateChannel(key, u.getValue(), false) ? 1 : 0;
             }
             if (updated > 0) {
                 logger.debug("{}: {} channels updated from CoIoT status, serial={}", thingName, updated, serial);
@@ -441,7 +451,17 @@ public class ShellyCoapHandler implements ShellyCoapListener {
                     thingHandler.updateChannel(profile.getControlGroup(0), CHANNEL_LAST_UPDATE, getTimestamp());
                 }
             }
+
+            if (profile.isLight && profile.inColor && col.isRgbValid()) {
+                // Update color picker from single values
+                if (col.isRgbValid()) {
+                    thingHandler.updateChannel(mkChannelId(CHANNEL_GROUP_COLOR_CONTROL, CHANNEL_COLOR_PICKER),
+                            col.toHSB(), false);
+                }
+            }
+
             if ((profile.isRGBW2 && !profile.inColor) || profile.isRoller) {
+                // Aggregate Meter Data from different Coap updates
                 int i = 1;
                 double totalCurrent = 0.0;
                 double totalKWH = 0.0;

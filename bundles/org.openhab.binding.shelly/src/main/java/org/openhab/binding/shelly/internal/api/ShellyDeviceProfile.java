@@ -175,7 +175,8 @@ public class ShellyDeviceProfile {
         }
 
         isBulb = thingType.equals(THING_TYPE_SHELLYBULB_STR);
-        isDuo = thingType.equals(THING_TYPE_SHELLYDUO_STR) || thingType.equals(THING_TYPE_SHELLYVINTAGE_STR);
+        isDuo = thingType.equals(THING_TYPE_SHELLYDUO_STR) || thingType.equals(THING_TYPE_SHELLYVINTAGE_STR)
+                || thingType.equals(THING_TYPE_SHELLYDUORGBW_STR);
         isRGBW2 = thingType.startsWith(THING_TYPE_SHELLYRGBW2_PREFIX);
         isLight = isBulb || isDuo || isRGBW2;
         if (isLight) {
@@ -187,15 +188,15 @@ public class ShellyDeviceProfile {
         boolean isSmoke = thingType.equals(THING_TYPE_SHELLYSMOKE_STR);
         boolean isGas = thingType.equals(THING_TYPE_SHELLYGAS_STR);
         boolean isUNI = thingType.equals(THING_TYPE_SHELLYUNI_STR);
+        boolean isMotion = thingType.equals(THING_TYPE_SHELLYMOTION_STR);
         isHT = thingType.equals(THING_TYPE_SHELLYHT_STR);
         isDW = thingType.equals(THING_TYPE_SHELLYDOORWIN_STR) || thingType.equals(THING_TYPE_SHELLYDOORWIN2_STR);
         isSense = thingType.equals(THING_TYPE_SHELLYSENSE_STR);
         isIX3 = thingType.equals(THING_TYPE_SHELLYIX3_STR);
         isButton = thingType.equals(THING_TYPE_SHELLYBUTTON1_STR);
         isSensor = isHT || isFlood || isDW || isSmoke || isGas || isButton || isUNI || isSense;
-        hasBattery = isHT || isFlood || isDW || isSmoke || isButton; // we assume that Sense is connected to //
-                                                                     // the
-        // charger
+        hasBattery = isHT || isFlood || isDW || isSmoke || isButton || isMotion; // we assume that Sense is connected to
+                                                                                 // the charger
     }
 
     public void updateFromStatus(ShellySettingsStatus status) {

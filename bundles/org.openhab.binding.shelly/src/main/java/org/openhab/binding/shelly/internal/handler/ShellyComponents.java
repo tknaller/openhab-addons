@@ -255,10 +255,10 @@ public class ShellyComponents {
 
             updated |= thingHandler.updateWakeupReason(sdata.actReasons);
 
-            if ((sdata.contact != null) && sdata.contact.isValid) {
+            if ((sdata.sensor != null) && sdata.sensor.isValid) {
                 // Shelly DW: “sensor”:{“state”:“open”, “is_valid”:true},
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_CONTACT,
-                        getString(sdata.contact.state).equalsIgnoreCase(SHELLY_API_DWSTATE_OPEN) ? OpenClosedType.OPEN
+                        getString(sdata.sensor.state).equalsIgnoreCase(SHELLY_API_DWSTATE_OPEN) ? OpenClosedType.OPEN
                                 : OpenClosedType.CLOSED);
                 boolean changed = thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ERROR,
                         getStringType(sdata.sensorError));
@@ -336,9 +336,17 @@ public class ShellyComponents {
                     thingHandler.postEvent(ALARM_TYPE_LOW_BATTERY, false);
                 }
             }
-            if (sdata.motion != null) {
+            if (sdata.motion != null) { // Shelly Sense
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION,
                         getOnOff(sdata.motion));
+            }
+            if (sdata.sensor != null) { // Shelly Motion
+                updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION,
+                        getOnOff(sdata.sensor.motion));
+                updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION_TS,
+                        getTimestamp(getString(profile.settings.timezone), sdata.sensor.motionTimestamp));
+                updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_VIBRATION,
+                        getOnOff(sdata.sensor.vibration));
             }
             if (sdata.charger != null) {
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_CHARGER,

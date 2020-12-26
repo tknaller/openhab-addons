@@ -302,7 +302,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
             }
 
             if (!profile.isInitialized()) {
-                logger.debug("{}: {}", thingName, messages.get("message.command.init", command));
+                logger.debug("{}: {}", thingName, messages.get("command.init", command));
                 initializeThing();
             } else {
                 profile = getProfile(false);
@@ -356,14 +356,6 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
     protected void refreshStatus() {
         try {
             boolean updated = false;
-
-            if (watchdog > 0) {
-                long delta = now() - watchdog;
-                logger.trace("{}: skipUpdate={}, watchdog={}, delta={}, remaining={}", thingName, skipUpdate, watchdog,
-                        delta, profile.updatePeriod - delta);
-            } else {
-                logger.trace("{}: skipUpdate={}, watchdog disabled", thingName, skipUpdate);
-            }
 
             skipUpdate++;
             ThingStatus thingStatus = getThing().getStatus();

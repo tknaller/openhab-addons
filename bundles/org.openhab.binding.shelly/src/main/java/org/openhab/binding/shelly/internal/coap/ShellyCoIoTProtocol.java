@@ -35,6 +35,10 @@ import org.openhab.binding.shelly.internal.handler.ShellyColorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+
 /**
  * The {@link ShellyCoIoTProtocol} implements common functions for the CoIoT implementations
  *
@@ -48,6 +52,7 @@ public class ShellyCoIoTProtocol {
     protected final ShellyDeviceProfile profile;
     protected final Map<String, CoIotDescrBlk> blkMap;
     protected final Map<String, CoIotDescrSen> sensorMap;
+    private final Gson gson = new GsonBuilder().create();
 
     // Due to the fact that the device reports only the current/last status, but no real events, we need to distinguish
     // between a real update or just a repeated status on periodic updates
@@ -66,7 +71,7 @@ public class ShellyCoIoTProtocol {
     }
 
     protected boolean handleStatusUpdate(List<CoIotSensor> sensorUpdates, CoIotDescrSen sen, CoIotSensor s,
-            Map<String, State> updates) {
+            Map<String, State> updates, ShellyColorUtils col) {
         // Process status information and convert into channel updates
         // Integer rIndex = Integer.parseInt(sen.links) + 1;
         // String rGroup = getProfile().numRelays <= 1 ? CHANNEL_GROUP_RELAY_CONTROL
@@ -74,6 +79,7 @@ public class ShellyCoIoTProtocol {
         int rIndex = getIdFromBlk(sen);
         String rGroup = getProfile().numRelays <= 1 ? CHANNEL_GROUP_RELAY_CONTROL
                 : CHANNEL_GROUP_RELAY_CONTROL + rIndex;
+
         switch (sen.type.toLowerCase()) {
             case "b": // BatteryLevel +
                 updateChannel(updates, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LEVEL,
@@ -133,22 +139,27 @@ public class ShellyCoIoTProtocol {
                         break;
                     // RGBW2/Bulb
                     case "red":
+                        col.setRed((int) s.value);
                         updateChannel(updates, CHANNEL_GROUP_COLOR_CONTROL, CHANNEL_COLOR_RED,
                                 ShellyColorUtils.toPercent((int) s.value));
                         break;
                     case "green":
+                        col.setGreen((int) s.value);
                         updateChannel(updates, CHANNEL_GROUP_COLOR_CONTROL, CHANNEL_COLOR_GREEN,
                                 ShellyColorUtils.toPercent((int) s.value));
                         break;
                     case "blue":
+                        col.setBlue((int) s.value);
                         updateChannel(updates, CHANNEL_GROUP_COLOR_CONTROL, CHANNEL_COLOR_BLUE,
                                 ShellyColorUtils.toPercent((int) s.value));
                         break;
                     case "white":
+                        col.setWhite((int) s.value);
                         updateChannel(updates, CHANNEL_GROUP_COLOR_CONTROL, CHANNEL_COLOR_WHITE,
                                 ShellyColorUtils.toPercent((int) s.value));
                         break;
                     case "gain":
+                        col.setGain((int) s.value);
                         updateChannel(updates, CHANNEL_GROUP_COLOR_CONTROL, CHANNEL_COLOR_GAIN,
                                 ShellyColorUtils.toPercent((int) s.value, SHELLY_MIN_GAIN, SHELLY_MAX_GAIN));
                         break;
@@ -359,6 +370,23 @@ public class ShellyCoIoTProtocol {
 
     public CoIotDescrSen fixDescription(@Nullable CoIotDescrSen sen, Map<String, CoIotDescrBlk> blkMap) {
         return sen != null ? sen : new CoIotDescrSen();
+    }
+
+    public void completeMissingSensorDefinition(Map<String, CoIotDescrSen> sensorMap) {
+    }
+
+    protected void addSensor(Map<String, CoIotDescrSen> sensorMap, String key, String json) {
+        try {
+            if (!sensorMap.containsKey(key)) {
+                CoIotDescrSen sen = gson.fromJson(json, CoIotDescrSen.class);
+                if (sen != null) {
+                    sensorMap.put(key, sen);
+                }
+            }
+        } catch (JsonSyntaxException e) {
+            // should never happen
+            logger.trace("Unable to parse sensor definition: {}", json, e);
+        }
     }
 
     public String getLastWakeup() {
