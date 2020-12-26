@@ -35,6 +35,7 @@ import org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.CoIotDescrBlk;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.CoIotDescrSen;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.CoIotSensor;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
+import org.openhab.binding.shelly.internal.handler.ShellyColorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,9 +68,9 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
      */
     @Override
     public boolean handleStatusUpdate(List<CoIotSensor> sensorUpdates, CoIotDescrSen sen, int serial, CoIotSensor s,
-            Map<String, State> updates) {
+            Map<String, State> updates, ShellyColorUtils col) {
         // first check the base implementation
-        if (super.handleStatusUpdate(sensorUpdates, sen, s, updates)) {
+        if (super.handleStatusUpdate(sensorUpdates, sen, s, updates, col)) {
             // process by the base class
             return true;
         }
@@ -92,7 +93,6 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
             case "3111": // B, battery, 0-100%, unknown -1
             case "3112": // S, charger, 0/1
             case "3115": // S, sensorError, 0/1
-            case "5101": // S, brightness, 1-100%
                 // processed by base handler
                 break;
 
@@ -248,6 +248,16 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
                 updateChannel(updates, rGroup, CHANNEL_EMETER_PFACTOR, getDecimal(s.value));
                 break;
 
+            case "5101": // {"I":5101,"T":"S","D":"brightness","R":"0/100","L":1},
+            case "5102": // {"I":5102,"T":"S","D":"gain","R":"0/100","L":1},
+            case "5103": // {"I":5103,"T":"S","D":"colorTemp","U":"K","R":"3000/6500","L":1},
+            case "5105": // {"I":5105,"T":"S","D":"red","R":"0/255","L":1},
+            case "5106": // {"I":5106,"T":"S","D":"green","R":"0/255","L":1},
+            case "5107": // {"I":5107,"T":"S","D":"blue","R":"0/255","L":1},
+            case "5108": // {"I":5108,"T":"S","D":"white","R":"0/255","L":1},
+                // already covered by base handler
+                break;
+
             case "6101": // A, overtemp, 0/1
                 if (s.value == 1) {
                     thingHandler.postEvent(ALARM_TYPE_OVERTEMP, true);
@@ -279,6 +289,21 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
                 updateChannel(updates, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_FLOOD,
                         value == 1 ? OnOffType.ON : OnOffType.OFF);
                 break;
+
+            case "6107": // A, motion, 0/1, -1
+                // {"I":6107,"T":"A","D":"motion","R":["0/1","-1"],"L":1},
+                updateChannel(updates, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION,
+                        value == 1 ? OnOffType.ON : OnOffType.OFF);
+                break;
+            case "3119": // Motion timestamp
+                // {"I":3119,"T":"S","D":"timestamp","U":"s","R":["U32","-1"],"L":1},
+                updateChannel(updates, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION_TS,
+                        getTimestamp(getString(profile.settings.timezone), (long) s.value));
+                break;
+            case "3120": // motionActive
+                // {"I":3120,"T":"S","D":"motionActive","R":["0/1","-1"],"L":1},
+                break;
+
             case "6108": // A, gas, none/mild/heavy/test or unknown
                 updateChannel(updates, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ALARM_STATE, getStringType(s.valueStr));
                 break;
@@ -308,5 +333,17 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
     @Override
     public CoIotDescrSen fixDescription(@Nullable CoIotDescrSen sen, Map<String, CoIotDescrBlk> blkMap) {
         return super.fixDescription(sen, blkMap);
+    }
+
+    private static final String ID_4101_DESCR = "{ \"I\":4101, \"T\":\"P\", \"D\":\"power\",  \"U\": \"W\",    \"R\":\"0/3500\", \"L\": 1}";
+    private static final String ID_4103_DESCR = "{ \"I\":4103, \"T\":\"E\", \"D\":\"energy\", \"U\": \"Wmin\", \"R\":\"U32\", \"L\": 1}";
+
+    @Override
+    public void completeMissingSensorDefinition(Map<String, CoIotDescrSen> sensorMap) {
+        if (profile.isDuo && profile.inColor) {
+            addSensor(sensorMap, "4101", ID_4101_DESCR);
+            addSensor(sensorMap, "4103", ID_4103_DESCR);
+        }
+        super.completeMissingSensorDefinition(sensorMap);
     }
 }

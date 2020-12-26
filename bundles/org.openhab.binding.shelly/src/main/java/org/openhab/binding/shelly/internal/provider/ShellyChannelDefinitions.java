@@ -178,6 +178,7 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_VIBRATION, "sensorVibration", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_TILT, "sensorTilt", ITEMT_ANGLE))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_MOTION, "sensorMotion", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_MOTION_TS, "motionTimestamp", ITEMT_DATETIME))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_FLOOD, "sensorFlood", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_SMOKE, "sensorSmoke", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_PPM, "sensorPPM", ITEMT_NUMBER))
@@ -318,10 +319,11 @@ public class ShellyChannelDefinitions {
         String group = profile.getControlGroup(idx);
 
         ShellySettingsRgbwLight light = profile.settings.lights.get(idx);
+        // The is no brightness channel in color mode, so we need a power channel
+        addChannel(thing, add, profile.inColor, group, CHANNEL_LIGHT_POWER);
+
         addChannel(thing, add, light.autoOn != null, group, CHANNEL_TIMER_AUTOON);
         addChannel(thing, add, light.autoOff != null, group, CHANNEL_TIMER_AUTOOFF);
-
-        addChannel(thing, add, status.ison != null, group, CHANNEL_LIGHT_POWER);
         addChannel(thing, add, status.hasTimer != null, group, CHANNEL_TIMER_ACTIVE);
         return add;
     }
@@ -377,9 +379,8 @@ public class ShellyChannelDefinitions {
         Map<String, Channel> newChannels = new LinkedHashMap<>();
         addChannel(thing, newChannels, meter.power != null, group, CHANNEL_METER_CURRENTWATTS);
         addChannel(thing, newChannels, meter.total != null, group, CHANNEL_METER_TOTALKWH);
-        if (meter.counters != null) {
-            addChannel(thing, newChannels, meter.counters[0] != null, group, CHANNEL_METER_LASTMIN1);
-        }
+        addChannel(thing, newChannels, (meter.counters != null) && (meter.counters[0] != null), group,
+                CHANNEL_METER_LASTMIN1);
         addChannel(thing, newChannels, meter.timestamp != null, group, CHANNEL_LAST_UPDATE);
         return newChannels;
     }
@@ -406,21 +407,24 @@ public class ShellyChannelDefinitions {
         addChannel(thing, newChannels, sdata.tmp != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_TEMP);
         addChannel(thing, newChannels, sdata.hum != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_HUM);
         addChannel(thing, newChannels, sdata.lux != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_LUX);
-        if (sdata.accel != null) {
+        addChannel(thing, newChannels, sdata.lux != null && sdata.lux.illumination != null, CHANNEL_GROUP_SENSOR,
+                CHANNEL_SENSOR_ILLUM);
+        addChannel(thing, newChannels, sdata.flood != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_FLOOD);
+        addChannel(thing, newChannels, sdata.smoke != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_FLOOD);
+        addChannel(thing, newChannels, sdata.charger != null, CHGR_DEVST, CHANNEL_DEVST_CHARGER);
+        addChannel(thing, newChannels, sdata.motion != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION);
+        if (sdata.sensor != null) { // DW2 or Motion
+            addChannel(thing, newChannels, sdata.sensor.state != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_CONTACT); // DW/DW2
+            addChannel(thing, newChannels, sdata.sensor.motionTimestamp != null, CHANNEL_GROUP_SENSOR, // Motion
+                    CHANNEL_SENSOR_MOTION_TS);
+            addChannel(thing, newChannels, sdata.sensor.vibration != null, CHANNEL_GROUP_SENSOR,
+                    CHANNEL_SENSOR_VIBRATION);
+        }
+        if (sdata.accel != null) { // DW2
             addChannel(thing, newChannels, sdata.accel.vibration != null, CHANNEL_GROUP_SENSOR,
                     CHANNEL_SENSOR_VIBRATION);
             addChannel(thing, newChannels, sdata.accel.tilt != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_TILT);
         }
-        addChannel(thing, newChannels, sdata.flood != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_FLOOD);
-        addChannel(thing, newChannels, sdata.smoke != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_FLOOD);
-        addChannel(thing, newChannels, sdata.lux != null && sdata.lux.illumination != null, CHANNEL_GROUP_SENSOR,
-                CHANNEL_SENSOR_ILLUM);
-        addChannel(thing, newChannels, sdata.contact != null && sdata.contact.state != null, CHANNEL_GROUP_SENSOR,
-                CHANNEL_SENSOR_CONTACT);
-        addChannel(thing, newChannels, sdata.motion != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION);
-        addChannel(thing, newChannels, sdata.charger != null, CHGR_DEVST, CHANNEL_DEVST_CHARGER);
-        addChannel(thing, newChannels, sdata.sensorError != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ERROR);
-        addChannel(thing, newChannels, sdata.actReasons != null, CHGR_DEVST, CHANNEL_DEVST_WAKEUP);
 
         // Gas
         if (sdata.gasSensor != null) {
@@ -434,8 +438,7 @@ public class ShellyChannelDefinitions {
                     CHANNEL_SENSOR_ALARM_STATE);
         }
 
-        // UNI
-        addChannel(thing, newChannels, sdata.adcs != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_VOLTAGE);
+        addChannel(thing, newChannels, sdata.adcs != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_VOLTAGE); // UNI
 
         // Battery
         if (sdata.bat != null) {
@@ -443,6 +446,8 @@ public class ShellyChannelDefinitions {
             addChannel(thing, newChannels, sdata.bat.value != null, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LOW);
         }
 
+        addChannel(thing, newChannels, sdata.sensorError != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ERROR);
+        addChannel(thing, newChannels, sdata.actReasons != null, CHGR_DEVST, CHANNEL_DEVST_WAKEUP);
         addChannel(thing, newChannels, true, profile.isButton ? CHANNEL_GROUP_STATUS : CHANNEL_GROUP_SENSOR,
                 CHANNEL_LAST_UPDATE);
         return newChannels;

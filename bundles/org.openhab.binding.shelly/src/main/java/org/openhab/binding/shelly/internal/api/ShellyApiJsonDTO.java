@@ -875,6 +875,14 @@ public class ShellyApiJsonDTO {
             @SerializedName("is_valid")
             public Boolean isValid; // whether the internal sensor is operating properly
             public String state; // Shelly Door/Window
+
+            // Shelly Motion
+            public Boolean motion;
+            public Boolean vibration;
+            @SerializedName("timestamp")
+            public Long motionTimestamp;
+            @SerializedName("active")
+            public Boolean motionActive;
         }
 
         public static class ShellySensorLux {
@@ -927,7 +935,7 @@ public class ShellyApiJsonDTO {
         public ShellySensorAccel accel;
         public ShellySensorBat bat;
         @SerializedName("sensor")
-        public ShellySensorState contact;
+        public ShellySensorState sensor;
         public Boolean smoke; // SHelly Smoke
         public Boolean flood; // Shelly Flood: true = flood condition detected
         @SerializedName("rain_sensor")

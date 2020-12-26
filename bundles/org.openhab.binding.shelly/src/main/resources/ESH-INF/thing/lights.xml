@@ -32,6 +32,21 @@
 		<config-description-ref uri="thing-type:shelly:light"/>
 	</thing-type>
 
+	<thing-type id="shellycolorbulb">
+		<label>Shelly Duo Color Bulb (SHSCB-1)</label>
+		<description>Shelly Duo Color Bulb in Color or White Mode</description>
+		<channel-groups>
+			<channel-group id="control" typeId="duoControl"/>
+			<channel-group id="color" typeId="colorSettingsBulb"/>
+			<channel-group id="white" typeId="whiteSettings"/>
+			<channel-group id="meter" typeId="meter"/>
+			<channel-group id="device" typeId="deviceStatus"/>
+		</channel-groups>
+
+		<representation-property>deviceName</representation-property>
+		<config-description-ref uri="thing-type:shelly:light"/>
+	</thing-type>
+
 	<thing-type id="shellyvintage">
 		<label>Shelly Vintage (SHVIN-1)</label>
 		<description>Shelly Vintage Light Bulb</description>
@@ -228,6 +243,7 @@
 		<label>Brightness</label>
 		<description>Brightness: 0..100%</description>
 		<category>DimmableLight</category>
+		<state min="0" max="100" step="1" readOnly="false"></state>
 	</channel-type>
 	<channel-type id="colorEffectBulb">
 		<item-type>Number</item-type>

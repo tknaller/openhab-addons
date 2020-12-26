@@ -21,6 +21,7 @@ import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.CoIotDescrBlk;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.CoIotDescrSen;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.CoIotSensor;
+import org.openhab.binding.shelly.internal.handler.ShellyColorUtils;
 
 /**
  * The {@link ShellyCoapListener} describes the listening interface to process Coap responses
@@ -33,8 +34,10 @@ public interface ShellyCoIoTInterface {
 
     public CoIotDescrSen fixDescription(@Nullable CoIotDescrSen sen, Map<String, CoIotDescrBlk> blkMap);
 
+    public void completeMissingSensorDefinition(Map<String, CoIotDescrSen> sensorMap);
+
     public boolean handleStatusUpdate(List<CoIotSensor> sensorUpdates, CoIotDescrSen sen, int serial, CoIotSensor s,
-            Map<String, State> updates);
+            Map<String, State> updates, ShellyColorUtils col);
 
     public String getLastWakeup();
 }

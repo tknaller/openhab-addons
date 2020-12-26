@@ -22,6 +22,7 @@
 		<description>Shelly 1L device with a single relay</description>
 		<channel-groups>
 			<channel-group id="relay" typeId="relayChannel"/>
+			<channel-group id="meter" typeId="meter"/>
 			<channel-group id="sensors" typeId="externalSensors"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
@@ -242,7 +243,7 @@
 			<channel-group id="relay2" typeId="relayChannel">
 				<label>Relay 2</label>
 			</channel-group>
-			<channel-group id="sensors" typeId="uniSensor"/>
+			<channel-group id="sensors" typeId="sensorData"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -370,7 +371,7 @@
 		<item-type>Dimmer</item-type>
 		<label>Roller Position (100=open, 0=closed)</label>
 		<description>Position the roller (100..0 in %, where 100%=open, 0%=closed)</description>
-		<state readOnly="false" min="0" max="100"/>
+		<state readOnly="false" min="0" max="100" pattern="%d %%"/>
 	</channel-type>
 	<channel-type id="rollerFavorite">
 		<item-type>Number</item-type>
@@ -452,91 +453,77 @@
 		<item-type>Number:Power</item-type>
 		<label>Watt</label>
 		<description>Current power consumption in Watt</description>
-		<state readOnly="true" pattern="%f %unit%">
+		<state readOnly="true" pattern="%.2f %unit%">
 		</state>
 	</channel-type>
 	<channel-type id="meterAccuWatts" advanced="true">
 		<item-type>Number:Power</item-type>
 		<label>Accumulated Watt</label>
 		<description>Accumulated current power consumption in Watt from all meters</description>
-		<state readOnly="true" pattern="%f %unit%">
+		<state readOnly="true" pattern="%.2f %unit%">
 		</state>
 	</channel-type>
 	<channel-type id="meterAccuTotal" advanced="true">
 		<item-type>Number:Power</item-type>
 		<label>Accumulated Total</label>
 		<description>Accumulated total power consumption in kw/h from all meters</description>
-		<state readOnly="true" pattern="%f %unit%">
+		<state readOnly="true" pattern="%.3f %unit%">
 		</state>
 	</channel-type>
 	<channel-type id="meterAccuReturned" advanced="true">
 		<item-type>Number:Power</item-type>
 		<label>Accumulated Returned</label>
 		<description>Accumulated returned power consumption in kw/h from all meters</description>
-		<state readOnly="true" pattern="%f %unit%">
+		<state readOnly="true" pattern="%.3f %unit%">
 		</state>
 	</channel-type>
 	<channel-type id="meterReactive">
 		<item-type>Number:Power</item-type>
 		<label>Reactive Watt</label>
 		<description>Instantaneous reactive power in Watts (W)</description>
-		<state readOnly="true" pattern="%f %unit%">
+		<state readOnly="true" pattern="%.3f %unit%">
 		</state>
 	</channel-type>
 	<channel-type id="lastPower1" advanced="true">
 		<item-type>Number:Energy</item-type>
 		<label>Last Power #1</label>
 		<description>Last power consumption #1 - one rounded minute</description>
-		<state readOnly="true" pattern="%f %unit%">
-		</state>
-	</channel-type>
-	<channel-type id="lastPower2" advanced="true">
-		<item-type>Number:Energy</item-type>
-		<label>Last Power #2</label>
-		<description>Last power consumption #2 - one rounded minute</description>
-		<state readOnly="true" pattern="%f %unit%">
-		</state>
-	</channel-type>
-	<channel-type id="lastPower3" advanced="true">
-		<item-type>Number:Energy</item-type>
-		<label>Last Power #3</label>
-		<description>Last power consumption #3 - one rounded minute</description>
-		<state readOnly="true" pattern="%f %unit%">
+		<state readOnly="true" pattern="%.3f %unit%">
 		</state>
 	</channel-type>
 	<channel-type id="meterTotal">
 		<item-type>Number:Energy</item-type>
 		<label>Total Energy</label>
 		<description>Total power consumption in kw/h</description>
-		<state readOnly="true" pattern="%f %unit%">
+		<state readOnly="true" pattern="%.3f %unit%">
 		</state>
 	</channel-type>
 	<channel-type id="meterReturned">
 		<item-type>Number:Energy</item-type>
 		<label>Total Returned Energy (kw/h)</label>
 		<description>Total returned energy in kw/h</description>
-		<state readOnly="true" pattern="%f %unit%">
+		<state readOnly="true" pattern="%.3f %unit%">
 		</state>
 	</channel-type>
 	<channel-type id="meterVoltage">
 		<item-type>Number:ElectricPotential</item-type>
 		<label>Voltage</label>
 		<description>RMS voltage, Volts </description>
-		<state readOnly="true" pattern="%f %unit%">
+		<state readOnly="true" pattern="%.3f %unit%">
 		</state>
 	</channel-type>
 	<channel-type id="meterCurrent">
 		<item-type>Number:ElectricPotential</item-type>
 		<label>Current</label>
 		<description>Current in A </description>
-		<state readOnly="true" pattern="%f %unit%">
+		<state readOnly="true" pattern="%.3f %unit%">
 		</state>
 	</channel-type>
 	<channel-type id="meterPowerFactor">
 		<item-type>Number</item-type>
 		<label>Power Factor</label>
 		<description></description>
-		<state readOnly="true" pattern="%f %unit%">
+		<state readOnly="true" pattern="%.3f %unit%">
 		</state>
 	</channel-type>
 	<channel-type id="timestamp">
