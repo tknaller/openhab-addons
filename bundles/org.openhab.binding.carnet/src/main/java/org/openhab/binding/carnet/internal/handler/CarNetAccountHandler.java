@@ -40,6 +40,7 @@ import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
+import org.openhab.binding.carnet.internal.CarNetUtils;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
@@ -139,7 +140,8 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         Map<String, String> properties = new TreeMap<String, String>();
 
         config.account = getConfigAs(CarNetAccountConfiguration.class);
-        String type = getThing().getUID().getThingTypeUID().getId();
+        String type = getThing().getUID().getAsString();
+        type = CarNetUtils.substringBetween(type, ":", ":");
         switch (type) {
             case THING_MYAUDI:
             default:
