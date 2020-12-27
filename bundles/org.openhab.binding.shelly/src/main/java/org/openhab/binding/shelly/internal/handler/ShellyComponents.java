@@ -217,7 +217,7 @@ public class ShellyComponents {
                 }
             }
 
-            if (updated && !profile.isRoller && !profile.isRGBW2) {
+            if (!profile.isRoller && !profile.isRGBW2) {
                 thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ACCUWATTS,
                         toQuantityType(accumulatedWatts, DIGITS_WATT, SmartHomeUnits.WATT));
                 thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ACCUTOTAL,
