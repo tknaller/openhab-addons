@@ -20,6 +20,7 @@ import java.util.concurrent.TimeoutException;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.http.HttpStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiResult;
 
 import com.google.gson.JsonSyntaxException;
@@ -95,7 +96,7 @@ public class CarNetException extends Exception {
     }
 
     public boolean isSecurityException() {
-        return getCauseClass() == CarNetSecurityException.class;
+        return (getCauseClass() == CarNetSecurityException.class) || (apiResult.httpCode == HttpStatus.FORBIDDEN_403);
     }
 
     public boolean isHttpAccessUnauthorized() {

@@ -62,6 +62,10 @@ public class CarNetVehicleBaseService {
         return false;
     }
 
+    public void disable() {
+        enabled = false;
+    }
+
     public boolean update() throws CarNetException {
         try {
             if (!enabled) {
@@ -70,11 +74,11 @@ public class CarNetVehicleBaseService {
             return serviceUpdate();
         } catch (CarNetException e) {
             int httpCode = e.getApiResult().httpCode;
-            if (httpCode == HttpStatus.FORBIDDEN_403) {
+            if (e.isSecurityException()) {
                 enabled = false;
-                logger.debug("Service not available!");
+                logger.debug("Service {} is not available!", serviceId);
             } else if (httpCode == HttpStatus.NO_CONTENT_204) {
-                logger.debug("Service return NO_CONTENT (204)");
+                logger.debug("Service {} returned NO_CONTENT (204)", serviceId);
             }
         }
         return false;

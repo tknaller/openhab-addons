@@ -266,7 +266,11 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
                 // Add channels based on service information
                 for (Map.Entry<String, CarNetVehicleBaseService> s : services.entrySet()) {
-                    s.getValue().createChannels(channels);
+                    CarNetVehicleBaseService service = s.getValue();
+                    if (!service.createChannels(channels)) {
+                        logger.debug("{}: Service {} is not available, disable", thingId, service.getServiceId());
+                        service.disable();
+                    }
                 }
 
                 logger.debug("{}: Creating {} channels", thingId, channels.size());

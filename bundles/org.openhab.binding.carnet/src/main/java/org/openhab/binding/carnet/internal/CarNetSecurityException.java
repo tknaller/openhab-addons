@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.carnet.internal;
 
+import org.openhab.binding.carnet.internal.api.CarNetApiResult;
+
 /**
  * {@link CarNetSecurityException} indicates security exceptions like login failures
  *
@@ -24,5 +26,9 @@ public class CarNetSecurityException extends CarNetException {
 
     public CarNetSecurityException(String message, Throwable e) {
         super(message, e);
+    }
+
+    public CarNetSecurityException(String message, CarNetApiResult apiResult) {
+        super(message, apiResult);
     }
 }

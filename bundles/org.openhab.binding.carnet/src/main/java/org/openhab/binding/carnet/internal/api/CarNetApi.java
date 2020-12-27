@@ -484,18 +484,17 @@ public class CarNetApi {
         try {
             json = http.get(uri, vin, fillAppHeaders());
         } catch (CarNetException e) {
-            if (e.isSecurityException()) { // check for login error
-                throw e;
-            }
             CarNetApiResult res = e.getApiResult();
             logger.debug("{}: API call {} failed: {}", config.vehicle.vin, function, e.toString());
-            if (res.isHttpUnauthorized()) {
+            if (e.isSecurityException() || res.isHttpUnauthorized()) {
                 json = loadJson(function);
+            }
+            if ((json == null) || json.isEmpty()) {
+                throw e;
             }
         } catch (RuntimeException e) {
             logger.debug("{}: API call {} failed", config.vehicle.vin, function, e);
-        } catch (Exception e) {
-            logger.debug("{}: API call {} failed", config.vehicle.vin, function, e);
+            throw new CarNetException("API call failes: RuntimeException", e);
         }
 
         if (classOfT.isInstance(json)) {

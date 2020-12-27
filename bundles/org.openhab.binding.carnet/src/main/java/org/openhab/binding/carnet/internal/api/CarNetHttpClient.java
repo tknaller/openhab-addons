@@ -39,6 +39,7 @@ import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.UrlEncoded;
 import org.openhab.binding.carnet.internal.CarNetException;
+import org.openhab.binding.carnet.internal.CarNetSecurityException;
 import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,6 +173,9 @@ public class CarNetHttpClient {
             String loc = getRedirect();
             if (!loc.isEmpty()) {
                 logger.debug("HTTP {} -> {}", code, loc);
+            }
+            if (code == HttpStatus.FORBIDDEN_403) {
+                throw new CarNetSecurityException("Forbidden", apiResult);
             }
             if (response.contains("\"error\":")) {
                 throw new CarNetException("API returned error", apiResult);
