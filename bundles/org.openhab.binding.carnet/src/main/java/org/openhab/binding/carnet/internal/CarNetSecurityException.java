@@ -20,6 +20,8 @@ import org.openhab.binding.carnet.internal.api.CarNetApiResult;
  * @author Markus Michels - Initial contribution
  */
 public class CarNetSecurityException extends CarNetException {
+    private static final long serialVersionUID = 3774082851695011862L;
+
     public CarNetSecurityException(String message) {
         super(message);
     }
