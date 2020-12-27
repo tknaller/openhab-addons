@@ -391,10 +391,8 @@ public class MagentaTVControl {
             // direct key code
             return key;
         }
-        if (KEY_MAP.containsKey(key)) {
-            return KEY_MAP.get(key);
-        }
-        return "";
+        String code = KEY_MAP.get(key);
+        return code != null ? code : "";
     }
 
     /**
