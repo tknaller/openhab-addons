@@ -53,8 +53,6 @@ import com.google.gson.JsonSyntaxException;
 public class GreeDeviceFinder {
     private final Logger logger = LoggerFactory.getLogger(GreeDeviceFinder.class);
     private static final Gson gson = (new GsonBuilder()).create();
-
-    protected final InetAddress ipAddress = InetAddress.getLoopbackAddress();
     protected Map<String, GreeAirDevice> deviceTable = new HashMap<>();
 
     @Activate
@@ -69,6 +67,7 @@ public class GreeDeviceFinder {
             throw new GreeException("Unknown host or invalid IP address", e);
         }
         try {
+            String id = ipAddress.getHostAddress();
             byte[] sendData = new byte[1024];
             byte[] receiveData = new byte[1024];
 
@@ -77,7 +76,7 @@ public class GreeDeviceFinder {
             scanGson.t = GREE_CMDT_SCAN;
             String scanReq = gson.toJson(scanGson);
             sendData = scanReq.getBytes(StandardCharsets.UTF_8);
-            logger.debug("Sending scan packet to {}", ipAddress.getHostAddress());
+            logger.debug("{}: Sending scan packet", id);
             clientSocket.setSoTimeout(DISCOVERY_TIMEOUT_MS);
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, ipAddress, DISCOVERY_TIMEOUT_MS);
             clientSocket.send(sendPacket);
@@ -97,7 +96,7 @@ public class GreeDeviceFinder {
 
                     // If there was no pack, ignore the response
                     if (scanResponseGson.pack == null) {
-                        logger.debug("Invalid packet format, ignore");
+                        logger.debug("{}: Invalid packet format, ignore", id);
                         retries--;
                         continue;
                     }
@@ -105,7 +104,7 @@ public class GreeDeviceFinder {
                     // Decrypt message - a a GreeException is thrown when something went wrong
                     String decryptedMsg = scanResponseGson.decryptedPack = GreeCryptoUtil
                             .decryptPack(GreeCryptoUtil.getAESGeneralKeyByteArray(), scanResponseGson.pack);
-                    logger.debug("Response received from address {}: {}", remoteAddress.getHostAddress(), decryptedMsg);
+                    logger.debug("{}: Response received: {}", remoteAddress.getHostAddress(), decryptedMsg);
 
                     // Create the JSON to hold the response values
                     scanResponseGson.packJson = gson.fromJson(decryptedMsg, GreeScanReponsePackDTO.class);
@@ -113,11 +112,11 @@ public class GreeDeviceFinder {
                     // Now make sure the device is reported as a Gree device
                     if (scanResponseGson.packJson.brand.equalsIgnoreCase("gree")) {
                         // Create a new GreeDevice
-                        logger.debug("Discovered device at {}:{}", remoteAddress.getHostAddress(), remotePort);
-                        GreeAirDevice newDevice = new GreeAirDevice(remoteAddress, remotePort, scanResponseGson);
+                        logger.debug("{}: Discovered device at {}:{}", id, remoteAddress.getHostAddress(), remotePort);
+                        GreeAirDevice newDevice = new GreeAirDevice(id, remoteAddress, remotePort, scanResponseGson);
                         addDevice(newDevice);
                     } else {
-                        logger.debug("Unit discovered, but brand is not GREE");
+                        logger.debug("{}: Unit discovered, but brand is not GREE", id);
                     }
                 } catch (SocketTimeoutException e) {
                     return;
@@ -133,9 +132,14 @@ public class GreeDeviceFinder {
         }
     }
 
-    private <T> T fromJson(DatagramPacket packet, Class<T> classOfT) {
+    private <T> T fromJson(DatagramPacket packet, Class<T> classOfT) throws JsonSyntaxException {
         String json = new String(packet.getData(), StandardCharsets.UTF_8).replace("\\u0000", "").trim();
-        return gson.fromJson(json, classOfT);
+        @Nullable
+        T o = gson.fromJson(json, classOfT);
+        if (o == null) {
+            throw new JsonSyntaxException("Unable to create object of type " + classOfT.toString() + ", json=" + json);
+        }
+        return o;
     }
 
     public void addDevice(GreeAirDevice newDevice) {
@@ -143,7 +147,11 @@ public class GreeDeviceFinder {
     }
 
     public GreeAirDevice getDevice(String id) {
-        return deviceTable.get(id);
+        GreeAirDevice dev = deviceTable.get(id);
+        if (dev != null) {
+            return dev;
+        }
+        throw new IllegalArgumentException("Invalid device id");
     }
 
     public Map<String, GreeAirDevice> getDevices() {

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.QuantityType;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.openhab.binding.gree.internal.GreeCryptoUtil;
@@ -59,6 +60,7 @@ import com.google.gson.JsonSyntaxException;
 @NonNullByDefault
 public class GreeAirDevice {
     private final Logger logger = LoggerFactory.getLogger(GreeAirDevice.class);
+    public String id = "";
     private final static Gson gson = new Gson();
     private boolean isBound = false;
     private final InetAddress ipAddress;
@@ -72,7 +74,8 @@ public class GreeAirDevice {
         ipAddress = InetAddress.getLoopbackAddress();
     }
 
-    public GreeAirDevice(InetAddress ipAddress, int port, GreeScanResponseDTO scanResponse) {
+    public GreeAirDevice(String id, InetAddress ipAddress, int port, GreeScanResponseDTO scanResponse) {
+        this.id = id;
         this.ipAddress = ipAddress;
         this.port = port;
         this.scanResponseGson = Optional.of(scanResponse);
@@ -133,7 +136,7 @@ public class GreeAirDevice {
             // Read the response, create the JSON to hold the response values
             GreeStatusResponseDTO resp = receiveResponse(clientSocket, GreeStatusResponseDTO.class);
             resp.decryptedPack = GreeCryptoUtil.decryptPack(getKey(), resp.pack);
-            logger.debug("Response from device: {}", resp.decryptedPack);
+            logger.debug("{}: Response from device: {}", id, resp.decryptedPack);
             resp.packJson = gson.fromJson(resp.decryptedPack, GreeStatusResponsePackDTO.class);
 
             // save the results
@@ -142,15 +145,16 @@ public class GreeAirDevice {
         } catch (IOException | JsonSyntaxException e) {
             throw new GreeException("I/O exception while updating status", e);
         } catch (RuntimeException e) {
-            logger.debug("Exception", e);
+            logger.debug("{}: Exception", id, e);
             String json = statusResponseGson.map(r -> r.packJson.toString()).orElse("n/a");
             throw new GreeException("Exception while updating status, JSON=" + json, e);
         }
     }
 
-    public void bindWithDevice(DatagramSocket clientSocket) throws GreeException {
+    public void bindWithDevice(String id, DatagramSocket clientSocket) throws GreeException {
         try {
             // Prep the Binding Request pack
+            this.id = id;
             GreeBindRequestPackDTO bindReqPackGson = new GreeBindRequestPackDTO();
             bindReqPackGson.mac = getId();
             bindReqPackGson.t = GREE_CMDT_BIND;
@@ -304,8 +308,8 @@ public class GreeAirDevice {
         if (CorF == TEMP_UNIT_FAHRENHEIT) { // If Fahrenheit,
             halfStep = newVal - outVal > 0 ? TEMP_HALFSTEP_YES : TEMP_HALFSTEP_NO;
         }
-        logger.debug("Converted temp from {}{} to temp={}, halfStep={}, unit={})", newVal, temp.getUnit(), outVal,
-                halfStep, CorF == TEMP_UNIT_CELSIUS ? "C" : "F");
+        logger.debug("{}: Converted temp from {}{} to temp={}, halfStep={}, unit={})", id, newVal, temp.getUnit(),
+                outVal, halfStep, CorF == TEMP_UNIT_CELSIUS ? "C" : "F");
 
         // Set the values in the HashMap
         HashMap<String, Integer> parameters = new HashMap<>();
@@ -325,6 +329,10 @@ public class GreeAirDevice {
 
     public void setDeviceHealth(DatagramSocket clientSocket, int value) throws GreeException {
         setCommandValue(clientSocket, GREE_PROP_HEALTH, value);
+    }
+
+    public void setDevicSafetyHeat(DatagramSocket clientSocket, int value) throws GreeException {
+        setCommandValue(clientSocket, GREE_PROP_HEAT, value);
     }
 
     public void setDevicePwrSaving(DatagramSocket clientSocket, int value) throws GreeException {
@@ -424,6 +432,7 @@ public class GreeAirDevice {
             execCmdPackGson.p = valueArray;
             execCmdPackGson.t = GREE_CMDT_CMD;
             String execCmdPackStr = gson.toJson(execCmdPackGson);
+            logger.debug("{}: Send command vector to unit: {}", id, execCmdPackStr);
 
             // Now encrypt and send the Command Request pack
             String encryptedCommandReqPacket = GreeCryptoUtil.encryptPack(getKey(), execCmdPackStr);
@@ -472,7 +481,12 @@ public class GreeAirDevice {
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         clientSocket.receive(receivePacket);
         String json = new String(receivePacket.getData(), StandardCharsets.UTF_8).replace("\\u0000", "").trim();
-        return gson.fromJson(json, classOfT);
+        @Nullable
+        T o = gson.fromJson(json, classOfT);
+        if (o == null) {
+            throw new JsonSyntaxException("Unable to create object of type " + classOfT.toString() + ", json=" + json);
+        }
+        return o;
     }
 
     private void updateTempFtoC() {

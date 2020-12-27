@@ -42,6 +42,7 @@ The following channels are supported for fans:
 |                    |           | Check the Air Conditioner's operating manual for supported modes.                                 |
 | temperature        | Number:Temperature | Sets the desired room temperature.                                                       |
 | currentTemperature | Number:Temperature | Displays the current room temperature (if supported by the unit, otherwise NaN).         |
+| safetyheat         | Switch    | Turn on/off safety heating mode (8°C)                                                             |
 | air                | Switch    | Set on/off the Air Conditioner's Air function if applicable to the Air Conditioner model          |
 | dry                | Switch    | Set on/off the Air Conditioner's Dry function if applicable to the Air Conditioner model          |
 | health             | Switch    | Set on/off the Air Conditioner's Health function if applicable to the Air Conditioner model       |

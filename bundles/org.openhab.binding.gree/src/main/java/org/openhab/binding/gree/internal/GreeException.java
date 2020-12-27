@@ -48,7 +48,7 @@ public class GreeException extends Exception {
     }
 
     @Override
-    public String getMessage() {
+    public @Nullable String getMessage() {
         return isEmpty() ? "" : nonNullString(super.getMessage());
     }
 
@@ -71,7 +71,7 @@ public class GreeException extends Exception {
         } else {
             message = getMessage();
         }
-        return message;
+        return message != null ? message : "";
     }
 
     public boolean isApiException() {
@@ -80,9 +80,10 @@ public class GreeException extends Exception {
 
     public boolean isTimeout() {
         Class<?> extype = !isEmpty() ? getCauseClass() : null;
+        String message = getMessage();
         return (extype != null) && ((extype == SocketTimeoutException.class) || (extype == TimeoutException.class)
                 || (extype == ExecutionException.class) || (extype == InterruptedException.class)
-                || getMessage().toLowerCase().contains("timeout"));
+                || (message != null) && message.toLowerCase().contains("timeout"));
     }
 
     public boolean isUnknownHost() {
@@ -107,7 +108,7 @@ public class GreeException extends Exception {
 
     private Class<?> getCauseClass() {
         Throwable cause = getCause();
-        if (getCause() != null) {
+        if (cause != null) {
             return cause.getClass();
         }
         return GreeException.class;

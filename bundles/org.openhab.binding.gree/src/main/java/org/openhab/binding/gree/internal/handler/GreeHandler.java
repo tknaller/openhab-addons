@@ -112,7 +112,7 @@ public class GreeHandler extends BaseThingHandler {
             if (newDevice != null) {
                 // Ok, our device responded, now let's Bind with it
                 device = newDevice;
-                device.bindWithDevice(clientSocket.get());
+                device.bindWithDevice(thingId, clientSocket.get());
                 if (device.getIsBound()) {
                     updateStatus(ThingStatus.ONLINE);
                     return;
@@ -216,6 +216,11 @@ public class GreeHandler extends BaseThingHandler {
             case PWRSAV_CHANNEL:
                 device.setDevicePwrSaving(socket, getOnOff(command));
                 break;
+            case STHT_CHANNEL:
+                device.setDevicSafetyHeat(socket, getOnOff(command));
+                break;
+            default:
+                logger.info("{}: Unknown command {} for channel {}", thingId, command, channelId);
         }
     }
 
@@ -341,7 +346,7 @@ public class GreeHandler extends BaseThingHandler {
             // The Number alone doesn't specify the temp unit
             // for this get current setting from the A/C unit
             int unit = device.getIntStatusVal(GREE_PROP_TEMPUNIT);
-            return toQuantityType((DecimalType) command, DIGITS_TEMP,
+            return toQuantityType((DecimalType) command,
                     unit == TEMP_UNIT_CELSIUS ? SIUnits.CELSIUS : ImperialUnits.FAHRENHEIT);
         }
         if (command instanceof QuantityType) {
@@ -376,8 +381,12 @@ public class GreeHandler extends BaseThingHandler {
                 }
             } catch (GreeException e) {
                 String subcode = "";
-                if (e.getCause() != null) {
-                    subcode = " (" + e.getCause().getMessage() + ")";
+                Throwable cause = e.getCause();
+                if (cause != null) {
+                    String m = cause.getMessage();
+                    if (m != null) {
+                        subcode = " (" + m + ")";
+                    }
                 }
                 String message = messages.get("update.exception", e.getMessage() + subcode);
                 if (getThing().getStatus() == ThingStatus.OFFLINE) {
@@ -542,7 +551,7 @@ public class GreeHandler extends BaseThingHandler {
     private @Nullable State updateTargetTemp() throws GreeException {
         if (device.hasStatusValChanged(GREE_PROP_SETTEMP) || device.hasStatusValChanged(GREE_PROP_TEMPUNIT)) {
             int unit = device.getIntStatusVal(GREE_PROP_TEMPUNIT);
-            return toQuantityType(device.getIntStatusVal(GREE_PROP_SETTEMP), DIGITS_TEMP,
+            return toQuantityType(device.getIntStatusVal(GREE_PROP_SETTEMP),
                     unit == TEMP_UNIT_CELSIUS ? SIUnits.CELSIUS : ImperialUnits.FAHRENHEIT);
         }
         return null;
@@ -565,9 +574,8 @@ public class GreeHandler extends BaseThingHandler {
         return message;
     }
 
-    public static QuantityType<?> toQuantityType(Number value, int digits, Unit<?> unit) {
-        BigDecimal bd = new BigDecimal(value.doubleValue());
-        return new QuantityType<>(bd.setScale(digits, BigDecimal.ROUND_HALF_EVEN), unit);
+    public static QuantityType<?> toQuantityType(Number value, Unit<?> unit) {
+        return new QuantityType<>(new BigDecimal(value.doubleValue()), unit);
     }
 
     private void stopRefreshTask() {
@@ -587,11 +595,14 @@ public class GreeHandler extends BaseThingHandler {
         logger.debug("{}: Thing {} is disposing", thingId, thing.getUID());
         if (clientSocket.isPresent()) {
             clientSocket.get().close();
-            clientSocket = Optional.empty();
         }
+        clientSocket = Optional.empty();
         stopRefreshTask();
-        if (initializeFuture != null) {
-            initializeFuture.cancel(true);
+
+        Future<?> job = initializeFuture;
+        if (job != null) {
+            job.cancel(true);
         }
+        initializeFuture = null;
     }
 }

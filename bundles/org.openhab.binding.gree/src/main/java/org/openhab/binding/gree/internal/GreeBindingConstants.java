@@ -55,6 +55,7 @@ public class GreeBindingConstants {
     public static final String DRY_CHANNEL = "dry";
     public static final String HEALTH_CHANNEL = "health";
     public static final String PWRSAV_CHANNEL = "powersave";
+    public static final String STHT_CHANNEL = "safetyheat";
 
     // Mode channel
     public static final String MODE_AUTO = "auto";
@@ -160,8 +161,6 @@ public class GreeBindingConstants {
     public static final int MAX_SCAN_CYCLES = 3;
     public static final int REFRESH_INTERVAL_SEC = 5;
     public static final int MAX_API_RETRIES = 3;
-
-    public static final int DIGITS_TEMP = 1;
 
     /**
      * The internal offset for the temperature sensor which is set to a constant of -40 degrees Celsius. GREE

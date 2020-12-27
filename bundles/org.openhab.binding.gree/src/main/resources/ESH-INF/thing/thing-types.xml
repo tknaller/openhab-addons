@@ -21,6 +21,7 @@
 			<channel id="powersave" typeId="powersave"/>
 			<channel id="light" typeId="light"/>
 			<channel id="health" typeId="health"/>
+			<channel id="safetyheat" typeId="safetyheat"/>
 		</channels>
 
 		<config-description>
@@ -65,13 +66,14 @@
 		<item-type>Number:Temperature</item-type>
 		<label>@text/channel-type.gree.targettemperature.label</label>
 		<description>@text/channel-type.gree.targettemperature.description</description>
-		<state min="16" max="86" step="1" pattern="%d %unit%"></state>
+		<!-- min = 8°C (safety heating mode), max=86°F -->
+		<state min="8" max="86" step="1" pattern="%.1f %unit%"></state>
 	</channel-type>
 	<channel-type id="currentTemperature">
 		<item-type>Number:Temperature</item-type>
 		<label>@text/channel-type.gree.currenttemperature.label</label>
 		<description>@text/channel-type.gree.currenttemperature.description</description>
-		<state readOnly="true" pattern="%d %unit%"></state>
+		<state readOnly="true" pattern="%.1f %unit%"></state>
 	</channel-type>
 	<channel-type id="air">
 		<item-type>Switch</item-type>
@@ -161,6 +163,11 @@
 		<item-type>Switch</item-type>
 		<label>@text/channel-type.gree.health.label</label>
 		<description>@text/channel-type.gree.health.description</description>
+	</channel-type>
+	<channel-type id="safetyheat">
+		<item-type>Switch</item-type>
+		<label>@text/channel-type.gree.safetyheat.label</label>
+		<description>@text/channel-type.gree.safetyheat.description</description>
 	</channel-type>
 
 </thing:thing-descriptions>

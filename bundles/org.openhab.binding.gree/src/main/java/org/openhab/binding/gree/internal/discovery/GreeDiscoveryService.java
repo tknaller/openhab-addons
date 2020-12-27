@@ -58,14 +58,15 @@ public class GreeDiscoveryService extends AbstractDiscoveryService {
     @Activate
     public GreeDiscoveryService(@Reference GreeDeviceFinder deviceFinder,
             @Reference NetworkAddressService networkAddressService,
-            @Reference GreeTranslationProvider translationProvider,
-            @Nullable Map<String, @Nullable Object> configProperties) {
+            @Reference GreeTranslationProvider translationProvider, @Nullable Map<String, @Nullable Object> config) {
         super(SUPPORTED_THING_TYPES_UIDS, TIMEOUT_SEC);
         this.messages = translationProvider;
         this.deviceFinder = deviceFinder;
         String ip = networkAddressService.getConfiguredBroadcastAddress();
         broadcastAddress = ip != null ? ip : "";
-        activate(configProperties);
+        if (config != null) {
+            activate(config);
+        }
     }
 
     @Override
