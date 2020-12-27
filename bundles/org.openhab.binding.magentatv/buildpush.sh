@@ -1,6 +1,6 @@
 echo Updating documentation
-cp ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.magentatv/README.md ~/Dev/openhab-3/git/openhab-addons/bundles/org.openhab.binding.magentatv/
-cp ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.magentatv/README.md ~/Dev/myfiles/magentatv/
+cp ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.magentatv/README*.md ~/Dev/openhab-3/git/openhab-addons/bundles/org.openhab.binding.magentatv/
+cp ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.magentatv/README*.md ~/Dev/myfiles/magentatv/
 
 echo Update formatting
 mvn spotless:apply
