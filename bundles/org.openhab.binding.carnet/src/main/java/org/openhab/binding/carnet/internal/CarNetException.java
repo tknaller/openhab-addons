@@ -36,7 +36,6 @@ public class CarNetException extends Exception {
     private static final long serialVersionUID = -5809459454769761821L;
     private static String NONE = "none";
 
-    private @Nullable Throwable e = null;
     private CarNetApiResult apiResult = new CarNetApiResult();
 
     public CarNetException(String message) {
@@ -45,7 +44,6 @@ public class CarNetException extends Exception {
 
     public CarNetException(String message, Throwable throwable) {
         super(message, throwable);
-        e = throwable;
     }
 
     public CarNetException(String message, CarNetApiResult result) {
@@ -54,9 +52,8 @@ public class CarNetException extends Exception {
     }
 
     public CarNetException(String message, CarNetApiResult result, Throwable throwable) {
-        super(message);
+        super(message, throwable);
         apiResult = result;
-        e = throwable;
     }
 
     @Override
@@ -67,8 +64,9 @@ public class CarNetException extends Exception {
     @Override
     public String toString() {
         String message = nonNullString(super.getMessage());
-        if (e != null) {
-            Class<?> clazz = e.getClass();
+        Throwable cause = super.getCause();
+        if (cause != null) {
+            Class<?> clazz = cause.getClass();
             if (clazz == UnknownHostException.class) {
                 String[] string = message.split(": "); // java.net.UnknownHostException: api.rach.io
                 message = MessageFormat.format("Unable to connect to {0} (unknown host / internet connection down)",
@@ -76,7 +74,7 @@ public class CarNetException extends Exception {
             } else if (clazz == MalformedURLException.class) {
                 message = MessageFormat.format("Invalid URL: '{0}'", message);
             } else {
-                message = nonNullString(e.toString()) + "(" + nonNullString(e.getMessage()) + ")";
+                message = nonNullString(cause.toString()) + "(" + nonNullString(cause.getMessage()) + ")";
             }
         } else {
             if (super.getClass() != CarNetException.class) {

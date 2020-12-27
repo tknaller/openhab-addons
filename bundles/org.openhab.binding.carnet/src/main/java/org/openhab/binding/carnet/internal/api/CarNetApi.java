@@ -534,9 +534,6 @@ public class CarNetApi {
             CarNetPendingRequest rsp = new CarNetPendingRequest(service, action, in);
             logger.debug("{}: Request for {}.{} accepted, requestId={}", config.vehicle.vin, service, action,
                     rsp.requestId);
-            if (pendingRequests.containsKey(rsp.requestId)) {
-                pendingRequests.remove(rsp.requestId); // duplicate id
-            }
             logger.debug("{}: Request {} queued for status updates", config.vehicle.vin, rsp.requestId);
             pendingRequests.put(rsp.requestId, rsp);
 

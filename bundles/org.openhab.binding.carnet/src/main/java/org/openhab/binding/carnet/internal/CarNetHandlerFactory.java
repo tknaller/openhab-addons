@@ -14,6 +14,7 @@ package org.openhab.binding.carnet.internal;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.Map;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
+import org.eclipse.smarthome.core.i18n.TimeZoneProvider;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
@@ -50,14 +52,16 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     private final CarNetTextResources resources;
     private final CarNetIChanneldMapper channelIdMapper;
     private final CarNetTokenManager tokenManager;
+    private final ZoneId zoneId;
     private final Map<ThingUID, @Nullable ServiceRegistration<?>> discoveryServiceRegistrations = new HashMap<>();
 
     @Activate
-    public CarNetHandlerFactory(@Reference CarNetTextResources resources,
+    public CarNetHandlerFactory(@Reference TimeZoneProvider tzProvider, @Reference CarNetTextResources resources,
             @Reference CarNetIChanneldMapper channelIdMapper, @Reference CarNetTokenManager tokenManager) {
         this.resources = resources;
         this.channelIdMapper = channelIdMapper;
         this.tokenManager = tokenManager;
+        zoneId = tzProvider.getTimeZone();
     }
 
     @Override
@@ -74,7 +78,7 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
             registerDeviceDiscoveryService(handler);
             return handler;
         } else if (THING_TYPE_VEHICLE.equals(thingTypeUID)) {
-            return new CarNetVehicleHandler(thing, resources, channelIdMapper, tokenManager);
+            return new CarNetVehicleHandler(thing, resources, zoneId, channelIdMapper, tokenManager);
         }
 
         return null;

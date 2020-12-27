@@ -18,6 +18,7 @@ import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -89,6 +90,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private final CarNetIChanneldMapper idMapper;
     private final Map<String, Object> channelData = new HashMap<>();
     private final CarNetTokenManager tokenManager;
+    private final ZoneId zoneId;
 
     public String thingId = "";
     private CarNetApi api = new CarNetApi();
@@ -104,13 +106,14 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private CarNetServiceAvailability serviceAvailability = new CarNetServiceAvailability();
     private CarNetCombinedConfig config = new CarNetCombinedConfig();
 
-    public CarNetVehicleHandler(Thing thing, CarNetTextResources resources, CarNetIChanneldMapper idMapper,
-            CarNetTokenManager tokenManager) {
+    public CarNetVehicleHandler(Thing thing, CarNetTextResources resources, ZoneId zoneId,
+            CarNetIChanneldMapper idMapper, CarNetTokenManager tokenManager) {
         super(thing);
 
         this.resources = resources;
         this.idMapper = idMapper;
         this.tokenManager = tokenManager;
+        this.zoneId = zoneId;
     }
 
     @Override
@@ -428,7 +431,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     || actionStatus.equalsIgnoreCase(CNAPI_REQUEST_QUEUED);
             updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_ACTION_PENDING,
                     inProgress ? OnOffType.ON : OnOffType.OFF);
-            updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_UPDATED, getTimestamp());
+            updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_UPDATED, getTimestamp(zoneId));
             if (!inProgress) {
                 forceUpdate = true; // refresh vehicle status
             }
@@ -452,7 +455,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         }
 
         if (updated) {
-            updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_UPDATED, getTimestamp());
+            updateChannel(CHANNEL_GROUP_GENERAL, CHANNEL_GENERAL_UPDATED, getTimestamp(zoneId));
         }
         return updated;
     }

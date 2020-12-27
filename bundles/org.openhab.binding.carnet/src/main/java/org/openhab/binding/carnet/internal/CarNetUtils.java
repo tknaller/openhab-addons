@@ -213,22 +213,22 @@ public class CarNetUtils {
         return System.currentTimeMillis() / 1000L;
     }
 
-    public static DateTimeType getTimestamp() {
-        return new DateTimeType(ZonedDateTime.ofInstant(Instant.ofEpochSecond(now()), ZoneId.systemDefault()));
+    public static DateTimeType getTimestamp(ZoneId zoneId) {
+        return new DateTimeType(ZonedDateTime.ofInstant(Instant.ofEpochSecond(now()), zoneId));
     }
 
     public static DateTimeType getTimestamp(String zone, long timestamp) {
+        ZoneId zoneId = !zone.isEmpty() ? ZoneId.of(zone) : ZoneId.systemDefault();
         try {
             if (timestamp == 0) {
-                return getTimestamp();
+                return getTimestamp(zoneId);
             }
-            ZoneId zoneId = !zone.isEmpty() ? ZoneId.of(zone) : ZoneId.systemDefault();
             ZonedDateTime zdt = LocalDateTime.now().atZone(zoneId);
             int delta = zdt.getOffset().getTotalSeconds();
             return new DateTimeType(ZonedDateTime.ofInstant(Instant.ofEpochSecond(timestamp - delta), zoneId));
         } catch (DateTimeException e) {
             // Unable to convert device's timezone, use system one
-            return getTimestamp();
+            return getTimestamp(zoneId);
         }
     }
 

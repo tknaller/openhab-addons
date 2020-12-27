@@ -35,7 +35,6 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNApiToken;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetSecurityPinAuthentication;
 import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
-import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,23 +50,15 @@ import com.google.gson.Gson;
 @Component(service = CarNetTokenManager.class)
 public class CarNetTokenManager {
     private final Logger logger = LoggerFactory.getLogger(CarNetTokenManager.class);
-
     private final Gson gson = new Gson();
+    private Map<String, TokenSet> accountTokens = new HashMap<>();
+    private CarNetHttpClient http = new CarNetHttpClient();
+    private CopyOnWriteArrayList<CarNetToken> securityTokens = new CopyOnWriteArrayList<CarNetToken>();
 
-    // private CarNetCombinedConfig config = new CarNetCombinedConfig();
     private class TokenSet {
         private CarNetToken idToken = new CarNetToken();
         private CarNetToken vwToken = new CarNetToken();
         private String csrf = "";
-    }
-
-    private Map<String, TokenSet> accountTokens = new HashMap<>();
-
-    private CarNetHttpClient http = new CarNetHttpClient();
-    private CopyOnWriteArrayList<CarNetToken> securityTokens = new CopyOnWriteArrayList<CarNetToken>();
-
-    @Activate
-    public CarNetTokenManager() {
     }
 
     public void setHttpClient(String tokenSetId, CarNetHttpClient httpClient) {

@@ -189,8 +189,7 @@ public class CarNetHttpClient {
             }
             return response;
         } catch (ExecutionException | InterruptedException | TimeoutException | MalformedURLException e) {
-            logger.debug("API call failed", e);
-            throw new CarNetException("API call failed!", new CarNetApiResult(request, e));
+            throw new CarNetException("API call failed!", new CarNetApiResult(request, e), e);
         }
     }
 
@@ -238,11 +237,8 @@ public class CarNetHttpClient {
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
         headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
         headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + token);
-        // headers.put("If-None-Match", "none");
-
         headers.put("X-Country-Id", "DE");
         headers.put("X-Language-Id", "de");
-
         return headers;
     }
 
@@ -355,20 +351,12 @@ public class CarNetHttpClient {
      * @throws MalformedURLException
      */
     private String getBaseUrl() throws MalformedURLException {
-        /*
-         * if (!config.vehicle.homeRegionUrl.isEmpty()) {
-         * return config.vehicle.homeRegionUrl + "/fs-car";
-         * }
-         */
         if (config.account.brand.equalsIgnoreCase(CNAPI_BRAND_AUDI)) {
             return CNAPI_BASE_URL_AUDI;
         }
         if (config.account.brand.equalsIgnoreCase(CNAPI_BRAND_VW)) {
             return CNAPI_BASE_URL_VW;
         }
-        // if (config.brand.equalsIgnoreCase(CNAPI_BRAND_SKODA)) {
-        // return CNAPI_BASE_URL_SKODA;
-        // }
         throw new MalformedURLException("Unknown brand for base URL");
     }
 
