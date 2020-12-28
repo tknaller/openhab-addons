@@ -688,4 +688,8 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     public CarNetIChanneldMapper getIdMapper() {
         return idMapper;
     }
+
+    public ZoneId getZoneId() {
+        return zoneId;
+    }
 }

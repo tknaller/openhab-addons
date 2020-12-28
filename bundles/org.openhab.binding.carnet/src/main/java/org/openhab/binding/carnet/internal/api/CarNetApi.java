@@ -258,6 +258,7 @@ public class CarNetApi {
     }
 
     public CarNetDestinationList getDestinations() throws CarNetException {
+        // The API returns 403 when service is not available, but
         String json = callApi(CNAPI_URI_DESTINATIONS, "getDestinations", String.class);
         if (json.equals("{\"destinations\":null}")) {
             // This services returns an empty list rather than http 403 when access is not allowed
@@ -267,9 +268,11 @@ public class CarNetApi {
                 json = test;
             }
         }
-        CNDestinations dest = fromJson(gson, json, CNDestinations.class, false);
-        if ((dest != null) && (dest.destinations != null)) {
-            return dest.destinations;
+        if (!json.isEmpty()) {
+            CNDestinations dest = fromJson(gson, json, CNDestinations.class);
+            if (dest.destinations != null) {
+                return dest.destinations;
+            }
         }
         CarNetDestinationList empty = new CarNetDestinationList();
         empty.destination = new ArrayList<>();
@@ -285,7 +288,7 @@ public class CarNetApi {
         return callApi(CNAPI_URI_CHARGER_STATUS, "chargerStatus", CNChargerInfo.class).charger;
     }
 
-    public @Nullable CarNetTripData getTripData(String type) throws CarNetException {
+    public CarNetTripData getTripData(String type) throws CarNetException {
         String json = "";
         try {
             String action = "list";
@@ -298,7 +301,7 @@ public class CarNetApi {
         if (json.isEmpty()) {
             json = loadJson("tripData" + type);
         }
-        return fromJson(gson, json, CarNetTripData.class, false);
+        return fromJson(gson, json, CarNetTripData.class);
     }
 
     public @Nullable String getPersonalData() throws CarNetException {
@@ -529,18 +532,15 @@ public class CarNetApi {
     }
 
     private String queuePendingAction(String json, String service, String action) throws CarNetException {
-        CNActionResponse in = fromJson(gson, json, CNActionResponse.class, false);
-        if (in != null) {
-            CarNetPendingRequest rsp = new CarNetPendingRequest(service, action, in);
-            logger.debug("{}: Request for {}.{} accepted, requestId={}", config.vehicle.vin, service, action,
-                    rsp.requestId);
-            logger.debug("{}: Request {} queued for status updates", config.vehicle.vin, rsp.requestId);
-            pendingRequests.put(rsp.requestId, rsp);
+        CNActionResponse in = fromJson(gson, json, CNActionResponse.class);
+        CarNetPendingRequest rsp = new CarNetPendingRequest(service, action, in);
+        logger.debug("{}: Request for {}.{} accepted, requestId={}", config.vehicle.vin, service, action,
+                rsp.requestId);
+        logger.debug("{}: Request {} queued for status updates", config.vehicle.vin, rsp.requestId);
+        pendingRequests.put(rsp.requestId, rsp);
 
-            // Check if action was accepted
-            return getRequestStatus(rsp.requestId, rsp.status);
-        }
-        return CNAPI_REQUEST_NOT_FOUND;
+        // Check if action was accepted
+        return getRequestStatus(rsp.requestId, rsp.status);
     }
 
     public Map<String, CarNetPendingRequest> getPendingRequests() {

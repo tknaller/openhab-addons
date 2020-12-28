@@ -21,6 +21,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.carnet.internal.CarNetException;
+import org.openhab.binding.carnet.internal.CarNetUtils;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
 import org.openhab.binding.carnet.internal.handler.CarNetAccountHandler;
@@ -104,6 +105,10 @@ public class CarNetVehicleBaseService {
 
     protected boolean updateChannel(String group, String channel, State value, int digits, Unit<?> unit) {
         return thingHandler.updateChannel(group, channel, value, digits, unit);
+    }
+
+    protected State getDateTime(String time) {
+        return CarNetUtils.getDateTime(time, thingHandler.getZoneId());
     }
 
     protected CarNetCombinedConfig getConfig() {
