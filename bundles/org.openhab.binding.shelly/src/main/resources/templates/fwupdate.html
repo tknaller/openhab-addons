@@ -1,0 +1,24 @@
+	<div id=update>
+	<p/>
+	<table>
+		<tr><td>Device</td><td>${serviceName}</td></tr>
+		<tr><td>Device Type</td><td>${modelId}</td></tr>
+		<tr><td>Device Mode</td><td>${deviceMode}</td></tr>
+		<tr><td>Device IP</td><td><a href=http://${deviceIp}>${deviceIp}</a></td></tr>
+		<tr><td>Device Hardware Rev</td><td>${deviceHwRev}</td></tr>
+		<tr><td>WiFi</td><td>${wifiNetwork}</td></tr>
+		<tr><td><p/></td></tr>
+		<tr><td>Current firmware</td><td>${firmwareVersion}</td></tr>
+		<tr><td>Requested version</td><td>${version}</td></tr>
+		<tr><td>Update URL</td><td>http://${deviceIp}/${firmwareUrl}</td></tr>
+		<tr><td>Update Type</td><td>${updateType}</td></tr>
+	</table>
+	<p/>
+	<div id=message>
+	<p>
+	${message}
+	</p>
+	</div>
+	
+	<a href="/shelly/manager/fwupdate?uid=${uid}&version=${version}&update=yes" color="red">Perform update</a>
+	</div>

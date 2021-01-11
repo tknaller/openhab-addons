@@ -81,6 +81,7 @@ public class ShellyCoapHandler implements ShellyCoapListener {
     private Request reqDescription = new Request(Code.GET, Type.CON);
     private Request reqStatus = new Request(Code.GET, Type.CON);
     private boolean discovering = false;
+    private int coiotPort = COIOT_PORT;
 
     private int lastSerial = -1;
     private String lastPayload = "";
@@ -118,8 +119,12 @@ public class ShellyCoapHandler implements ShellyCoapListener {
             }
 
             logger.debug("{}: Starting CoAP Listener", thingName);
-            coapServer.start(config.localIp, this);
-            statusClient = new CoapClient(completeUrl(config.deviceIp, COLOIT_URI_DEVSTATUS))
+            if (!profile.coiotEndpoint.isEmpty() && profile.coiotEndpoint.contains(":")) {
+                String ps = substringAfter(profile.coiotEndpoint, ":");
+                coiotPort = Integer.parseInt(ps);
+            }
+            coapServer.start(config.localIp, coiotPort, this);
+            statusClient = new CoapClient(completeUrl(config.deviceIp, coiotPort, COLOIT_URI_DEVSTATUS))
                     .setTimeout((long) SHELLY_API_TIMEOUT_MS).useNONs().setEndpoint(coapServer.getEndpoint());
             @Nullable
             Endpoint endpoint = null;
@@ -182,6 +187,10 @@ public class ShellyCoapHandler implements ShellyCoapListener {
                     switch (opt.getNumber()) {
                         case OptionNumberRegistry.URI_PATH:
                             uri = COLOIT_URI_BASE + opt.getStringValue();
+                            break;
+                        case OptionNumberRegistry.URI_HOST: // ignore
+                            break;
+                        case OptionNumberRegistry.CONTENT_FORMAT: // ignore
                             break;
                         case COIOT_OPTION_GLOBAL_DEVID:
                             devId = opt.getStringValue();
@@ -541,7 +550,7 @@ public class ShellyCoapHandler implements ShellyCoapListener {
         }
 
         resetSerial();
-        return newRequest(ipAddress, uri, con).send();
+        return newRequest(ipAddress, coiotPort, uri, con).send();
     }
 
     /**
@@ -555,10 +564,10 @@ public class ShellyCoapHandler implements ShellyCoapListener {
      * @return new packet
      */
 
-    private Request newRequest(String ipAddress, String uri, Type con) {
+    private Request newRequest(String ipAddress, int port, String uri, Type con) {
         // We need to build our own Request to set an empty Token
         Request request = new Request(Code.GET, con);
-        request.setURI(completeUrl(ipAddress, uri));
+        request.setURI(completeUrl(ipAddress, port, uri));
         request.setToken(EMPTY_BYTE);
         request.addMessageObserver(new MessageObserverAdapter() {
             @Override
@@ -601,15 +610,18 @@ public class ShellyCoapHandler implements ShellyCoapListener {
         if (isStarted()) {
             logger.debug("{}: Stopping CoAP Listener", thingName);
             coapServer.stop(this);
-            if (statusClient != null) {
-                statusClient.shutdown();
+            CoapClient cclient = statusClient;
+            if (cclient != null) {
+                cclient.shutdown();
                 statusClient = null;
             }
-            if (!reqDescription.isCanceled()) {
-                reqDescription.cancel();
+            Request request = reqDescription;
+            if (!request.isCanceled()) {
+                request.cancel();
             }
-            if (!reqStatus.isCanceled()) {
-                reqStatus.cancel();
+            request = reqStatus;
+            if (!request.isCanceled()) {
+                request.cancel();
             }
         }
         resetSerial();
@@ -620,7 +632,7 @@ public class ShellyCoapHandler implements ShellyCoapListener {
         stop();
     }
 
-    private static String completeUrl(String ipAddress, String uri) {
-        return "coap://" + ipAddress + ":" + COIOT_PORT + uri;
+    private static String completeUrl(String ipAddress, int port, String uri) {
+        return "coap://" + ipAddress + ":" + String.valueOf(port) + uri;
     }
 }

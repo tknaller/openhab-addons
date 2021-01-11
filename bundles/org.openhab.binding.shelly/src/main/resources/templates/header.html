@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<html lang="en" ng-app="Shelly Manager">
+
+    <title>Shelly Manager</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    ${metaTag}
+    
+    <style type=text/css>
+    body {
+    	width:100%;
+        padding: 0;
+        margin: 0;
+        font-family: 'Roboto', Sans-Serif;
+        color: white;
+        background-color: #262D2F;
+        -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+        background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3AQMAAACSFUAFAAAABlBMVEUlLS4nLjCbZncXAAABmklEQVQY0w3QsWsTYRzG8WcR/wQXSwZBnBQnRTQ3iaCoo7SlDbgUxXZoweVsTpAiDtLBxalFHLo1oNhA0uSlIh0UElSwtU3yghavIs3bJty9l969v8dM3/XDF9UzPQmensfeoT07+rKLqMmr+UIDfO6Fpt3AfVEu//0bKJnmVIIyczuvvTUUKDdMKYPpxEcXd5cQxMLrD4vY5EG0+U7A31makxisB/Y28+ALHvS5junlIFXRL9jQ81zwCEpffkOpgCmVbu/Dc7zX1oKmWf4zf66DyO+bMX8Sbr4f0S8iko3u4YNZjMji27IRbLsr4edMMG2b/Q9mFZZZ2FCreGVOeT1zB5cqH1eSCcGAzIKWwFTleO2C4OcgqJSs4L29OXBKUOMz51gHyf3UZPDUrQV/ZlhufYldhrlrdGPcQcxima4HmrR2V5+G49yJiHv497e0XWQClSZedejROd08as0gNZyyuoWECz/IDmZHto6H7/ApV9BKunB6N2VN4AKyG06CltqpJxi3PtflMbgRWjf0L1Iz/VqHCuWkDeQ/VX8mJIHnrVUAAAAASUVORK5CYII=) repeat;
+        height:100%
+    }
+
+	a:link {
+	  color: #3399ff; 
+	  background-color: transparent; 
+	  text-decoration: none;
+	}
+
+	a:visited {
+	  color: green;
+	  background-color: transparent; 
+	  text-decoration: none;
+	}
+
+	a:hover {
+	  color: red;
+	  background-color: transparent;
+	  text-decoration: underline;
+	}
+
+	a:active {
+	  color: yellow;
+	  background-color: transparent;
+	  text-decoration: underline;
+	}
+
+	.devTable { border-collapse:collapse;font-size:12px; }
+	.devTable th { background-color:#0B398C;color:white }
+	.devTable td, .devTable th { padding:3px;border:0; white-space: nowrap; }
+	.devTable td { border-bottom:1px #1EBDDD; }
+
+    .blue {
+        color:#2886c7
+    }
+
+    .red {
+        color:#cb4a4a
+    }
+
+	.tooltip {
+	  position: relative;
+	  display: inline-block;
+	  border-bottom: 1px dotted black;
+	}
+
+	.tooltip .tooltiptext {
+	  visibility: hidden;
+	  max-width: 600px;
+	  background-color: #555;
+	  color: #fff;
+	  text-align: left;
+	  border-radius: 5px;
+	  padding: 5px 0;
+	  position: absolute;
+	  z-index: 1;
+	  bottom: 125%;
+	  left: 50%;
+	  margin-left: -50%;
+	  opacity: 0;
+	  transition: opacity 0.3s;
+	}
+
+	.tooltip .tooltiptext::after {
+	  content: "";
+	  position: absolute;
+	  top: 100%;
+	  left: 50%;
+	  margin-left: -7px;
+	  border-width: 7px;
+	  border-style: solid;
+	  border-color: #555 transparent transparent transparent;
+	}
+
+	.tooltip:hover .tooltiptext {
+	  visibility: visible;
+	  opacity: 1;
+	}
+    </style>
+</head>
+
+<body>

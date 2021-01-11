@@ -34,8 +34,8 @@ public class ShellyBindingConfiguration {
     public static final String CONFIG_LOCAL_IP = "localIP";
     public static final String CONFIG_AUTOCOIOT = "autoCoIoT";
 
-    public String defaultUserId = ""; // default for http basic user id
-    public String defaultPassword = ""; // default for http basic auth password
+    public String defaultUserId = "admin"; // default for http basic user id
+    public String defaultPassword = "admin"; // default for http basic auth password
     public String localIP = ""; // default:use OH network config
     public boolean autoCoIoT = true;
 

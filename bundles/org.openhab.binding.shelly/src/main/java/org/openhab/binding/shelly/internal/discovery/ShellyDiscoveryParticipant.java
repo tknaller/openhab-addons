@@ -159,8 +159,7 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
 
                     // create shellyunknown thing - will be changed during thing initialization with valid credentials
                     thingUID = ShellyThingCreator.getThingUID(name, model, mode, true);
-                }
-                if (e.isTimeout()) {
+                } else if (e.isTimeout()) {
                     logger.info("{}: {}", name, messages.get("discovery.failed", address, e.toString()));
                 } else {
                     logger.info("{}: {}", name, messages.get("discovery.failed", address, e.toString()));

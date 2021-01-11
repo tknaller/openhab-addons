@@ -1,0 +1,10 @@
+cd ~/Dev/openhab-3/git/openhab-addons/bundles/org.openhab.binding.shelly
+rm -rf src/main/java/
+mkdir src/main/java
+cp -R ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.shelly/src/main/java/ src/main/java/
+rm -rf src/main/resources/OH-INF/
+mkdir src/main/resources/OH-INF
+cp -R ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.shelly/src/main/resources/ESH-INF/ src/main/resources/OH-INF/
+cp -R ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.shelly/src/main/resources/templates/ src/main/resources/templates/
+~/Dev/myfiles/convert_v2_v3.sh
+
