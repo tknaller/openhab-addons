@@ -7,7 +7,7 @@ Allterco provides a rich set of smart home devices. All of them are WiFi enabled
 The binding is officially acknowledged by Allterco and openHAB is listed as a reference and directly supports the openHAB community.
 
 The binding controls the devices independently from the Allterco Shelly Cloud (in fact it can be disabled).
-The binding co-exists with Shelly App for Smartphones, Shelly App, Shelly Cloud, MQTT and other 3rd party Apps.
+The binding co-exists with Shelly App for Smartphones, Shelly Device Web UI, Shelly Cloud, MQTT and other 3rd party Apps.
 
 The binding focuses on reporting the device status and device control.
 Initial setup and device configuration has to be performed using the Shelly Apps (Web UI or Smartphone App).

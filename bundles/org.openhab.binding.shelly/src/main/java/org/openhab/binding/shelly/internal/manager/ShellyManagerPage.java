@@ -19,7 +19,6 @@ import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,8 +35,11 @@ import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.Thing;
+import org.eclipse.smarthome.core.thing.ThingStatus;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.UnDefType;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
@@ -60,9 +62,6 @@ import com.google.gson.Gson;
  */
 @NonNullByDefault
 public class ShellyManagerPage {
-    private static final String HTTP_HEADER_AUTH = "Authorization";
-    private static final String HTTP_AUTH_TYPE_BASIC = "Basic";
-
     private final Logger logger = LoggerFactory.getLogger(ShellyManagerPage.class);
     private final ConfigurationAdmin configurationAdmin;
     protected final Map<String, ShellyBaseHandler> thingHandlers;
@@ -110,30 +109,32 @@ public class ShellyManagerPage {
         return value;
     }
 
-    protected String loadHTML(String template, Map<String, String> properties) throws ShellyApiException {
+    protected String loadHTML(String template) throws ShellyApiException {
         if (htmlTemplates.containsKey(template)) {
             return getString(htmlTemplates.get(template));
         }
 
+        String html = "";
         String file = TEMPLATE_PATH + template;
-        logger.info("Read HTML from {}", file);
+        logger.debug("Read HTML from {}", file);
         ClassLoader cl = ShellyBaseHandler.class.getClassLoader();
         if (cl != null) {
             try (InputStream inputStream = cl.getResourceAsStream(file)) {
                 if (inputStream != null) {
-                    String html = IOUtils.toString(inputStream, StandardCharsets.UTF_8.toString());
+                    // String html = IOUtils.toString(inputStream, UTF_8);
+                    html = IOUtils.toString(inputStream);
                     htmlTemplates.put(template, html);
-                    html = fillAttributes(html, properties);
-                    return html;
                 }
             } catch (IOException e) {
+                throw new ShellyApiException("Unable to read " + file + " from bundle resources!", e);
             }
         }
-        throw new ShellyApiException("Unable to read " + file + " from bundle resources!");
+        return html;
     }
 
-    protected String loadHTML(String template) throws ShellyApiException {
-        return loadHTML(template, new HashMap<>());
+    protected String loadHTML(String template, Map<String, String> properties) throws ShellyApiException {
+        String html = loadHTML(template);
+        return html.contains("${") ? fillAttributes(html, properties) : html;
     }
 
     protected String fillPage(String template, Map<String, String> properties) {
@@ -155,7 +156,8 @@ public class ShellyManagerPage {
         Thing thing = th.getThing();
         properties.put("thingName", getString(thing.getLabel()));
         properties.put("thingStatus", getString(thing.getStatus().toString()));
-        properties.put("thingStatusDetail", getString(thing.getStatusInfo().getStatusDetail().toString()));
+        ThingStatusDetail detail = thing.getStatusInfo().getStatusDetail();
+        properties.put("thingStatusDetail", detail.equals(ThingStatusDetail.NONE) ? "" : getString(detail.toString()));
         properties.put("thingStatusDescr", getString(thing.getStatusInfo().getDescription()));
         ShellyThingConfiguration config = thing.getConfiguration().as(ShellyThingConfiguration.class);
         for (Map.Entry<String, Object> p : thing.getConfiguration().getProperties().entrySet()) {
@@ -189,6 +191,31 @@ public class ShellyManagerPage {
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_WAKEUP);
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_CHARGER);
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_UPDATE);
+        addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ALARM);
+
+        String wiFiSignal = getString(properties.get(CHANNEL_DEVST_RSSI));
+        if (!wiFiSignal.isEmpty()) {
+            properties.put("imgWiFi", "imgWiFi" + wiFiSignal);
+        }
+        String statusIcon = "";
+        ThingStatus ts = th.getThing().getStatus();
+        switch (ts) {
+            case UNINITIALIZED:
+            case REMOVED:
+            case REMOVING:
+                statusIcon = "statusUNINITIALIZED";
+                break;
+            case OFFLINE:
+                ThingStatusDetail sd = th.getThing().getStatusInfo().getStatusDetail();
+                if (((sd == ThingStatusDetail.CONFIGURATION_PENDING)
+                        || (sd == ThingStatusDetail.HANDLER_CONFIGURATION_PENDING))) {
+                    statusIcon = "imgDevStatusCONFIG";
+                    break;
+                }
+            default:
+                statusIcon = "imgDevStatus" + ts.toString();
+        }
+        properties.put("imgDevStatus", statusIcon);
 
         return properties;
     }
@@ -197,30 +224,36 @@ public class ShellyManagerPage {
             String attribute) {
         State state = thingHandler.getChannelValue(CHANNEL_GROUP_DEV_STATUS, attribute);
         if (state != UnDefType.NULL) {
-            String value = state.toString();
+            String value;
+            if (state instanceof DateTimeType) {
+                DateTimeType dt = (DateTimeType) state;
+                value = dt.format(null).replace('T', ' ');
+            } else {
+                value = state.toString();
+            }
             properties.put(attribute, value);
         }
     }
 
     protected String fillAttributes(String template, Map<String, String> properties) {
-        if ((properties.size() == 0) || !template.contains("${")) {
+        if ((properties.size() == 0) || !template.contains("{")) {
             // no replacement necessary
             return template;
         }
 
-        // fill in the attributes
-        String html = template;
-        while (html.indexOf("${") >= 0) {
-            String attribute = substringBetween(html, "${", "}");
-            String before = substringBefore(html, "${");
-            String after = substringAfter(html, "}");
-            String value = "";
-            if (properties.containsKey(attribute)) {
-                value = getValue(properties, attribute);
-            }
-            html = before + value + after;
+        String result = template;
+        for (Map.Entry<String, String> var : properties.entrySet()) {
+            result = result.replaceAll(java.util.regex.Pattern.quote("${" + var.getKey() + "}"),
+                    getValue(properties, var.getKey()));
         }
-        return html;
+
+        // remove the remaining place holders (depending on the thing status not all are filled)
+        while (result.contains("${") && result.contains("}")) {
+            String before = substringBefore(result, "${");
+            String after = substringAfter(result, "}");
+            result = before + after;
+        }
+        return result;
     }
 
     protected String getValue(Map<String, String> properties, String attribute) {
@@ -234,17 +267,19 @@ public class ShellyManagerPage {
                     value = value.replace(OnOffType.ON.toString(), "yes");
                     value = value.replace(OnOffType.OFF.toString(), "no");
                     break;
+                case CHANNEL_DEVST_HEARTBEAT:
+                    break;
             }
         }
         return value;
     }
 
-    public FwaList getFirmwareList(String deviceType) throws ShellyApiException {
+    public FwaList getFirmwareArchiveList(String deviceType) throws ShellyApiException {
         FwaList list;
         String json = "";
         try {
             if (!deviceType.isEmpty()) {
-                json = httpGet(FWLISTARCH_URL + "?type=" + deviceType);
+                json = httpGet(FWREPO_ARCH_URL + "?type=" + deviceType);
             }
         } catch (ShellyApiException e) {
             logger.debug("{}: Unable to get firmware list for device type {}: {}", LOG_PREFIX, deviceType,
@@ -270,11 +305,11 @@ public class ShellyManagerPage {
             Request request = httpClient.newRequest(url).method(HttpMethod.GET).timeout(SHELLY_API_TIMEOUT_MS,
                     TimeUnit.MILLISECONDS);
             request.header(HttpHeader.ACCEPT, ShellyHttpApi.CONTENT_TYPE_JSON);
-            logger.info("{}: HTTP GET {}", LOG_PREFIX, url);
+            logger.trace("{}: HTTP GET {}", LOG_PREFIX, url);
             ContentResponse contentResponse = request.send();
             apiResult = new ShellyApiResult(contentResponse);
             String response = contentResponse.getContentAsString().replace("\t", "").replace("\r\n", "").trim();
-            logger.info("{}: HTTP Response {}: {}", LOG_PREFIX, contentResponse.getStatus(), response);
+            logger.trace("{}: HTTP Response {}: {}", LOG_PREFIX, contentResponse.getStatus(), response);
 
             // validate response, API errors are reported as Json
             if (contentResponse.getStatus() != HttpStatus.OK_200) {
@@ -286,15 +321,15 @@ public class ShellyManagerPage {
         }
     }
 
-    protected String getDeviceType(Map<String, String> properties) {
+    protected static String getDeviceType(Map<String, String> properties) {
         return getString(properties.get(PROPERTY_MODEL_ID));
     }
 
-    protected String getDeviceIp(Map<String, String> properties) {
+    protected static String getDeviceIp(Map<String, String> properties) {
         return getString(properties.get("deviceIp"));
     }
 
-    protected String getDeviceName(Map<String, String> properties) {
+    protected static String getDeviceName(Map<String, String> properties) {
         return getString(properties.get(PROPERTY_DEV_NAME));
     }
 

@@ -51,7 +51,7 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
         String uid = getUrlParm(parameters, "uid");
         String update = getUrlParm(parameters, "update");
         if (uid.isEmpty() || action.isEmpty()) {
-            return "Invalid URL parameters";
+            return "Invalid URL parameters: " + parameters.toString();
         }
 
         String html = loadHTML(HEADER_HTML);

@@ -12,12 +12,14 @@
  */
 package org.openhab.binding.shelly.internal.manager;
 
+import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.manager.ShellyManagerConstants.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.HttpClient;
@@ -44,32 +46,42 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
 
     @Override
     public String generateContent(Map<String, String[]> parameters) throws ShellyApiException {
-        logger.info("Generating overview for {} devices", thingHandlers.size());
+        logger.debug("Generating overview for {} devices", thingHandlers.size());
         firmwareListHtml = new HashMap<>(); // re-load list each time we generate an overview
 
+        String html = "";
         Map<String, String> properties = new HashMap<>();
-        properties.put("metaTag", "<meta http-equiv=\"refresh\" content=\"60\" />");
+        properties.put("metaTag", "<meta http-equiv=\"refresh\" content=\"20\" />");
+        properties.put("cssHeader", loadHTML(OVERVIEW_HEADER, properties));
+        html = loadHTML(HEADER_HTML, properties);
+        html += loadHTML(OVERVIEW_HTML, properties);
 
-        String html = loadHTML(HEADER_HTML) + loadHTML(OVERVIEW_HTML);
         String deviceHtml = "";
-        for (Map.Entry<String, ShellyBaseHandler> thing : thingHandlers.entrySet()) {
+        TreeMap<String, ShellyBaseHandler> sortedMap = new TreeMap<>();
+        for (Map.Entry<String, ShellyBaseHandler> handler : thingHandlers.entrySet()) { // sort by Device Name
+            String deviceName = getDisplayName(handler.getValue().getThing().getProperties());
+            sortedMap.put(deviceName, handler.getValue());
+        }
+        for (Map.Entry<String, ShellyBaseHandler> handler : sortedMap.entrySet()) {
             try {
-                String uid = thing.getKey();
-                ShellyBaseHandler th = thing.getValue();
-
-                logger.info("Generating info for UID {}", uid);
-                fillProperties(properties, uid, th);
+                ShellyBaseHandler th = handler.getValue();
+                String uid = getString(th.getThing().getUID().getAsString()); // handler.getKey();
+                properties.clear();
+                fillProperties(properties, uid, handler.getValue());
                 String deviceType = getDeviceType(properties);
                 if (!deviceType.equalsIgnoreCase("unknown")) { // pw-protected device
                     properties.put(ATTRIBUTE_FIRMWARE_SEL, fillFirmwareList(uid, deviceType));
                     properties.put(ATTRIBUTE_ACTION_LIST, fillActionList(uid));
                 }
-                html += fillPage(loadHTML(DEVICE_HTML), properties);
+                html += fillPage(loadHTML(OVERVIEW_DEVICE), properties);
             } catch (ShellyApiException e) {
                 logger.info("{}: Exception", LOG_PREFIX, e);
             }
         }
-        html += deviceHtml + loadHTML(FOOTER_HTML);
+
+        properties.clear();
+        properties.put("cssFoofer", loadHTML(OVERVIEW_FOOTER, properties));
+        html += deviceHtml + loadHTML(FOOTER_HTML, properties);
         return fillAttributes(html, properties);
     }
 
@@ -87,7 +99,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         try {
             // Get current prod + beta version from original firmware repo
             logger.debug("{}: Load firmware version list for device type {}", LOG_PREFIX, deviceType);
-            String json = httpGet(FWREPO_URL); // return a strange JSON format so we are parsing this manually
+            String json = httpGet(FWREPO_PROD_URL); // return a strange JSON format so we are parsing this manually
             String entry = substringBetween(json, "\"" + deviceType + "\":{", "}");
             if (!entry.isEmpty()) {
                 entry = "{" + entry + "}";
@@ -115,14 +127,14 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
             }
 
             // Add those from Shelly Firmware Archive
-            json = httpGet(FWLISTARCH_URL + "?type=" + deviceType);
+            json = httpGet(FWREPO_ARCH_URL + "?type=" + deviceType);
             if (json.startsWith("[]")) {
                 // no files available for this device type
                 logger.info("{}: No firmware files found for device type {}", LOG_PREFIX, deviceType);
             } else {
                 // Create selection list
                 json = "{" + json.replace("[{", "\"versions\":[{") + "}"; // make it an named array
-                FwaList list = getFirmwareList(deviceType);
+                FwaList list = getFirmwareArchiveList(deviceType);
                 ArrayList<FwalEntry> versions = list.versions;
                 if (versions != null) {
                     html += "\t\t\t\t\t<option value=\"\" disabled hidden>- Archive -</option>\n";
@@ -156,5 +168,13 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         }
         html += "\t\t\t</select>\n\t\t\t";
         return html;
+    }
+
+    private String getDisplayName(Map<String, String> properties) {
+        String name = getString(properties.get(PROPERTY_DEV_NAME));
+        if (name.isEmpty()) {
+            name = getString(properties.get(PROPERTY_SERVICE_NAME));
+        }
+        return name;
     }
 }

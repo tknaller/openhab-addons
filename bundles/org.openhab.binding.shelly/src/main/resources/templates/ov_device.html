@@ -1,30 +1,33 @@
 		<tr>
+		    <td class="${imgDevStatus}" title="${thingStatus} ${thingStatusDetail}"/>
 			<td>
-				<div class="tooltip">${deviceName} (*)
+				<div class="tooltip">
+			        ${deviceName}
 					<span class="tooltiptext">
 						<table align="left">
 							<tr><td>${thingName}</td></tr>
-							<tr><td>Status</td><td>${thingStatus} - ${thingStatusDetail}</td></tr>
-							<tr><td/><td>${thingStatusDescr}</td></tr>
-							<tr><td>Shelly Device Name</td><td>${deviceName}</td></tr>
+							<tr><td>Status</td><td>${thingStatus} ${thingStatusDetail}</td></tr>
+                            <tr><td>Status Detail</td><td>${thingStatusDescr}</td></tr>
+                            <tr><td>Shelly Device Name</td><td>${deviceName}</td></tr>
 							<tr><td>Network Name</td><td>${serviceName}</td></tr>
 							<tr><td>Device Type</td><td>${modelId}</td></tr>
 							<tr><td>Device Hardware Rev</td><td>${deviceHwRev}</td></tr>
 							<tr><td>Device Mode</td><td>${deviceMode}</td></tr>
 							<tr><td>MAC Address</td><td>${macAddress}</td></tr>
+                            <tr><td>Last Alarm</td><td>${alarm}</td></tr>
 						</table>
 					</span>
 				</div>
 			</td>
 			<td><a href=http://${deviceIp} target="_blank">${deviceIp}</a></td>
 			<td>${wifiNetwork}</td>
-			<td align="center">${wifiSignal}</td>
+			<td class="${imgWiFi}" align="right">${wifiSignal}</td>
 			<td>${heartBeat}</td>
 			<td>${actionList}</td>
 			<td>${firmwareVersion}</td>
 			<td align="center">${updateAvailable}</td>
 			<td>${firmwareSelection}</td>
-			<td align="center">${uptime}</td>
+			<td align="right">${uptime}</td>
 			<td align="center">${devUpdatePeriod}</td>
 			<td align="center">${alarmCount}</td>
 			<td>${alarm}</td>

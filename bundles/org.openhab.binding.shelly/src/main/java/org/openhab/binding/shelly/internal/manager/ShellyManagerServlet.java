@@ -12,8 +12,7 @@
  */
 package org.openhab.binding.shelly.internal.manager;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.openhab.binding.shelly.internal.manager.ShellyManagerConstants.SHELLY_MANAGER_URI;
+import static org.openhab.binding.shelly.internal.manager.ShellyManagerConstants.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.io.IOException;
@@ -103,7 +102,10 @@ public class ShellyManagerServlet extends HttpServlet {
                 return;
             }
 
-            out.write(manager.generateContent(path, parameters));
+            // Make sure it's UTF-8 encoded
+            String result = manager.generateContent(path, parameters);
+            // result = new String(result.getBytes(StandardCharsets.ISO_8859_1), UTF_8);
+            out.write(result);
         } catch (ShellyApiException e) {
             out.write("Exception:<br>" + e.toString());
         } catch (RuntimeException e) {
@@ -111,7 +113,7 @@ public class ShellyManagerServlet extends HttpServlet {
                     e);
         } finally {
             response.setContentType("text/html");
-            response.setCharacterEncoding(UTF_8.toString());
+            response.setCharacterEncoding(UTF_8);
             out.close();
         }
     }

@@ -20,6 +20,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 
 /**
  * The {@link ShellyBindingConfiguration} class contains fields mapping binding configuration parameters.
@@ -59,7 +60,10 @@ public class ShellyBindingConfiguration {
         }
     }
 
-    public void updateFromProperties(Dictionary<String, Object> properties) {
+    public void updateFromProperties(@Nullable Dictionary<String, Object> properties) {
+        if (properties == null) { // saw this once
+            return;
+        }
         List<String> keys = Collections.list(properties.keys());
         Map<String, Object> dictCopy = keys.stream().collect(Collectors.toMap(Function.identity(), properties::get));
         updateFromProperties(dictCopy);

@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.shelly.internal.manager;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * {@link ShellyManagerConstants} defines the constants for Shelly Manager
  *
@@ -19,6 +21,7 @@ package org.openhab.binding.shelly.internal.manager;
  */
 public class ShellyManagerConstants {
     public static final String LOG_PREFIX = "ShellyManager";
+    public static final String UTF_8 = StandardCharsets.UTF_8.toString();
 
     public static final String SHELLY_MANAGER_URI = "/shelly/manager";
     public static final String SHELLY_MGR_OVERVIEW_URI = SHELLY_MANAGER_URI + "/ovierview";
@@ -31,17 +34,20 @@ public class ShellyManagerConstants {
     public static final String TEMPLATE_PATH = "templates/";
     public static final String HEADER_HTML = "header.html";
     public static final String OVERVIEW_HTML = "overview.html";
-    public static final String DEVICE_HTML = "device.html";
+    public static final String OVERVIEW_HEADER = "ov_header.html";
+    public static final String OVERVIEW_DEVICE = "ov_device.html";
+    public static final String OVERVIEW_FOOTER = "ov_footer.html";
     public static final String FWUPDATE_HTML = "fwupdate.html";
     public static final String ACTION_HTML = "action.html";
     public static final String FOOTER_HTML = "footer.html";
     public static final String ATTRIBUTE_FIRMWARE_SEL = "firmwareSelection";
     public static final String ATTRIBUTE_ACTION_LIST = "actionList";
 
-    public static final String FWREPO_URL = "https://repo.shelly.cloud/files/firmware/";
     public static final String FWPROD = "prod";
     public static final String FWBETA = "beta";
 
-    public static final String FWLISTARCH_URL = "http://archive.shelly-tools.de/archive.php";
-    public static final String FWLISTARCH_FILE = "http://archive.shelly-tools.de/version/";
+    public static final String FWREPO_PROD_URL = "https://api.shelly.cloud/files/firmware/";
+    public static final String FWREPO_TEST_URL = "https://repo.shelly.cloud/files/firmware/";
+    public static final String FWREPO_ARCH_URL = "http://archive.shelly-tools.de/archive.php";
+    public static final String FWREPO_ARCFILE_URL = "http://archive.shelly-tools.de/version/";
 }

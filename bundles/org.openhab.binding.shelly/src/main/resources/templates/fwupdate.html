@@ -1,4 +1,4 @@
-	<div id=update>
+	<div class="update">
 	<p/>
 	<table>
 		<tr><td>Device</td><td>${serviceName}</td></tr>
@@ -10,15 +10,28 @@
 		<tr><td><p/></td></tr>
 		<tr><td>Current firmware</td><td>${firmwareVersion}</td></tr>
 		<tr><td>Requested version</td><td>${version}</td></tr>
-		<tr><td>Update URL</td><td>http://${deviceIp}/${firmwareUrl}</td></tr>
+		<tr><td>Update URL</td><td>${firmwareUrl}</td></tr>
 		<tr><td>Update Type</td><td>${updateType}</td></tr>
 	</table>
 	<p/>
-	<div id=message>
+	
+    <form>
+        <p>Please select update source:</p>
+        <input checked="checked" type="radio" name="source" id="internet" value="internet"/>
+        <label for="internet">Download firmware directly from Internet</label><br/>
+        <input type="radio" name="source" id="local" value="local"/>
+        <label for="local">Use openHAB as proxy (device doesn't require Internet access)</label><br/>
+         <input type="hidden" id="uid" name="uid" value="${uid}">
+         <input type="hidden" id="version" name="version" value="${version}">
+         <input type="hidden" id="update" name="update" value="yes">
+        <p/>
+        <button>Perform Device Update</button>
+    </form>
+    <p/>
+
 	<p>
 	${message}
 	</p>
 	</div>
 	
-	<a href="/shelly/manager/fwupdate?uid=${uid}&version=${version}&update=yes" color="red">Perform update</a>
 	</div>
