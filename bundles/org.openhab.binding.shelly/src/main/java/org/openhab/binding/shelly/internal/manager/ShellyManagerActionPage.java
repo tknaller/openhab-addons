@@ -54,15 +54,21 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
             return "Invalid URL parameters: " + parameters.toString();
         }
 
-        String html = loadHTML(HEADER_HTML);
+        Map<String, String> properties = new HashMap<>();
+        properties.put("metaTag", "");
+        properties.put("cssHeader", "");
+        properties.put("cssFooter", "");
+        String html = loadHTML(HEADER_HTML, properties);
+
         ShellyBaseHandler th = thingHandlers.get(uid);
         if (th != null) {
             Thing thing = th.getThing();
-            Map<String, String> properties = fillProperties(new HashMap<>(), uid, th);
+            fillProperties(properties, uid, th);
 
             Map<String, String> actions = getActions();
             String actionUrl = SHELLY_MGR_OVERVIEW_URI;
             String actionButtonLabel = "Perform Action"; // Default
+            String serviceName = getValue(properties, "serviceName");
             String message = "";
 
             ShellyThingConfiguration config = getThingConfig(th, properties);
@@ -71,16 +77,23 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
             switch (action) {
                 case SHELLY_MGR_ACTION_RESTART:
                     api.deviceReboot();
-                    message = "The device is restarting and reconnects to WiFi. It will take a moment until device status is refreshed in openHAB.";
-                    actionButtonLabel = "Ok";
+                    if (!update.equalsIgnoreCase("yes")) {
+                        message = "The device will restart and reconnects to WiFi.";
+                        actionUrl = buildActionUrl(uid, action);
+                    } else {
+                        message = "The device is restarting and reconnects to WiFi. It will take a moment until device status is refreshed in openHAB.";
+                        actionButtonLabel = "Ok";
+                    }
                     break;
                 case SHELLY_MGR_ACTION_RESET:
                     if (!update.equalsIgnoreCase("yes")) {
                         message = "<p style=\"color:red;\">Attention: Performing this action will reset the device to factory defaults.<br/>"
-                                + "All configuration data incl. WiFi settings get lost and device will return to Access Point mode (WiFi ${serviceName}).</p>";
+                                + "All configuration data incl. WiFi settings get lost and device will return to Access Point mode (WiFi "
+                                + serviceName + ").</p>";
                         actionUrl = buildActionUrl(uid, action);
                     } else {
-                        message = "<p style=\"color:blue;\">Factorry reset was performed. Connect to WiFi network ${serviceName} and open http://192.168.33.1 to restart with device setup.</p>";
+                        message = "<p style=\"color:blue;\">Factorry reset was performed. Connect to WiFi network "
+                                + serviceName + " and open http://192.168.33.1 to restart with device setup.</p>";
                         actionButtonLabel = "Ok";
                     }
                     break;
@@ -94,11 +107,11 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                     if (!update.equalsIgnoreCase("yes")) {
                         ShellySettingsLogin status = api.getLoginSettings();
                         message = "Device protection is currently " + (status.enabled ? "enabled" : "disabled<br/>");
-                        message += "<p style=\"color:yellow;\">Device login will be set to user ${user} with password ${password}.</p>";
+                        message += "<p style=\"color:yellow;\">Device login will be set to user ${userId} with password ${password}.</p>";
                         actionUrl = buildActionUrl(uid, action);
                     } else {
                         api.setLoginCredentials(config.userId, config.password);
-                        message = "<p style=\"color:green;\">Device login was updated to user ${user} with password ${password}.</p>";
+                        message = "<p style=\"color:green;\">Device login was updated to user ${userId} with password ${password}.</p>";
                         actionButtonLabel = "Ok";
                     }
                     break;
@@ -109,10 +122,13 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
             properties.put("action", getString(actions.get(action))); // get description for command
             properties.put("actionButtonLabel", actionButtonLabel);
             properties.put("actionUrl", actionUrl);
+            message = fillAttributes(message, properties);
             properties.put("message", message);
-            html += fillPage(loadHTML(ACTION_HTML), uid, th, properties);
+            html += loadHTML(ACTION_HTML, properties);
         }
-        html += loadHTML(FOOTER_HTML);
+
+        properties.clear();
+        html += loadHTML(FOOTER_HTML, properties);
         return html;
     }
 

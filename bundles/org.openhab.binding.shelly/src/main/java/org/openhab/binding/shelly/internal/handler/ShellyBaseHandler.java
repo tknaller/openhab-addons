@@ -1009,6 +1009,10 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
             properties.put(PROPERTY_SERVICE_NAME, hostname);
             logger.trace("{}: Updated serrviceName to {}", thingName, hostname);
         }
+        String deviceName = getString(profile.settings.name);
+        if (!deviceName.isEmpty()) {
+            properties.put(PROPERTY_DEV_NAME, deviceName);
+        }
 
         // add status properties
         if (status.wifiSta != null) {

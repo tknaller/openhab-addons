@@ -134,19 +134,7 @@ public class ShellyManagerPage {
 
     protected String loadHTML(String template, Map<String, String> properties) throws ShellyApiException {
         String html = loadHTML(template);
-        return html.contains("${") ? fillAttributes(html, properties) : html;
-    }
-
-    protected String fillPage(String template, Map<String, String> properties) {
-        return fillAttributes(template, properties);
-    }
-
-    protected String fillPage(String template, String uid, ShellyBaseHandler th, Map<String, String> addProperties)
-            throws ShellyApiException {
-        Map<String, String> properties = new HashMap<>();
-        properties.put("metaTag", ""); // default empty, might be overwritten
-        properties.putAll(addProperties);
-        return fillAttributes(template, fillProperties(properties, uid, th));
+        return fillAttributes(html, properties);
     }
 
     protected Map<String, String> fillProperties(Map<String, String> properties, String uid, ShellyBaseHandler th) {
@@ -166,10 +154,14 @@ public class ShellyManagerPage {
             properties.put(key, value);
         }
 
-        String deviceName = getString(properties.get(PROPERTY_DEV_NAME));
-        if (deviceName.isEmpty()) {
+        State state = th.getChannelValue(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_NAME);
+        if (state != UnDefType.NULL) {
+            addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_NAME);
+        } else {
             // If the Shelly doesn't provide a device name (not configured) we use the service name
-            properties.put(PROPERTY_DEV_NAME, getString(properties.get(PROPERTY_SERVICE_NAME)));
+            String deviceName = getDeviceName(properties);
+            properties.put(PROPERTY_DEV_NAME,
+                    !deviceName.isEmpty() ? deviceName : getString(properties.get(PROPERTY_SERVICE_NAME)));
         }
 
         if (config.userId.isEmpty()) {
@@ -194,9 +186,7 @@ public class ShellyManagerPage {
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ALARM);
 
         String wiFiSignal = getString(properties.get(CHANNEL_DEVST_RSSI));
-        if (!wiFiSignal.isEmpty()) {
-            properties.put("imgWiFi", "imgWiFi" + wiFiSignal);
-        }
+        properties.put("imgWiFi", !wiFiSignal.isEmpty() ? "imgWiFi" + wiFiSignal : "");
         String statusIcon = "";
         ThingStatus ts = th.getThing().getStatus();
         switch (ts) {
@@ -207,8 +197,7 @@ public class ShellyManagerPage {
                 break;
             case OFFLINE:
                 ThingStatusDetail sd = th.getThing().getStatusInfo().getStatusDetail();
-                if (((sd == ThingStatusDetail.CONFIGURATION_PENDING)
-                        || (sd == ThingStatusDetail.HANDLER_CONFIGURATION_PENDING))) {
+                if (uid.contains(THING_TYPE_SHELLYUNKNOWN_STR) || (sd == ThingStatusDetail.CONFIGURATION_ERROR)) {
                     statusIcon = "imgDevStatusCONFIG";
                     break;
                 }
@@ -223,20 +212,20 @@ public class ShellyManagerPage {
     private void addAttribute(Map<String, String> properties, ShellyBaseHandler thingHandler, String group,
             String attribute) {
         State state = thingHandler.getChannelValue(CHANNEL_GROUP_DEV_STATUS, attribute);
+        String value = "";
         if (state != UnDefType.NULL) {
-            String value;
             if (state instanceof DateTimeType) {
                 DateTimeType dt = (DateTimeType) state;
                 value = dt.format(null).replace('T', ' ');
             } else {
                 value = state.toString();
             }
-            properties.put(attribute, value);
         }
+        properties.put(attribute, value);
     }
 
     protected String fillAttributes(String template, Map<String, String> properties) {
-        if ((properties.size() == 0) || !template.contains("{")) {
+        if (!template.contains("${")) {
             // no replacement necessary
             return template;
         }
@@ -247,13 +236,11 @@ public class ShellyManagerPage {
                     getValue(properties, var.getKey()));
         }
 
-        // remove the remaining place holders (depending on the thing status not all are filled)
-        while (result.contains("${") && result.contains("}")) {
-            String before = substringBefore(result, "${");
-            String after = substringAfter(result, "}");
-            result = before + after;
+        if (result.contains("${")) {
+            return result.replaceAll("\\Q${\\E.*}", "");
+        } else {
+            return result;
         }
-        return result;
     }
 
     protected String getValue(Map<String, String> properties, String attribute) {

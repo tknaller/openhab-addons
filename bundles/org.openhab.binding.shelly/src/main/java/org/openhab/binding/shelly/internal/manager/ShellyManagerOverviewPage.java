@@ -23,9 +23,11 @@ import java.util.TreeMap;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
 import org.openhab.binding.shelly.internal.manager.ShellyManagerPage.FwaList.FwalEntry;
+import org.openhab.binding.shelly.internal.util.ShellyVersionDTO;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +53,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
 
         String html = "";
         Map<String, String> properties = new HashMap<>();
-        properties.put("metaTag", "<meta http-equiv=\"refresh\" content=\"20\" />");
+        properties.put("metaTag", "<meta http-equiv=\"refresh\" content=\"60\" />");
         properties.put("cssHeader", loadHTML(OVERVIEW_HEADER, properties));
         html = loadHTML(HEADER_HTML, properties);
         html += loadHTML(OVERVIEW_HTML, properties);
@@ -71,23 +73,27 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                 String deviceType = getDeviceType(properties);
                 if (!deviceType.equalsIgnoreCase("unknown")) { // pw-protected device
                     properties.put(ATTRIBUTE_FIRMWARE_SEL, fillFirmwareList(uid, deviceType));
-                    properties.put(ATTRIBUTE_ACTION_LIST, fillActionList(uid));
+                    properties.put(ATTRIBUTE_ACTION_LIST, fillActionList(th, uid));
+                } else {
+                    properties.put(ATTRIBUTE_FIRMWARE_SEL, "");
+                    properties.put(ATTRIBUTE_ACTION_LIST, "");
                 }
-                html += fillPage(loadHTML(OVERVIEW_DEVICE), properties);
+                html += loadHTML(OVERVIEW_DEVICE, properties);
             } catch (ShellyApiException e) {
-                logger.info("{}: Exception", LOG_PREFIX, e);
+                logger.debug("{}: Exception", LOG_PREFIX, e);
             }
         }
 
         properties.clear();
-        properties.put("cssFoofer", loadHTML(OVERVIEW_FOOTER, properties));
+        properties.put("cssFooter", loadHTML(OVERVIEW_FOOTER, properties));
         html += deviceHtml + loadHTML(FOOTER_HTML, properties);
         return fillAttributes(html, properties);
     }
 
     private String fillFirmwareList(String uid, String deviceType) throws ShellyApiException {
-        if (firmwareListHtml.containsKey(deviceType)) {
-            return getString(firmwareListHtml.get(deviceType));
+        String key = uid + "_" + deviceType;
+        if (firmwareListHtml.containsKey(key)) {
+            return getString(firmwareListHtml.get(key));
         }
 
         String html = "\n\t\t\t\t<select name=\"fwList\" id=\"fwList\" onchange=\"location = this.options[this.selectedIndex].value;\">\n";
@@ -137,11 +143,13 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                 FwaList list = getFirmwareArchiveList(deviceType);
                 ArrayList<FwalEntry> versions = list.versions;
                 if (versions != null) {
-                    html += "\t\t\t\t\t<option value=\"\" disabled hidden>- Archive -</option>\n";
+                    html += "\t\t\t\t\t<option value=\"\" disabled>-- Archive:</option>\n";
                     for (int i = versions.size() - 1; i >= 0; i--) {
                         FwalEntry e = versions.get(i);
                         String version = getString(e.version);
-                        if (!version.equalsIgnoreCase(pVersion) && !version.equalsIgnoreCase(bVersion)) {
+                        ShellyVersionDTO v = new ShellyVersionDTO();
+                        if (!version.equalsIgnoreCase(pVersion) && !version.equalsIgnoreCase(bVersion)
+                                && v.compare(version, SHELLY_API_MIN_FWCOIOT) >= 0) {
                             html += "\t\t\t\t\t<option value=\"" + updateUrl + "&version=" + version + "\">" + version
                                     + "</option>\n";
                         }
@@ -153,20 +161,24 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
             logger.debug("{}: Unable to retrieve firmware list: {}", LOG_PREFIX, e.toString());
         }
 
-        firmwareListHtml.put(deviceType, html);
+        firmwareListHtml.put(key, html);
         return html;
     }
 
-    private String fillActionList(String uid) {
+    private String fillActionList(ShellyBaseHandler handler, String uid) {
+        ThingStatus status = handler.getThing().getStatus();
+        if (status != ThingStatus.ONLINE) {
+            return ""; // device not initialized, offline etc.
+        }
         Map<String, String> actionList = ShellyManagerActionPage.getActions();
         String html = "\n\t\t\t\t<select name=\"actionList\" id=\"actionList\" onchange=\"location = '"
                 + SHELLY_MGR_ACTION_URI + "?uid=" + urlEncode(uid)
                 + "&action='+this.options[this.selectedIndex].value;\">\n";
-        html += "\t\t\t\t\t<option value=\"\" selected disabled hidden>select</option>\n";
+        html += "\t\t\t\t\t<option value=\"\" selected disabled>select</option>\n";
         for (Map.Entry<String, String> a : actionList.entrySet()) {
             html += "\t\t\t\t\t<option value=\"" + a.getKey() + "\">" + a.getValue() + "</option>\n";
         }
-        html += "\t\t\t</select>\n\t\t\t";
+        html += "\t\t\t\t</select>\n\t\t\t";
         return html;
     }
 

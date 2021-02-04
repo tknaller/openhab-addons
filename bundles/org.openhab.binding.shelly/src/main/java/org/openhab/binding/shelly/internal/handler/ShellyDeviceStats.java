@@ -33,7 +33,7 @@ public class ShellyDeviceStats {
         prop.put("lastUptime", String.valueOf(lastUptime));
         prop.put("unexpectedRestarts", String.valueOf(unexpectedRestarts));
         prop.put("timeoutErrors", String.valueOf(timeoutErrors));
-        prop.put("timeoutsRecorvered", String.valueOf(timeoutsRecorvered));
+        prop.put("timeoutsRecovered", String.valueOf(timeoutsRecorvered));
         prop.put("remainingWatchdog", String.valueOf(remainingWatchdog));
         prop.put("alarmCount", String.valueOf(alarms));
         return prop;

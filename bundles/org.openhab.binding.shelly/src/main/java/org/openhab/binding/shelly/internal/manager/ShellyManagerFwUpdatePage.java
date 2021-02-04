@@ -50,10 +50,11 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
             return "Invalid URL parameters: " + parameters;
         }
 
-        String html = loadHTML(HEADER_HTML);
+        Map<String, String> properties = new HashMap<>();
+        String html = loadHTML(HEADER_HTML, properties);
         ShellyBaseHandler th = thingHandlers.get(uid);
         if (th != null) {
-            Map<String, String> properties = fillProperties(new HashMap<>(), uid, th);
+            properties = fillProperties(new HashMap<>(), uid, th);
             ShellyThingConfiguration config = getThingConfig(th, properties);
             String deviceType = getDeviceType(properties);
             String uri = getFirmwareUrl(config.deviceIp, deviceType, version);
@@ -72,24 +73,26 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
                             + source + "<br/>" + "Firmware url for update: ${firmwareUrl}<p/>";
                     if (result.status.equalsIgnoreCase("updating")) {
                         output += "Update was started, device returned status '{$updateStatus}'<br>";
-                        output += "Wait 1 minute, then check device UI at <a href=http://${deviceIp}>${deviceIp}</a>, section Firmware.<p/>";
+                        output += "Wait 1 minute, then check device UI at <a href=\"http://${deviceIp}\" title=\"${deviceName}\" target=\"_blank\">${deviceIp}</a>, section Firmware.<p/>";
                     } else {
                         output += "<p style=\"color:red;\">Device ${serviceName} did not accepted the update request, status=${updateStatus}</p>";
                     }
-                    html += fillPage(output, uid, th, properties);
+                    output = fillAttributes(output, properties);
+                    html += fillAttributes(output, properties);
                 } catch (ShellyApiException e) {
                     properties.put("message",
                             "<p style=\"color:red;\">Device updated failed: " + e.toString() + "</p>");
-                    html += fillPage(loadHTML(FWUPDATE_HTML), uid, th, properties);
+                    html += loadHTML(FWUPDATE_HTML, properties);
                 }
             } else {
                 String message = "Do not power-off or restart device while updading the firmware!<br/>";
                 message += "Make sure device is connected to the Internet.";
                 properties.put("message", message);
-                html += fillPage(loadHTML(FWUPDATE_HTML), uid, th, properties);
+                html += loadHTML(FWUPDATE_HTML, properties);
             }
         }
-        html += loadHTML(FOOTER_HTML);
+
+        html += loadHTML(FOOTER_HTML, properties);
         return html;
     }
 

@@ -95,7 +95,7 @@ public class ShellyManagerServlet extends HttpServlet {
                 ipAddress = request.getRemoteAddr();
             }
             Map<String, String[]> parameters = request.getParameterMap();
-            logger.info("{}: {} Request from {}:{}{}?{}", className, request.getProtocol(), ipAddress,
+            logger.debug("{}: {} Request from {}:{}{}?{}", className, request.getProtocol(), ipAddress,
                     request.getRemotePort(), path, parameters.toString());
             if (!path.toLowerCase().startsWith(SERVLET_URI)) {
                 logger.warn("{} received unknown request: path = {}", className, path);
@@ -107,7 +107,8 @@ public class ShellyManagerServlet extends HttpServlet {
             // result = new String(result.getBytes(StandardCharsets.ISO_8859_1), UTF_8);
             out.write(result);
         } catch (ShellyApiException e) {
-            out.write("Exception:<br>" + e.toString());
+            out.write("Exception:<p>" + e.toString());
+            out.write("<a href=\"/shelly/manager\">Return to Overview</a>");
         } catch (RuntimeException e) {
             logger.debug("{}: Exception uri={}, parameters={}", className, path, request.getParameterMap().toString(),
                     e);
