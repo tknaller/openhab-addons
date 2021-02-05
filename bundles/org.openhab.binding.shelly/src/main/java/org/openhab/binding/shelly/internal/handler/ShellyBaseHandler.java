@@ -91,7 +91,6 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
     protected boolean stopping = false;
     private boolean channelsCreated = false;
 
-    private long lastAlarmTs = 0;
     private long watchdog = now();
 
     private @Nullable ScheduledFuture<?> statusJob;
@@ -525,7 +524,6 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
 
         if (!alarm.isEmpty()) {
             postEvent(alarm, force);
-            stats.alarms++;
         }
     }
 
@@ -539,14 +537,16 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         State value = cache.getValue(channelId);
         String lastAlarm = value != UnDefType.NULL ? value.toString() : "";
 
-        if (force || !lastAlarm.equals(alarm) || (now() > (lastAlarmTs + HEALTH_CHECK_INTERVAL_SEC))) {
+        if (force || !lastAlarm.equals(alarm) || (now() > (stats.lastAlarmTs + HEALTH_CHECK_INTERVAL_SEC))) {
             if (alarm.equals(ALARM_TYPE_NONE)) {
                 cache.updateChannel(channelId, getStringType(alarm));
             } else {
                 logger.info("{}: {}", thingName, messages.get("event.triggered", alarm));
                 triggerChannel(channelId, alarm);
                 cache.updateChannel(channelId, getStringType(alarm));
-                lastAlarmTs = now();
+                stats.lastAlarm = alarm;
+                stats.lastAlarmTs = now();
+                stats.alarms++;
             }
         }
     }

@@ -22,6 +22,7 @@ import org.eclipse.smarthome.core.library.types.OpenClosedType;
 import org.eclipse.smarthome.core.library.unit.ImperialUnits;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
+import org.eclipse.smarthome.core.types.UnDefType;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsEMeter;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsMeter;
@@ -343,8 +344,10 @@ public class ShellyComponents {
             if (sdata.sensor != null) { // Shelly Motion
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION,
                         getOnOff(sdata.sensor.motion));
+                long timestamp = getLong(sdata.sensor.motionTimestamp);
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION_TS,
-                        getTimestamp(getString(profile.settings.timezone), sdata.sensor.motionTimestamp));
+                        timestamp != 0 ? getTimestamp(getString(profile.settings.timezone), timestamp)
+                                : UnDefType.UNDEF);
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_VIBRATION,
                         getOnOff(sdata.sensor.vibration));
             }

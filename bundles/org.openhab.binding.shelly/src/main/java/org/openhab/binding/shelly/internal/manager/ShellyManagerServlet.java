@@ -90,6 +90,7 @@ public class ShellyManagerServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         String path = getString(request.getRequestURI()).toLowerCase();
         String ipAddress = request.getHeader("HTTP_X_FORWARDED_FOR");
+        String output = "";
         try {
             if (ipAddress == null) {
                 ipAddress = request.getRemoteAddr();
@@ -103,18 +104,16 @@ public class ShellyManagerServlet extends HttpServlet {
             }
 
             // Make sure it's UTF-8 encoded
-            String result = manager.generateContent(path, parameters);
-            // result = new String(result.getBytes(StandardCharsets.ISO_8859_1), UTF_8);
-            out.write(result);
-        } catch (ShellyApiException e) {
-            out.write("Exception:<p>" + e.toString());
-            out.write("<a href=\"/shelly/manager\">Return to Overview</a>");
-        } catch (RuntimeException e) {
+            output = manager.generateContent(path, parameters);
+        } catch (ShellyApiException | RuntimeException e) {
             logger.debug("{}: Exception uri={}, parameters={}", className, path, request.getParameterMap().toString(),
                     e);
+            output = "Exception:" + e.toString() + "<p/><a href=\"/shelly/manager\">Return to Overview</a>";
+            logger.debug("{}: {}", className, output);
         } finally {
             response.setContentType("text/html");
             response.setCharacterEncoding(UTF_8);
+            out.write(output);
             out.close();
         }
     }

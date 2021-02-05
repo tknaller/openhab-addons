@@ -133,7 +133,7 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
         if (handler != null) {
             String uid = thing.getUID().getAsString();
             deviceListeners.put(uid, handler);
-            logger.info("Thing handler for uid {} added, total things = {}", uid, deviceListeners.size());
+            logger.debug("Thing handler for uid {} added, total things = {}", uid, deviceListeners.size());
             return handler;
         }
 
@@ -151,7 +151,8 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
     @Override
     protected synchronized void removeHandler(@NonNull ThingHandler thingHandler) {
         if (thingHandler instanceof ShellyBaseHandler) {
-            deviceListeners.remove(thingHandler.getThing().getThingTypeUID().getId());
+            String uid = thingHandler.getThing().getUID().getAsString();
+            deviceListeners.remove(uid);
         }
     }
 

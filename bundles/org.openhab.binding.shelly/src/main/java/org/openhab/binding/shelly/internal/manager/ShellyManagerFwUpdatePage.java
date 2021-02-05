@@ -72,7 +72,7 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
                     String output = "<p/>Updating device ${deviceName} (${uid}) with version ${version}, source="
                             + source + "<br/>" + "Firmware url for update: ${firmwareUrl}<p/>";
                     if (result.status.equalsIgnoreCase("updating")) {
-                        output += "Update was started, device returned status '{$updateStatus}'<br>";
+                        output += "Update was started, device returned status '${updateStatus}'<br>";
                         output += "Wait 1 minute, then check device UI at <a href=\"http://${deviceIp}\" title=\"${deviceName}\" target=\"_blank\">${deviceIp}</a>, section Firmware.<p/>";
                     } else {
                         output += "<p style=\"color:red;\">Device ${serviceName} did not accepted the update request, status=${updateStatus}</p>";

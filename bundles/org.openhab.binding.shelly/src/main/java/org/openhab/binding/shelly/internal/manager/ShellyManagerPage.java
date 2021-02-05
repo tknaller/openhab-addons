@@ -193,11 +193,12 @@ public class ShellyManagerPage {
             case UNINITIALIZED:
             case REMOVED:
             case REMOVING:
-                statusIcon = "statusUNINITIALIZED";
+                statusIcon = "imgDevStatusUNINITIALIZED";
                 break;
             case OFFLINE:
                 ThingStatusDetail sd = th.getThing().getStatusInfo().getStatusDetail();
-                if (uid.contains(THING_TYPE_SHELLYUNKNOWN_STR) || (sd == ThingStatusDetail.CONFIGURATION_ERROR)) {
+                if (uid.contains(THING_TYPE_SHELLYUNKNOWN_STR) || (sd == ThingStatusDetail.CONFIGURATION_ERROR)
+                        || (sd == ThingStatusDetail.HANDLER_CONFIGURATION_PENDING)) {
                     statusIcon = "imgDevStatusCONFIG";
                     break;
                 }
@@ -248,7 +249,7 @@ public class ShellyManagerPage {
         if (!value.isEmpty()) {
             switch (attribute) {
                 case PROPERTY_FIRMWARE_VERSION:
-                    value = substringBefore(value, "-");
+                    value = substringBeforeLast(value, "-");
                     break;
                 case PROPERTY_UPDATE_AVAILABLE:
                     value = value.replace(OnOffType.ON.toString(), "yes");

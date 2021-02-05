@@ -15,6 +15,8 @@ package org.openhab.binding.shelly.internal.handler;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.openhab.binding.shelly.internal.util.ShellyUtils;
+
 /***
  * {@link ShellyDeviceStats} some statistical values for the thing
  *
@@ -27,6 +29,8 @@ public class ShellyDeviceStats {
     public long timeoutsRecorvered = 0;
     public long remainingWatchdog = 0;
     public long alarms = 0;
+    public String lastAlarm = "";
+    public long lastAlarmTs = 0;
 
     public Map<String, String> asProperties() {
         Map<String, String> prop = new HashMap<>();
@@ -36,6 +40,8 @@ public class ShellyDeviceStats {
         prop.put("timeoutsRecovered", String.valueOf(timeoutsRecorvered));
         prop.put("remainingWatchdog", String.valueOf(remainingWatchdog));
         prop.put("alarmCount", String.valueOf(alarms));
+        prop.put("lastAlarm", lastAlarm);
+        prop.put("lastAlarmTs", lastAlarmTs != 0 ? ShellyUtils.getTimestamp("", lastAlarmTs).format(null) : "");
         return prop;
     }
 }

@@ -31,6 +31,7 @@ import org.eclipse.smarthome.core.library.types.OpenClosedType;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
 import org.eclipse.smarthome.core.types.State;
+import org.eclipse.smarthome.core.types.UnDefType;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.CoIotDescrBlk;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.CoIotDescrSen;
 import org.openhab.binding.shelly.internal.coap.ShellyCoapJSonDTO.CoIotSensor;
@@ -298,7 +299,8 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
             case "3119": // Motion timestamp
                 // {"I":3119,"T":"S","D":"timestamp","U":"s","R":["U32","-1"],"L":1},
                 updateChannel(updates, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION_TS,
-                        getTimestamp(getString(profile.settings.timezone), (long) s.value));
+                        s.value != 0 ? getTimestamp(getString(profile.settings.timezone), (long) s.value)
+                                : UnDefType.UNDEF);
                 break;
             case "3120": // motionActive
                 // {"I":3120,"T":"S","D":"motionActive","R":["0/1","-1"],"L":1},

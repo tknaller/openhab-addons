@@ -136,7 +136,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
             json = httpGet(FWREPO_ARCH_URL + "?type=" + deviceType);
             if (json.startsWith("[]")) {
                 // no files available for this device type
-                logger.info("{}: No firmware files found for device type {}", LOG_PREFIX, deviceType);
+                logger.debug("{}: No firmware files found for device type {}", LOG_PREFIX, deviceType);
             } else {
                 // Create selection list
                 json = "{" + json.replace("[{", "\"versions\":[{") + "}"; // make it an named array
