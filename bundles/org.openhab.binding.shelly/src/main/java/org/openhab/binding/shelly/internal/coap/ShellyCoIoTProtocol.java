@@ -83,7 +83,7 @@ public class ShellyCoIoTProtocol {
         switch (sen.type.toLowerCase()) {
             case "b": // BatteryLevel +
                 updateChannel(updates, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LEVEL,
-                        toQuantityType(s.value, DIGITS_PERCENT, SmartHomeUnits.PERCENT));
+                        toQuantityType(s.value, 0, SmartHomeUnits.PERCENT));
                 break;
             case "h" /* Humidity */:
                 updateChannel(updates, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_HUM,

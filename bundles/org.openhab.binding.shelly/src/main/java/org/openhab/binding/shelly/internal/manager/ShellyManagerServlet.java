@@ -108,7 +108,12 @@ public class ShellyManagerServlet extends HttpServlet {
         } catch (ShellyApiException | RuntimeException e) {
             logger.debug("{}: Exception uri={}, parameters={}", className, path, request.getParameterMap().toString(),
                     e);
-            output = "Exception:" + e.toString() + "<p/><a href=\"/shelly/manager\">Return to Overview</a>";
+            String stackTrace = "";
+            for (StackTraceElement ste : e.getStackTrace()) {
+                stackTrace += ste.toString() + "<br/>";
+            }
+            output = "Exception:" + e.toString() + "<br/>" + stackTrace
+                    + "<p/><a href=\"/shelly/manager\">Return to Overview</a>";
             logger.debug("{}: {}", className, output);
         } finally {
             response.setContentType("text/html");

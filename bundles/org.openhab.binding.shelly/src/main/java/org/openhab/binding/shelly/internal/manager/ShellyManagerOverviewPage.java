@@ -70,6 +70,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                 String uid = getString(th.getThing().getUID().getAsString()); // handler.getKey();
                 properties.clear();
                 fillProperties(properties, uid, handler.getValue());
+                properties.put("displayName", handler.getKey());
                 String deviceType = getDeviceType(properties);
                 if (!deviceType.equalsIgnoreCase("unknown")) { // pw-protected device
                     properties.put(ATTRIBUTE_FIRMWARE_SEL, fillFirmwareList(uid, deviceType));
@@ -149,7 +150,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                         String version = getString(e.version);
                         ShellyVersionDTO v = new ShellyVersionDTO();
                         if (!version.equalsIgnoreCase(pVersion) && !version.equalsIgnoreCase(bVersion)
-                                && v.compare(version, SHELLY_API_MIN_FWCOIOT) >= 0) {
+                                && (v.compare(version, SHELLY_API_MIN_FWCOIOT) >= 0) || version.contains("master")) {
                             html += "\t\t\t\t\t<option value=\"" + updateUrl + "&version=" + version + "\">" + version
                                     + "</option>\n";
                         }

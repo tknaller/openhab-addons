@@ -4,7 +4,8 @@
         .devTable th { background-color:#0B398C; }
         .devTable tr:nth-child(even) { }
         .devTable tr:nth-child(odd)  { background: #555; border: 0; }
-        .devTable td, .devTable th { padding:3px 5px; white-space: nowrap; border: 0; }
+        .devTable td, .devTable th { padding:3px 5px; white-space:  border: 0; }
+        .devTable th, .devTable tr, .devTable tr { min-height: 26px; }
 
         .devTable select, option {
             background-color: #555; color:white; 
@@ -13,8 +14,7 @@
         }
 
         .tooltip { position: relative; display: inline-block; border-bottom: 1px dotted black; }
-        .tooltiphdr        { background: #0B398C; padding: 7px 7px; }
-        .tooltiptext table { padding: 7px 7px; background: #555; border: 0; }
+        .tooltiptext table { padding: 7px 7px; background: #555; border: 0; white-space: nowrap;}
         .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
 
         .tooltip .tooltiptext {

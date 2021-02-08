@@ -44,6 +44,7 @@ import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.UnDefType;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyApiResult;
+import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api.ShellyHttpApi;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
@@ -147,11 +148,14 @@ public class ShellyManagerPage {
         ThingStatusDetail detail = thing.getStatusInfo().getStatusDetail();
         properties.put("thingStatusDetail", detail.equals(ThingStatusDetail.NONE) ? "" : getString(detail.toString()));
         properties.put("thingStatusDescr", getString(thing.getStatusInfo().getDescription()));
+        ShellyDeviceProfile profile = th.getProfile();
         ShellyThingConfiguration config = thing.getConfiguration().as(ShellyThingConfiguration.class);
         for (Map.Entry<String, Object> p : thing.getConfiguration().getProperties().entrySet()) {
             String key = p.getKey();
-            String value = p.getValue().toString();
-            properties.put(key, value);
+            if (p.getValue() != null) {
+                String value = p.getValue().toString();
+                properties.put(key, value);
+            }
         }
 
         State state = th.getChannelValue(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_NAME);
@@ -212,7 +216,7 @@ public class ShellyManagerPage {
 
     private void addAttribute(Map<String, String> properties, ShellyBaseHandler thingHandler, String group,
             String attribute) {
-        State state = thingHandler.getChannelValue(CHANNEL_GROUP_DEV_STATUS, attribute);
+        State state = thingHandler.getChannelValue(group, attribute);
         String value = "";
         if (state != UnDefType.NULL) {
             if (state instanceof DateTimeType) {

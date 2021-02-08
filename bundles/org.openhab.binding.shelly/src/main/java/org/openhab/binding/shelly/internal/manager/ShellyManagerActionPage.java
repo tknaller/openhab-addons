@@ -22,8 +22,10 @@ import java.util.Map;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.smarthome.core.thing.Thing;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsLogin;
+import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api.ShellyHttpApi;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
@@ -73,16 +75,24 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
 
             ShellyThingConfiguration config = getThingConfig(th, properties);
             ShellyHttpApi api = new ShellyHttpApi(uid, config, httpClient);
+            ShellyDeviceProfile profile = th.getProfile();
 
             switch (action) {
                 case SHELLY_MGR_ACTION_RESTART:
-                    api.deviceReboot();
                     if (!update.equalsIgnoreCase("yes")) {
-                        message = "The device will restart and reconnects to WiFi.";
-                        actionUrl = buildActionUrl(uid, action);
-                    } else {
                         message = "The device is restarting and reconnects to WiFi. It will take a moment until device status is refreshed in openHAB.";
                         actionButtonLabel = "Ok";
+                    } else {
+                        message = "The device will restart and reconnects to WiFi.";
+                        actionUrl = buildActionUrl(uid, action);
+                        new Thread(() -> { // schedule asynchronous reboot
+                            try {
+                                api.deviceReboot();
+                                setRestarted(th);
+                            } catch (ShellyApiException e) {
+                                // maybe the device restarts before returning the http response
+                            }
+                        }).start();
                     }
                     break;
                 case SHELLY_MGR_ACTION_RESET:
@@ -95,6 +105,7 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                         message = "<p style=\"color:blue;\">Factorry reset was performed. Connect to WiFi network "
                                 + serviceName + " and open http://192.168.33.1 to restart with device setup.</p>";
                         actionButtonLabel = "Ok";
+                        setRestarted(th);
                     }
                     break;
                 case SHELLY_MGR_ACTION_PROTECT:
@@ -114,6 +125,10 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                         message = "<p style=\"color:green;\">Device login was updated to user ${userId} with password ${password}.</p>";
                         actionButtonLabel = "Ok";
                     }
+                    break;
+                case SHELLY_MGR_ACTION_RES_STATS:
+                    th.resetStats();
+                    actionButtonLabel = "Ok";
                     break;
                 default:
                     logger.warn("{}: Unknown action {} requested", LOG_PREFIX, action);
@@ -137,10 +152,16 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
         list.put(SHELLY_MGR_ACTION_RESTART, "Reboot Device");
         list.put(SHELLY_MGR_ACTION_PROTECT, "Protect Device");
         list.put(SHELLY_MGR_ACTION_RESET, "Factory Reset");
+        list.put(SHELLY_MGR_ACTION_RES_STATS, "Reset Statistics");
         return list;
     }
 
     private String buildActionUrl(String uid, String action) {
         return SHELLY_MGR_ACTION_URI + "?action=" + action + "&uid=" + urlEncode(uid) + "&update=yes";
+    }
+
+    private void setRestarted(ShellyBaseHandler th) {
+        th.requestUpdates(th.getProfile().isMotion ? 20 : 10, true);
+        th.setThingOffline(ThingStatusDetail.GONE, "offline.status-error-restarted");
     }
 }

@@ -18,15 +18,21 @@ import static org.openhab.binding.shelly.internal.util.ShellyUtils.getString;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsUpdate;
+import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api.ShellyHttpApi;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link ShellyManagerFwUpdatePage} implements the Shelly Manager's firmware update page
@@ -35,6 +41,8 @@ import org.osgi.service.cm.ConfigurationAdmin;
  */
 @NonNullByDefault
 public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
+    protected final Logger logger = LoggerFactory.getLogger(ShellyManagerFwUpdatePage.class);
+
     public ShellyManagerFwUpdatePage(ConfigurationAdmin configurationAdmin, HttpClient httpClient,
             Map<String, ShellyBaseHandler> thingHandlers) {
         super(configurationAdmin, httpClient, thingHandlers);
@@ -56,7 +64,9 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
         if (th != null) {
             properties = fillProperties(new HashMap<>(), uid, th);
             ShellyThingConfiguration config = getThingConfig(th, properties);
+            ShellyDeviceProfile profile = th.getProfile();
             String deviceType = getDeviceType(properties);
+            String deviceName = getDeviceName(properties);
             String uri = getFirmwareUrl(config.deviceIp, deviceType, version);
             String url = "http://" + getDeviceIp(properties) + "/ota?" + uri;
             properties.put("uid", uid);
@@ -65,25 +75,26 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
 
             if (update.equalsIgnoreCase("yes")) {
                 // do the update
-                try {
-                    ShellyHttpApi api = new ShellyHttpApi(uid, config, httpClient);
-                    ShellySettingsUpdate result = api.firmwareUpdate(uri);
-                    properties.put("updateStatus", result.status);
-                    String output = "<p/>Updating device ${deviceName} (${uid}) with version ${version}, source="
-                            + source + "<br/>" + "Firmware url for update: ${firmwareUrl}<p/>";
-                    if (result.status.equalsIgnoreCase("updating")) {
-                        output += "Update was started, device returned status '${updateStatus}'<br>";
-                        output += "Wait 1 minute, then check device UI at <a href=\"http://${deviceIp}\" title=\"${deviceName}\" target=\"_blank\">${deviceIp}</a>, section Firmware.<p/>";
-                    } else {
-                        output += "<p style=\"color:red;\">Device ${serviceName} did not accepted the update request, status=${updateStatus}</p>";
+                th.setThingOffline(ThingStatusDetail.FIRMWARE_UPDATING, "offline.status-error-fwupgrade");
+                String output = "<p/>Updating device ${deviceName} (${uid}) with version ${version}, source=" + source
+                        + "<br/>" + "Firmware url for update: ${firmwareUrl}<p/>"
+                        + "Wait 2 minutes, then check device UI at <a href=\"http://${deviceIp}\" title=\"${thingName}\" target=\"_blank\">${deviceIp}</a>, section Firmware.<p/>";
+                html += fillAttributes(output, properties);
+
+                new Thread(() -> { // schedule asynchronous reboot
+                    try {
+                        ShellyHttpApi api = new ShellyHttpApi(uid, config, httpClient);
+                        ShellySettingsUpdate result = api.firmwareUpdate(uri);
+                        String status = getString(result.status);
+                        logger.info("{}: Firmware update initiated, device returned status {}", deviceName, status);
+
+                        // Shelly Motion needs almost 2min for upgrade
+                        scheduleUpdate(th, uid + "_check", profile.isMotion ? 110 : 30);
+                    } catch (ShellyApiException e) {
+                        // maybe the device restarts before returning the http response
+                        logger.warn("{}: Firmware updated failed: {}", deviceName, e.toString());
                     }
-                    output = fillAttributes(output, properties);
-                    html += fillAttributes(output, properties);
-                } catch (ShellyApiException e) {
-                    properties.put("message",
-                            "<p style=\"color:red;\">Device updated failed: " + e.toString() + "</p>");
-                    html += loadHTML(FWUPDATE_HTML, properties);
-                }
+                }).start();
             } else {
                 String message = "Do not power-off or restart device while updading the firmware!<br/>";
                 message += "Make sure device is connected to the Internet.";
@@ -114,5 +125,16 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
                 }
         }
         return "";
+    }
+
+    private void scheduleUpdate(ShellyBaseHandler th, String name, int delay) {
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                th.requestUpdates(1, true);
+            }
+        };
+        Timer timer = new Timer(name);
+        timer.schedule(task, delay * 1000);
     }
 }

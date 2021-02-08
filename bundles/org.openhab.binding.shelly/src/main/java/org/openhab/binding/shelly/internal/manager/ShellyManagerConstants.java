@@ -30,6 +30,7 @@ public class ShellyManagerConstants {
     public static final String SHELLY_MGR_ACTION_RESTART = "restart";
     public static final String SHELLY_MGR_ACTION_RESET = "reset";
     public static final String SHELLY_MGR_ACTION_PROTECT = "protect";
+    public static final String SHELLY_MGR_ACTION_RES_STATS = "reset_stat";
 
     public static final String TEMPLATE_PATH = "templates/";
     public static final String HEADER_HTML = "header.html";
