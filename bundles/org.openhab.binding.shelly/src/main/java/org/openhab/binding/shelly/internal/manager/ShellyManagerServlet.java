@@ -16,6 +16,7 @@ import static org.openhab.binding.shelly.internal.manager.ShellyManagerConstants
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Map;
 
@@ -26,10 +27,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.smarthome.core.net.HttpServiceUtil;
+import org.eclipse.smarthome.core.net.NetworkAddressService;
 import org.eclipse.smarthome.io.net.http.HttpClientFactory;
 import org.openhab.binding.shelly.internal.ShellyHandlerFactory;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
+import org.openhab.binding.shelly.internal.manager.ShellyManagerPage.ShellyMgrResponse;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
@@ -58,18 +63,22 @@ public class ShellyManagerServlet extends HttpServlet {
     private final HttpService httpService;
 
     @Activate
-    public ShellyManagerServlet(@Reference ConfigurationAdmin configurationAdmin, @Reference HttpService httpService,
+    public ShellyManagerServlet(@Reference ConfigurationAdmin configurationAdmin,
+            @Reference NetworkAddressService networkAddressService, @Reference HttpService httpService,
             @Reference HttpClientFactory httpClientFactory, @Reference ShellyHandlerFactory handlerFactory,
-            Map<String, Object> config) {
+            ComponentContext componentContext, Map<String, Object> config) {
         className = substringAfterLast(getClass().toString(), ".");
         this.httpService = httpService;
-        this.manager = new ShellyManager(configurationAdmin, httpClientFactory.getCommonHttpClient(),
-                handlerFactory.getThingHandlers());
+        String localIp = getString(networkAddressService.getPrimaryIpv4HostAddress());
+        int localPort = HttpServiceUtil.getHttpServicePort(componentContext.getBundleContext());
+        this.manager = new ShellyManager(configurationAdmin, httpClientFactory.getCommonHttpClient(), localIp,
+                localPort, handlerFactory.getThingHandlers());
+
         try {
             httpService.registerServlet(SERVLET_URI, this, null, httpService.createDefaultHttpContext());
-            logger.debug("{} started at '{}'", className, SERVLET_URI);
+            logger.debug("{}: Started at '{}'", className, SERVLET_URI);
         } catch (NamespaceException | ServletException | IllegalArgumentException e) {
-            logger.warn("Could not start {}", className, e);
+            logger.warn("{}: Unable to initialize bindingConfig", className, e);
         }
     }
 
@@ -87,10 +96,11 @@ public class ShellyManagerServlet extends HttpServlet {
             return;
         }
 
-        PrintWriter out = response.getWriter();
         String path = getString(request.getRequestURI()).toLowerCase();
         String ipAddress = request.getHeader("HTTP_X_FORWARDED_FOR");
-        String output = "";
+        ShellyMgrResponse output = new ShellyMgrResponse();
+        PrintWriter print = null;
+        OutputStream bin = null;
         try {
             if (ipAddress == null) {
                 ipAddress = request.getRemoteAddr();
@@ -103,23 +113,36 @@ public class ShellyManagerServlet extends HttpServlet {
                 return;
             }
 
-            // Make sure it's UTF-8 encoded
             output = manager.generateContent(path, parameters);
+            response.setContentType(output.mimeType);
+            if (output.mimeType.equals("text/html")) {
+                // Make sure it's UTF-8 encoded
+                response.setCharacterEncoding(UTF_8);
+                print = response.getWriter();
+                print.write((String) output.data);
+            } else {
+                // binary data
+                byte[] data = (byte[]) output.data;
+                bin = response.getOutputStream();
+                bin.write(data, 0, data.length);
+                response.setContentLength(data.length);
+            }
         } catch (ShellyApiException | RuntimeException e) {
             logger.debug("{}: Exception uri={}, parameters={}", className, path, request.getParameterMap().toString(),
                     e);
-            String stackTrace = "";
-            for (StackTraceElement ste : e.getStackTrace()) {
-                stackTrace += ste.toString() + "<br/>";
-            }
-            output = "Exception:" + e.toString() + "<br/>" + stackTrace
-                    + "<p/><a href=\"/shelly/manager\">Return to Overview</a>";
-            logger.debug("{}: {}", className, output);
-        } finally {
             response.setContentType("text/html");
-            response.setCharacterEncoding(UTF_8);
-            out.write(output);
-            out.close();
+            print = response.getWriter();
+            print.write("Exception:" + e.toString() + "<br/>Check openHAB.log for details."
+                    + "<p/><a href=\"/shelly/manager\">Return to Overview</a>");
+            logger.debug("{}: {}", className, output);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        } finally {
+            if (print != null) {
+                print.close();
+            }
+            if (bin != null) {
+                bin.close();
+            }
         }
     }
 }

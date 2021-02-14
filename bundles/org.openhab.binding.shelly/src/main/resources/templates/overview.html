@@ -1,5 +1,24 @@
-    <div id="overview">
+    <div class="navigation">
+        <table><tr><td>
+            Device Filter&nbsp;
+            <select name="thingFilter" id="thingFilter" onchange="location = '${uri}/overview?filter='+this.options[this.selectedIndex].value;">
+                <option value="" selected disabled>select</option>
+                <option value="*">All</option>
+                <option value="active">Active only</option>
+                <option value="attention">Need Attention</option>
+                <option value="update">Update available</option>
+                <option value="unprotected">Unprotected</option>
+            </select>
+            <a href="javascript:history.go(0)">
+                <img src="${uri}/images/manager_refresh.png" alt="Refresh Devices Status"/>&nbsp;&nbsp;
+            </a>
+        </td></tr></table>
+    </div>
+    <hr/>
+    
+    <div class="overview">
     <table class="devTable">
+        <tbody>
         <tr>
             <th>S</th>
             <th align="left">Name</th>
@@ -13,14 +32,15 @@
             <th>Update avail</th>
             <th align="left">Versions</th>
             <th>Uptime</th>
+            <th>Internal Temp</th>
             <th>Update Period</th>
+            <th>Remaining Watchdog</th>
             <th>Events</th>
             <th>Last Event</th>
             <th>Event Time</th>
             <th>Unexpected Restarts</th>
             <th>Timeout Errors</th>
             <th>Timeouts Recovered</th>
-            <th>Remaining Watchdog</th>
-            <th>Internal Temp</th>
+            <th>CoIOT Messages</th>
+            <th>CoIOT Errors</th>
         </tr>
-	    

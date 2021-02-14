@@ -21,11 +21,10 @@ import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.smarthome.core.thing.Thing;
+import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsLogin;
-import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api.ShellyHttpApi;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
@@ -42,18 +41,19 @@ import org.slf4j.LoggerFactory;
 public class ShellyManagerActionPage extends ShellyManagerPage {
     private final Logger logger = LoggerFactory.getLogger(ShellyManagerActionPage.class);
 
-    public ShellyManagerActionPage(ConfigurationAdmin configurationAdmin, HttpClient httpClient,
-            Map<String, ShellyBaseHandler> thingHandlers) {
-        super(configurationAdmin, httpClient, thingHandlers);
+    public ShellyManagerActionPage(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp,
+            int localPort, Map<String, ShellyBaseHandler> thingHandlers) {
+        super(configurationAdmin, httpClient, localIp, localPort, thingHandlers);
     }
 
     @Override
-    public String generateContent(Map<String, String[]> parameters) throws ShellyApiException {
+    public ShellyMgrResponse generateContent(String path, Map<String, String[]> parameters) throws ShellyApiException {
         String action = getUrlParm(parameters, "action");
         String uid = getUrlParm(parameters, "uid");
         String update = getUrlParm(parameters, "update");
         if (uid.isEmpty() || action.isEmpty()) {
-            return "Invalid URL parameters: " + parameters.toString();
+            return new ShellyMgrResponse("Invalid URL parameters: " + parameters.toString(),
+                    HttpStatus.BAD_REQUEST_400);
         }
 
         Map<String, String> properties = new HashMap<>();
@@ -64,7 +64,6 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
 
         ShellyBaseHandler th = thingHandlers.get(uid);
         if (th != null) {
-            Thing thing = th.getThing();
             fillProperties(properties, uid, th);
 
             Map<String, String> actions = getActions();
@@ -75,24 +74,23 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
 
             ShellyThingConfiguration config = getThingConfig(th, properties);
             ShellyHttpApi api = new ShellyHttpApi(uid, config, httpClient);
-            ShellyDeviceProfile profile = th.getProfile();
 
             switch (action) {
                 case SHELLY_MGR_ACTION_RESTART:
-                    if (!update.equalsIgnoreCase("yes")) {
+                    if (update.equalsIgnoreCase("yes")) {
                         message = "The device is restarting and reconnects to WiFi. It will take a moment until device status is refreshed in openHAB.";
                         actionButtonLabel = "Ok";
-                    } else {
-                        message = "The device will restart and reconnects to WiFi.";
-                        actionUrl = buildActionUrl(uid, action);
                         new Thread(() -> { // schedule asynchronous reboot
                             try {
                                 api.deviceReboot();
-                                setRestarted(th);
                             } catch (ShellyApiException e) {
                                 // maybe the device restarts before returning the http response
                             }
+                            setRestarted(th, uid); // refresh 20s after reboot
                         }).start();
+                    } else {
+                        message = "The device will restart and reconnects to WiFi.";
+                        actionUrl = buildActionUrl(uid, action);
                     }
                     break;
                 case SHELLY_MGR_ACTION_RESET:
@@ -105,7 +103,14 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                         message = "<p style=\"color:blue;\">Factorry reset was performed. Connect to WiFi network "
                                 + serviceName + " and open http://192.168.33.1 to restart with device setup.</p>";
                         actionButtonLabel = "Ok";
-                        setRestarted(th);
+                        new Thread(() -> { // schedule asynchronous reboot
+                            try {
+                                api.factoryReset();
+                            } catch (ShellyApiException e) {
+                                // maybe the device restarts before returning the http response
+                            }
+                            setRestarted(th, uid);
+                        }).start();
                     }
                     break;
                 case SHELLY_MGR_ACTION_PROTECT:
@@ -144,7 +149,7 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
 
         properties.clear();
         html += loadHTML(FOOTER_HTML, properties);
-        return html;
+        return new ShellyMgrResponse(html, HttpStatus.OK_200);
     }
 
     public static Map<String, String> getActions() {
@@ -160,8 +165,8 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
         return SHELLY_MGR_ACTION_URI + "?action=" + action + "&uid=" + urlEncode(uid) + "&update=yes";
     }
 
-    private void setRestarted(ShellyBaseHandler th) {
-        th.requestUpdates(th.getProfile().isMotion ? 20 : 10, true);
+    private void setRestarted(ShellyBaseHandler th, String uid) {
         th.setThingOffline(ThingStatusDetail.GONE, "offline.status-error-restarted");
+        scheduleUpdate(th, uid + "_upgrade", 20); // wait 20s before refresh
     }
 }

@@ -548,6 +548,8 @@ public class ShellyApiJsonDTO {
         ShellyStatusCloud cloud;
         @SerializedName("sleep_mode")
         public ShellySensorSleepMode sleepMode; // FW 1.6
+        @SerializedName("external_power")
+        public Integer externalPower; // H&T FW 1.6, seems to be the same like charger for the Sense
 
         public String timezone;
         public Double lat;
@@ -951,8 +953,6 @@ public class ShellyApiJsonDTO {
 
         public Boolean motion; // Shelly Sense: true=motion detected
         public Boolean charger; // Shelly Sense: true=charger connected
-        @SerializedName("external_power")
-        public Integer externalPower; // H&T FW 1.6, seems to be the same like charger for the Sense
 
         @SerializedName("act_reasons")
         public List<Object> actReasons; // HT/Smoke/Flood: list of reasons which woke up the device

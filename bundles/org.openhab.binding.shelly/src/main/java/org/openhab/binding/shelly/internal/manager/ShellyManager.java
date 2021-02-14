@@ -19,9 +19,10 @@ import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.http.HttpStatus;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
-import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
+import org.openhab.binding.shelly.internal.manager.ShellyManagerPage.ShellyMgrResponse;
 import org.osgi.service.cm.ConfigurationAdmin;
 
 /**
@@ -32,26 +33,30 @@ import org.osgi.service.cm.ConfigurationAdmin;
 @NonNullByDefault
 public class ShellyManager {
     private final Map<String, ShellyManagerPage> pages = new LinkedHashMap<>();
-    private final ShellyBindingConfiguration bindingConfig = new ShellyBindingConfiguration();
 
-    public ShellyManager(ConfigurationAdmin configurationAdmin, HttpClient httpClient,
+    public ShellyManager(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp, int localPort,
             Map<String, ShellyBaseHandler> thingHandlers) {
-
         pages.put(SHELLY_MGR_OVERVIEW_URI,
-                new ShellyManagerOverviewPage(configurationAdmin, httpClient, thingHandlers));
-        pages.put(SHELLY_MGR_ACTION_URI, new ShellyManagerActionPage(configurationAdmin, httpClient, thingHandlers));
+                new ShellyManagerOverviewPage(configurationAdmin, httpClient, localIp, localPort, thingHandlers));
+        pages.put(SHELLY_MGR_ACTION_URI,
+                new ShellyManagerActionPage(configurationAdmin, httpClient, localIp, localPort, thingHandlers));
         pages.put(SHELLY_MGR_FWUPDATE_URI,
-                new ShellyManagerFwUpdatePage(configurationAdmin, httpClient, thingHandlers));
-        pages.put(SHELLY_MANAGER_URI, new ShellyManagerOverviewPage(configurationAdmin, httpClient, thingHandlers));
+                new ShellyManagerFwUpdatePage(configurationAdmin, httpClient, localIp, localPort, thingHandlers));
+        pages.put(SHELLY_MGR_OTA_URI,
+                new ShellyManagerFwUpdatePage(configurationAdmin, httpClient, localIp, localPort, thingHandlers));
+        pages.put(SHELLY_MGR_IMAGES_URI,
+                new ShellyManagerImageLoader(configurationAdmin, httpClient, localIp, localPort, thingHandlers));
+        pages.put(SHELLY_MANAGER_URI,
+                new ShellyManagerOverviewPage(configurationAdmin, httpClient, localIp, localPort, thingHandlers));
     }
 
-    public String generateContent(String path, Map<String, String[]> parameters) throws ShellyApiException {
+    public ShellyMgrResponse generateContent(String path, Map<String, String[]> parameters) throws ShellyApiException {
         for (Map.Entry<String, ShellyManagerPage> page : pages.entrySet()) {
             if (path.toLowerCase().startsWith(page.getKey())) {
                 ShellyManagerPage p = page.getValue();
-                return p.generateContent(parameters);
+                return p.generateContent(path, parameters);
             }
         }
-        return "Invalid URL or syntax";
+        return new ShellyMgrResponse("Invalid URL or syntax", HttpStatus.BAD_REQUEST_400);
     }
 }

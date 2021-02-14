@@ -22,6 +22,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -64,13 +67,51 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class ShellyManagerPage {
     private final Logger logger = LoggerFactory.getLogger(ShellyManagerPage.class);
-    private final ConfigurationAdmin configurationAdmin;
     protected final Map<String, ShellyBaseHandler> thingHandlers;
     protected final HttpClient httpClient;
+    protected final ConfigurationAdmin configurationAdmin;
+    protected final ShellyBindingConfiguration bindingConfig = new ShellyBindingConfiguration();
+    protected final String localIp;
+    protected final int localPort;
 
     protected final Map<String, String> htmlTemplates = new HashMap<>();
     protected Map<String, String> firmwareListHtml = new HashMap<>();
     protected final Gson gson = new Gson();
+
+    public static class ShellyMgrResponse {
+        public @Nullable Object data = "";
+        public String mimeType = "";
+        public String redirectUrl = "";
+        public int code;
+        public Map<String, String> headers = new HashMap<>();
+
+        public ShellyMgrResponse() {
+            init("", HttpStatus.OK_200, "text/html", null);
+        }
+
+        public ShellyMgrResponse(Object data, int code) {
+            init(data, code, "text/html", null);
+        }
+
+        public ShellyMgrResponse(Object data, int code, String mimeType) {
+            init(data, code, mimeType, null);
+        }
+
+        public ShellyMgrResponse(Object data, int code, String mimeType, Map<String, String> headers) {
+            init(data, code, mimeType, headers);
+        }
+
+        private void init(Object message, int code, String mimeType, @Nullable Map<String, String> headers) {
+            this.data = message;
+            this.code = code;
+            this.mimeType = mimeType;
+            this.headers = headers != null ? headers : new TreeMap<>();
+        }
+
+        public void setRedirect(String redirectUrl) {
+            this.redirectUrl = redirectUrl;
+        }
+    }
 
     public static class FwaList {
         public static class FwalEntry {
@@ -90,15 +131,17 @@ public class ShellyManagerPage {
         public @Nullable String beta_ver;
     }
 
-    public ShellyManagerPage(ConfigurationAdmin configurationAdmin, HttpClient httpClient,
-            Map<String, ShellyBaseHandler> thingHandlers) {
+    public ShellyManagerPage(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp,
+            int localPort, Map<String, ShellyBaseHandler> thingHandlers) {
+        this.configurationAdmin = configurationAdmin;
         this.thingHandlers = thingHandlers;
         this.httpClient = httpClient;
-        this.configurationAdmin = configurationAdmin;
+        this.localIp = localIp;
+        this.localPort = localPort;
     }
 
-    public String generateContent(Map<String, String[]> parameters) throws ShellyApiException {
-        return "";
+    public ShellyMgrResponse generateContent(String path, Map<String, String[]> parameters) throws ShellyApiException {
+        return new ShellyMgrResponse("Invalid Request", HttpStatus.BAD_REQUEST_400);
     }
 
     protected String getUrlParm(Map<String, String[]> parameters, String param) {
@@ -134,11 +177,19 @@ public class ShellyManagerPage {
     }
 
     protected String loadHTML(String template, Map<String, String> properties) throws ShellyApiException {
+        properties.put("uri", SHELLY_MANAGER_URI);
         String html = loadHTML(template);
         return fillAttributes(html, properties);
     }
 
     protected Map<String, String> fillProperties(Map<String, String> properties, String uid, ShellyBaseHandler th) {
+        try {
+            Configuration serviceConfig = configurationAdmin.getConfiguration("binding." + BINDING_ID);
+            bindingConfig.updateFromProperties(serviceConfig.getProperties());
+        } catch (IOException e) {
+            logger.debug("ShellyManager: Unable to get bindingConfig");
+        }
+
         properties.putAll(th.getThing().getProperties());
         properties.putAll(th.getStatsProp());
 
@@ -148,6 +199,7 @@ public class ShellyManagerPage {
         ThingStatusDetail detail = thing.getStatusInfo().getStatusDetail();
         properties.put("thingStatusDetail", detail.equals(ThingStatusDetail.NONE) ? "" : getString(detail.toString()));
         properties.put("thingStatusDescr", getString(thing.getStatusInfo().getDescription()));
+        properties.put("uid", uid);
         ShellyDeviceProfile profile = th.getProfile();
         ShellyThingConfiguration config = thing.getConfiguration().as(ShellyThingConfiguration.class);
         for (Map.Entry<String, Object> p : thing.getConfiguration().getProperties().entrySet()) {
@@ -170,14 +222,8 @@ public class ShellyManagerPage {
 
         if (config.userId.isEmpty()) {
             // Get defauls from Binding Config
-            try {
-                ShellyBindingConfiguration bindingConfig = new ShellyBindingConfiguration();
-                Configuration serviceConfig = configurationAdmin.getConfiguration("binding." + BINDING_ID);
-                bindingConfig.updateFromProperties(serviceConfig.getProperties());
-                properties.put("userId", bindingConfig.defaultUserId);
-                properties.put("password", bindingConfig.defaultPassword);
-            } catch (IOException e) {
-            }
+            properties.put("userId", bindingConfig.defaultUserId);
+            properties.put("password", bindingConfig.defaultPassword);
         }
 
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_RSSI);
@@ -188,6 +234,14 @@ public class ShellyManagerPage {
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_CHARGER);
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_UPDATE);
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ALARM);
+        addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_CHARGER);
+
+        // Shelly H&T: When external power is connected the battery level is not valid
+        if (!profile.isHT || (getInteger(profile.settings.externalPower) == 0)) {
+            addAttribute(properties, th, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LEVEL);
+        } else {
+            properties.put(CHANNEL_SENSOR_BAT_LEVEL, "USB");
+        }
 
         String wiFiSignal = getString(properties.get(CHANNEL_DEVST_RSSI));
         properties.put("imgWiFi", !wiFiSignal.isEmpty() ? "imgWiFi" + wiFiSignal : "");
@@ -221,7 +275,7 @@ public class ShellyManagerPage {
         if (state != UnDefType.NULL) {
             if (state instanceof DateTimeType) {
                 DateTimeType dt = (DateTimeType) state;
-                value = dt.format(null).replace('T', ' ');
+                value = dt.toLocaleZone().format(null).replace('T', ' ').replace('-', '/');
             } else {
                 value = state.toString();
             }
@@ -333,5 +387,16 @@ public class ShellyManagerPage {
             config.password = getString(properties.get("password"));
         }
         return config;
+    }
+
+    protected void scheduleUpdate(ShellyBaseHandler th, String name, int delay) {
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                th.requestUpdates(1, true);
+            }
+        };
+        Timer timer = new Timer(name);
+        timer.schedule(task, delay * 1000);
     }
 }

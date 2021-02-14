@@ -26,12 +26,16 @@ public class ShellyManagerConstants {
     public static final String SHELLY_MANAGER_URI = "/shelly/manager";
     public static final String SHELLY_MGR_OVERVIEW_URI = SHELLY_MANAGER_URI + "/ovierview";
     public static final String SHELLY_MGR_FWUPDATE_URI = SHELLY_MANAGER_URI + "/fwupdate";
+    public static final String SHELLY_MGR_IMAGES_URI = SHELLY_MANAGER_URI + "/images";
     public static final String SHELLY_MGR_ACTION_URI = SHELLY_MANAGER_URI + "/action";
     public static final String SHELLY_MGR_ACTION_RESTART = "restart";
     public static final String SHELLY_MGR_ACTION_RESET = "reset";
     public static final String SHELLY_MGR_ACTION_PROTECT = "protect";
+    public static final String SHELLY_MGR_ACTION_SETTZ = "settz";
     public static final String SHELLY_MGR_ACTION_RES_STATS = "reset_stat";
+    public static final String SHELLY_MGR_OTA_URI = SHELLY_MANAGER_URI + "/ota";
 
+    public static final String IMAGE_PATH = "images/";
     public static final String TEMPLATE_PATH = "templates/";
     public static final String HEADER_HTML = "header.html";
     public static final String OVERVIEW_HTML = "overview.html";
@@ -41,8 +45,26 @@ public class ShellyManagerConstants {
     public static final String FWUPDATE_HTML = "fwupdate.html";
     public static final String ACTION_HTML = "action.html";
     public static final String FOOTER_HTML = "footer.html";
+
+    public static final String ATTRIBUTE_URI = "uri";
+    public static final String ATTRIBUTE_DISPLAY_NAME = "displayName";
+    public static final String ATTRIBUTE_DEV_STATUS = "deviceStatus";
     public static final String ATTRIBUTE_FIRMWARE_SEL = "firmwareSelection";
     public static final String ATTRIBUTE_ACTION_LIST = "actionList";
+
+    public static final String FWUPDATE_SOURCE_LOCAL = "local";
+    public static final String FWUPDATE_SOURCE_INTERNET = "internet";
+    public static final String FWUPDATE_SOURCE_CUSTOM = "custom";
+
+    public static final String URLPARM_UID = "uid";
+    public static final String URLPARM_DEVTYPE = "deviceType";
+    public static final String URLPARM_ACTION = "action";
+    public static final String URLPARM_FILTER = "filter";
+    public static final String URLPARM_TYPE = "type";
+    public static final String URLPARM_VERSION = "version";
+    public static final String URLPARM_UPDATE = "update";
+    public static final String URLPARM_SOURCE = "source";
+    public static final String URLPARM_URL = "url";
 
     public static final String FWPROD = "prod";
     public static final String FWBETA = "beta";
