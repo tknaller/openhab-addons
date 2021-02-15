@@ -78,6 +78,8 @@ public class ShellyManagerPage {
     protected Map<String, String> firmwareListHtml = new HashMap<>();
     protected final Gson gson = new Gson();
 
+    protected final ShellyManagerCache<String, FwRepoEntry> firmwareRepo = new ShellyManagerCache<>(15 * 60 * 1000);
+
     public static class ShellyMgrResponse {
         public @Nullable Object data = "";
         public String mimeType = "";
@@ -318,6 +320,32 @@ public class ShellyManagerPage {
             }
         }
         return value;
+    }
+
+    public FwRepoEntry getFirmwareRepoEntry(String deviceType) throws ShellyApiException {
+        logger.debug("{}: Load firmware list from {}", FWREPO_PROD_URL);
+        FwRepoEntry fw = null;
+        if (firmwareRepo.containsKey(deviceType)) {
+            fw = firmwareRepo.get(deviceType);
+        }
+        String json = httpGet(FWREPO_PROD_URL); // returns a strange JSON format so we are parsing this manually
+        String entry = substringBetween(json, "\"" + deviceType + "\":{", "}");
+        if (!entry.isEmpty()) {
+            entry = "{" + entry + "}";
+            /*
+             * Example:
+             * "SHPLG-1":{
+             * "url":"http:\/\/repo.shelly.cloud\/firmware\/SHPLG-1.zip",
+             * "version":"20201228-092318\/v1.9.3@ad2bb4e3",
+             * "beta_url":"http:\/\/repo.shelly.cloud\/firmware\/rc\/SHPLG-1.zip",
+             * "beta_ver":"20201223-093703\/v1.9.3-rc5@3f583801"
+             * },
+             */
+            fw = fromJson(gson, entry, FwRepoEntry.class);
+            firmwareRepo.put(deviceType, fw);
+        }
+
+        return fw != null ? fw : new FwRepoEntry();
     }
 
     public FwaList getFirmwareArchiveList(String deviceType) throws ShellyApiException {

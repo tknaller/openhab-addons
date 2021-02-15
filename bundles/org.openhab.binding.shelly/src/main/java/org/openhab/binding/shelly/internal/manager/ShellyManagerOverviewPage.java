@@ -90,8 +90,8 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                         properties.put(ATTRIBUTE_DEV_STATUS, fillDeviceStatus(filterResult));
                     }
                     if (!deviceType.equalsIgnoreCase("unknown")) { // pw-protected device
-                        properties.put(ATTRIBUTE_FIRMWARE_SEL, fillFirmwareList(uid, deviceType));
-                        properties.put(ATTRIBUTE_ACTION_LIST, fillActionList(th, uid));
+                        properties.put(ATTRIBUTE_FIRMWARE_SEL, fillFirmwareHtml(uid, deviceType));
+                        properties.put(ATTRIBUTE_ACTION_LIST, fillActionHtml(th, uid));
                     } else {
                         properties.put(ATTRIBUTE_FIRMWARE_SEL, "");
                         properties.put(ATTRIBUTE_ACTION_LIST, "");
@@ -109,7 +109,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         return new ShellyMgrResponse(fillAttributes(html, properties), HttpStatus.OK_200);
     }
 
-    private String fillFirmwareList(String uid, String deviceType) throws ShellyApiException {
+    private String fillFirmwareHtml(String uid, String deviceType) throws ShellyApiException {
         String key = uid + "_" + deviceType;
         if (firmwareListHtml.containsKey(key)) {
             return getString(firmwareListHtml.get(key));
@@ -184,15 +184,15 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         return html;
     }
 
-    private String fillActionList(ShellyBaseHandler handler, String uid) {
+    private String fillActionHtml(ShellyBaseHandler handler, String uid) {
         ThingStatus status = handler.getThing().getStatus();
         if (status != ThingStatus.ONLINE) {
             return ""; // device not initialized, offline etc.
         }
         Map<String, String> actionList = ShellyManagerActionPage.getActions();
         String html = "\n\t\t\t\t<select name=\"actionList\" id=\"actionList\" onchange=\"location = '"
-                + SHELLY_MGR_ACTION_URI + "?uid=" + urlEncode(uid)
-                + "&action='+this.options[this.selectedIndex].value;\">\n";
+                + SHELLY_MGR_ACTION_URI + "?uid=" + urlEncode(uid) + "&" + URLPARM_ACTION
+                + "='+this.options[this.selectedIndex].value;\">\n";
         html += "\t\t\t\t\t<option value=\"\" selected disabled>select</option>\n";
         for (Map.Entry<String, String> a : actionList.entrySet()) {
             html += "\t\t\t\t\t<option value=\"" + a.getKey() + "\">" + a.getValue() + "</option>\n";

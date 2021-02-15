@@ -42,11 +42,6 @@ import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * {@link ShellyManagerFwUpdatePage} implements the Shelly Manager's firmware update page
- *
- * @author Markus Michels - Initial contribution
- */
 @NonNullByDefault
 public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
     protected final Logger logger = LoggerFactory.getLogger(ShellyManagerFwUpdatePage.class);
@@ -83,7 +78,7 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
             ShellyThingConfiguration config = getThingConfig(th, properties);
             ShellyDeviceProfile profile = th.getProfile();
             String deviceType = getDeviceType(properties);
-            String uri = getFirmwareUrl(config.deviceIp, deviceType, version);
+            String uri = getFirmwareUrl(config.deviceIp, deviceType, version, source.equals(FWUPDATE_SOURCE_LOCAL));
             if (source.equalsIgnoreCase(FWUPDATE_SOURCE_INTERNET)) {
                 // If target
                 // - contains "update=xx" then use -> ?update=true for release and ?update=false for beta
@@ -95,28 +90,24 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
                 url = "http://" + localIp + ":" + localPort + SHELLY_MGR_OTA_URI
                         + urlEncode("?" + URLPARM_DEVTYPE + "=" + deviceType + "&" + URLPARM_VERSION + "=" + version);
             } // else custom -> don't modify url
+            String updateUrl = url;
             properties.put("version", version);
             properties.put("firmwareUrl", uri);
-            properties.put("updateUrl", url);
+            properties.put("updateUrl", updateUrl);
             properties.put("source", source);
 
             if (update.equalsIgnoreCase("yes")) {
                 // do the update
                 th.setThingOffline(ThingStatusDetail.FIRMWARE_UPDATING, "offline.status-error-fwupgrade");
                 String output = "<p/>Updating device ${deviceName} (${uid}) with version ${version}, source=${source}"
-                        + "<br/>" + "Update url for update: " + url + "<p/>"
+                        + "<p/>" + "Update url: " + url + "<p/>"
                         + "Wait 1-2 minutes, then check device UI at <a href=\"http://${deviceIp}\" title=\"${thingName}\" target=\"_blank\">${deviceIp}</a>, section Firmware.<p/>";
                 html += fillAttributes(output, properties);
 
                 new Thread(() -> { // schedule asynchronous reboot
                     try {
                         ShellyHttpApi api = new ShellyHttpApi(uid, config, httpClient);
-                        String updateUrl = uri;
-                        if (source.equalsIgnoreCase(FWUPDATE_SOURCE_LOCAL)) {
-                            updateUrl = "http://" + localIp + ":" + localPort + SHELLY_MGR_OTA_URI
-                                    + urlEncode("?" + URLPARM_URL + "=" + updateUrl);
-                        }
-                        ShellySettingsUpdate result = api.firmwareUpdate(updateUrl);
+                        ShellySettingsUpdate result = api.firmwareUpdate("url=" + updateUrl);
                         String status = getString(result.status);
                         logger.info("{}: Firmware update initiated, device returned status {}", th.thingName, status);
 
@@ -142,17 +133,17 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
         String deviceType = getUrlParm(parameters, URLPARM_DEVTYPE);
         String version = getUrlParm(parameters, URLPARM_VERSION);
         String url = getUrlParm(parameters, URLPARM_URL);
+        String failure = "Unable to find firmware for device type " + deviceType + ", version " + version + ", url="
+                + url;
+        logger.debug("ShellyManager: Update firmware - deviceType={}, version={}, url={}", deviceType, version, url);
 
         try {
-
             if (url.isEmpty()) {
-                url = getFirmwareUrl("", deviceType, version);
+                url = getFirmwareUrl("", deviceType, version, true);
                 if (url.isEmpty()) {
-                    throw new ShellyApiException(
-                            "Unable to find firmware for device type " + deviceType + ", version " + version);
+                    logger.info("ShellyManager: {}", failure);
+                    return new ShellyMgrResponse(failure, HttpStatus.BAD_REQUEST_400);
                 }
-                logger.debug("ShellyManager: Firmware URL for device type {}, version {} is {}", deviceType, version,
-                        url);
             }
 
             logger.info("ShellyManager: Loading firmware from {}", url);
@@ -164,25 +155,40 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
             ContentResponse contentResponse = request.send();
             HttpFields fields = contentResponse.getHeaders();
             Map<String, String> headers = new TreeMap<>();
-            String etag = getString(headers.get("ETag"));
+            String etag = getString(fields.get("ETag"));
+            String ranges = getString(fields.get("accept-ranges"));
+            String modified = getString(fields.get("Last-Modified"));
             headers.put("ETag", etag);
-            headers.put("accept-ranges", getString(headers.get("accept-ranges")));
+            headers.put("accept-ranges", ranges);
+            headers.put("Last-Modified", modified);
             byte[] data = contentResponse.getContent();
-            logger.info("ShellyManager: Firmware successfully loaded, size={}, ETag={}", data.length);
+            logger.info("ShellyManager: Firmware successfully loaded - size={}, ETag={}, last modified={}", data.length,
+                    modified);
             return new ShellyMgrResponse(data, HttpStatus.OK_200, contentResponse.getMediaType(), headers);
         } catch (ExecutionException | TimeoutException | InterruptedException | RuntimeException e) {
-            logger.debug("{}: Unable to load firmware from {} (device type={}, version={})", url, deviceType, version,
-                    e);
+            logger.info("ShellyManager: {}", failure, e);
+            return new ShellyMgrResponse(failure, HttpStatus.BAD_REQUEST_400);
+
         }
-        return new ShellyMgrResponse("Unable to load firmware from " + url, HttpStatus.NOT_FOUND_404);
     }
 
-    protected String getFirmwareUrl(String deviceIp, String deviceType, String version) throws ShellyApiException {
+    protected String getFirmwareUrl(String deviceIp, String deviceType, String version, boolean local)
+            throws ShellyApiException {
         switch (version) {
             case FWPROD:
-                return "update=true"; // update from regular url
             case FWBETA:
-                return "beta=true"; // update from beta url
+                boolean prod = version.equals(FWPROD);
+                if (!local) {
+                    // run regular device update
+                    return prod ? "update=true" : "beta=false";
+                } else {
+                    // convert prod/beta to full url
+                    FwRepoEntry fw = getFirmwareRepoEntry(deviceType);
+                    String url = getString(prod ? fw.url : fw.beta_url);
+                    logger.debug("ShellyManager: Map {} release to url {}, version {}", url,
+                            prod ? fw.version : fw.beta_ver);
+                    return url;
+                }
             default: // Update from firmware archive
                 FwaList list = getFirmwareArchiveList(deviceType);
                 ArrayList<FwaList.FwalEntry> versions = list.versions;

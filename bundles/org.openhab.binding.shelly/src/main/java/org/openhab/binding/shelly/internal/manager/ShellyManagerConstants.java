@@ -46,7 +46,11 @@ public class ShellyManagerConstants {
     public static final String ACTION_HTML = "action.html";
     public static final String FOOTER_HTML = "footer.html";
 
+    public static final String ATTRIBUTE_METATAG = "metaTag";
+    public static final String ATTRIBUTE_CSS_HEADER = "cssHeader";
+    public static final String ATTRIBUTE_CSS_FOOTER = "cssFooter";
     public static final String ATTRIBUTE_URI = "uri";
+    public static final String ATTRIBUTE_MESSAGE = "message";
     public static final String ATTRIBUTE_DISPLAY_NAME = "displayName";
     public static final String ATTRIBUTE_DEV_STATUS = "deviceStatus";
     public static final String ATTRIBUTE_FIRMWARE_SEL = "firmwareSelection";
@@ -73,4 +77,7 @@ public class ShellyManagerConstants {
     public static final String FWREPO_TEST_URL = "https://repo.shelly.cloud/files/firmware/";
     public static final String FWREPO_ARCH_URL = "http://archive.shelly-tools.de/archive.php";
     public static final String FWREPO_ARCFILE_URL = "http://archive.shelly-tools.de/version/";
+
+    public static final int CACHE_TIMEOUT_DEF_MIN = 60; // Default timeout for cache entries
+    public static final int CACHE_TIMEOUT_FW_MIN = 15; // Cache entries for the firmware list 15min
 }
