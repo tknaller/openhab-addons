@@ -14,11 +14,14 @@ package org.openhab.binding.shelly.internal.manager;
 
 import java.nio.charset.StandardCharsets;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * {@link ShellyManagerConstants} defines the constants for Shelly Manager
  *
  * @author Markus Michels - Initial contribution
  */
+@NonNullByDefault
 public class ShellyManagerConstants {
     public static final String LOG_PREFIX = "ShellyManager";
     public static final String UTF_8 = StandardCharsets.UTF_8.toString();
@@ -28,12 +31,16 @@ public class ShellyManagerConstants {
     public static final String SHELLY_MGR_FWUPDATE_URI = SHELLY_MANAGER_URI + "/fwupdate";
     public static final String SHELLY_MGR_IMAGES_URI = SHELLY_MANAGER_URI + "/images";
     public static final String SHELLY_MGR_ACTION_URI = SHELLY_MANAGER_URI + "/action";
-    public static final String SHELLY_MGR_ACTION_RESTART = "restart";
-    public static final String SHELLY_MGR_ACTION_RESET = "reset";
-    public static final String SHELLY_MGR_ACTION_PROTECT = "protect";
-    public static final String SHELLY_MGR_ACTION_SETTZ = "settz";
-    public static final String SHELLY_MGR_ACTION_RES_STATS = "reset_stat";
     public static final String SHELLY_MGR_OTA_URI = SHELLY_MANAGER_URI + "/ota";
+
+    public static final String ACTION_RESTART = "restart";
+    public static final String ACTION_PROTECT = "protect";
+    public static final String ACTION_SETTZ = "settz";
+    public static final String ACTION_SETNTP = "setntp";
+    public static final String ACTION_SETCLOUD = "setcloud";
+    public static final String ACTION_RES_STATS = "reset_stat";
+    public static final String ACTION_RESET = "reset";
+    public static final String ACTION_NONE = "-";
 
     public static final String IMAGE_PATH = "images/";
     public static final String TEMPLATE_PATH = "templates/";
@@ -56,6 +63,7 @@ public class ShellyManagerConstants {
     public static final String ATTRIBUTE_DEV_STATUS = "deviceStatus";
     public static final String ATTRIBUTE_FIRMWARE_SEL = "firmwareSelection";
     public static final String ATTRIBUTE_ACTION_LIST = "actionList";
+    public static final String ATTRIBUTE_LAST_ALARM = "lastAlarmTs";
 
     public static final String URLPARM_UID = "uid";
     public static final String URLPARM_DEVTYPE = "deviceType";

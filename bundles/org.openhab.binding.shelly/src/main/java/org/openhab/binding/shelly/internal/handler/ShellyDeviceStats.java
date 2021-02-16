@@ -36,7 +36,7 @@ public class ShellyDeviceStats {
     public long coiotMessages = 0;
     public long coiotErrors = 0;
 
-    public Map<String, String> asProperties(String timeZone) {
+    public Map<String, String> asProperties() {
         Map<String, String> prop = new HashMap<>();
         prop.put("lastUptime", String.valueOf(lastUptime));
         prop.put("deviceRestarts", String.valueOf(restarts));
@@ -45,9 +45,7 @@ public class ShellyDeviceStats {
         prop.put("remainingWatchdog", String.valueOf(remainingWatchdog));
         prop.put("alarmCount", String.valueOf(alarms));
         prop.put("lastAlarm", lastAlarm);
-        prop.put("lastAlarmTs", lastAlarmTs != 0
-                ? ShellyUtils.getTimestamp(timeZone, lastAlarmTs).format(null).replace('T', ' ').replace('-', '/')
-                : "");
+        prop.put("lastAlarmTs", ShellyUtils.convertTimestamp(lastAlarmTs));
         prop.put("coiotMessages", String.valueOf(coiotMessages));
         prop.put("coiotErrors", String.valueOf(coiotErrors));
         return prop;

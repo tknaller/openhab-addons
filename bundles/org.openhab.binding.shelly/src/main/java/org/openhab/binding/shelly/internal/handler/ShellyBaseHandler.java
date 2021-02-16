@@ -1193,7 +1193,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
     }
 
     public Map<String, String> getStatsProp() {
-        return stats.asProperties(getString(profile.settings.timezone));
+        return stats.asProperties();
     }
 
     public void resetStats() {

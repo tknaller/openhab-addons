@@ -277,7 +277,14 @@ public class ShellyManagerPage {
         if (state != UnDefType.NULL) {
             if (state instanceof DateTimeType) {
                 DateTimeType dt = (DateTimeType) state;
-                value = dt.format(null).replace('T', ' ').replace('-', '/');
+                switch (attribute) {
+                    case ATTRIBUTE_LAST_ALARM:
+                        value = dt.format(null).replace('T', ' ').replace('-', '/');
+                        break;
+                    default:
+                        value = getTimestamp(dt);
+                        value = dt.format(null).replace('T', ' ').replace('-', '/');
+                }
             } else {
                 value = state.toString();
             }

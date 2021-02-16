@@ -77,7 +77,7 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
             ShellyHttpApi api = new ShellyHttpApi(uid, config, httpClient);
 
             switch (action) {
-                case SHELLY_MGR_ACTION_RESTART:
+                case ACTION_RESTART:
                     if (update.equalsIgnoreCase("yes")) {
                         message = "The device is restarting and reconnects to WiFi. It will take a moment until device status is refreshed in openHAB.";
                         actionButtonLabel = "Ok";
@@ -94,14 +94,14 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                         actionUrl = buildActionUrl(uid, action);
                     }
                     break;
-                case SHELLY_MGR_ACTION_RESET:
+                case ACTION_RESET:
                     if (!update.equalsIgnoreCase("yes")) {
-                        message = "<p style=\"color:red;\">Attention: Performing this action will reset the device to factory defaults.<br/>"
+                        message = "<p class=\"warning\">Attention: Performing this action will reset the device to factory defaults.<br/>"
                                 + "All configuration data incl. WiFi settings get lost and device will return to Access Point mode (WiFi "
                                 + serviceName + ").</p>";
                         actionUrl = buildActionUrl(uid, action);
                     } else {
-                        message = "<p style=\"color:blue;\">Factorry reset was performed. Connect to WiFi network "
+                        message = "<p class=\"info\">Factorry reset was performed. Connect to WiFi network "
                                 + serviceName + " and open http://192.168.33.1 to restart with device setup.</p>";
                         actionButtonLabel = "Ok";
                         new Thread(() -> { // schedule asynchronous reboot
@@ -114,7 +114,7 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                         }).start();
                     }
                     break;
-                case SHELLY_MGR_ACTION_PROTECT:
+                case ACTION_PROTECT:
                     // Get device settings
                     if (config.userId.isEmpty() || config.password.isEmpty()) {
                         message = "<p style=\"color:red;\">To use this feature you need to set default credentials in the Shelly Binding settings.</p>";
@@ -132,9 +132,11 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                         actionButtonLabel = "Ok";
                     }
                     break;
-                case SHELLY_MGR_ACTION_RES_STATS:
+                case ACTION_RES_STATS:
                     th.resetStats();
                     actionButtonLabel = "Ok";
+                    break;
+                case ACTION_NONE:
                     break;
                 default:
                     logger.warn("{}: Unknown action {} requested", LOG_PREFIX, action);
@@ -155,10 +157,14 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
 
     public static Map<String, String> getActions() {
         Map<String, String> list = new LinkedHashMap<>();
-        list.put(SHELLY_MGR_ACTION_RESTART, "Reboot Device");
-        list.put(SHELLY_MGR_ACTION_PROTECT, "Protect Device");
-        list.put(SHELLY_MGR_ACTION_RESET, "Factory Reset");
-        list.put(SHELLY_MGR_ACTION_RES_STATS, "Reset Statistics");
+        list.put(ACTION_RES_STATS, "Reset Statistics");
+        list.put(ACTION_RESTART, "Reboot Device");
+        // list.put(ACTION_NONE, "----------------");
+        list.put(ACTION_PROTECT, "Protect Device");
+        // list.put(ACTION_SETCLOUD, "Set Timezone");
+        // list.put(ACTION_SETCLOUD, "Cloud on/off");
+        list.put(ACTION_NONE, "----------------");
+        list.put(ACTION_RESET, "Factory Reset");
         return list;
     }
 

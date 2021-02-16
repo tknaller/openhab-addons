@@ -16,13 +16,13 @@
 	
     <form>
         <p>Please select update source:</p>
-        <input checked="checked" type="radio" name="source" id="internet" value="internet"/>
+            <input checked="checked" type="radio" name="source" id="internet" value="internet"/>
         <label for="internet">Download firmware directly from Internet</label><br/>
-        <input type="radio" name="source" id="local" value="local"/>
+            <input type="radio" name="source" id="local" value="local"/>
         <label for="local">Use openHAB as proxy (device doesn't require Internet access)</label><br/>
-         <input type="hidden" id="uid" name="uid" value="${uid}">
-         <input type="hidden" id="version" name="version" value="${version}">
-         <input type="hidden" id="update" name="update" value="yes">
+	        <input type="hidden" id="uid" name="uid" value="${uid}">
+	        <input type="hidden" id="version" name="version" value="${version}">
+	        <input type="hidden" id="update" name="update" value="yes">
         <p/>
         <button>Perform Device Update</button>
     </form>

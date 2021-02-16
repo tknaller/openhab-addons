@@ -80,6 +80,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         for (Map.Entry<String, ShellyBaseHandler> handler : sortedMap.entrySet()) {
             try {
                 ShellyBaseHandler th = handler.getValue();
+                ThingStatus status = th.getThing().getStatus();
                 String uid = getString(th.getThing().getUID().getAsString()); // handler.getKey();
                 Map<String, String> warnings = getStatusWarnings(th);
 
@@ -96,10 +97,10 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
 
                     properties.put(ATTRIBUTE_DISPLAY_NAME, handler.getKey());
                     properties.put(ATTRIBUTE_DEV_STATUS, fillDeviceStatus(warnings));
-                    if (!warnings.isEmpty()) {
+                    if (!warnings.isEmpty() && (status != ThingStatus.UNKNOWN)) {
                         properties.put(ATTRIBUTE_STATUS_ICON, ICON_ATTENTION);
                     }
-                    if (!deviceType.equalsIgnoreCase("unknown")) { // pw-protected device
+                    if (!deviceType.equalsIgnoreCase("unknown") && (status == ThingStatus.ONLINE)) {
                         properties.put(ATTRIBUTE_FIRMWARE_SEL, fillFirmwareHtml(uid, deviceType));
                         properties.put(ATTRIBUTE_ACTION_LIST, fillActionHtml(th, uid));
                     } else {
@@ -174,16 +175,15 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
 
     private String fillActionHtml(ShellyBaseHandler handler, String uid) {
         ThingStatus status = handler.getThing().getStatus();
-        if (status != ThingStatus.ONLINE) {
-            return ""; // device not initialized, offline etc.
-        }
         Map<String, String> actionList = ShellyManagerActionPage.getActions();
         String html = "\n\t\t\t\t<select name=\"actionList\" id=\"actionList\" onchange=\"location = '"
                 + SHELLY_MGR_ACTION_URI + "?uid=" + urlEncode(uid) + "&" + URLPARM_ACTION
                 + "='+this.options[this.selectedIndex].value;\">\n";
         html += "\t\t\t\t\t<option value=\"\" selected disabled>select</option>\n";
         for (Map.Entry<String, String> a : actionList.entrySet()) {
-            html += "\t\t\t\t\t<option value=\"" + a.getKey() + "\">" + a.getValue() + "</option>\n";
+            String value = a.getValue();
+            html += "\t\t\t\t\t<option value=\"" + a.getKey() + (value.startsWith(ACTION_NONE) ? " disabled " : "")
+                    + "\">" + value + "</option>\n";
         }
         html += "\t\t\t\t</select>\n\t\t\t";
         return html;
@@ -244,7 +244,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
             result.put("Device Alarm", ALARM_TYPE_LOADERR);
         }
         if (stats.lastAlarm.equalsIgnoreCase(ALARM_TYPE_RESTARTED)) {
-            result.put("Device Alarm", ALARM_TYPE_RESTARTED);
+            result.put("Device Alarm", ALARM_TYPE_RESTARTED + " (" + convertTimestamp(stats.lastAlarmTs) + ")");
         }
         if (profile.isSensor) {
             State sensorError = handler.getChannelValue(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ERROR);
