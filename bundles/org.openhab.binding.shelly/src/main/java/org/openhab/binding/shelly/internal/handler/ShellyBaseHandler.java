@@ -242,6 +242,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
             // New Shelly devices might use a different endpoint for the CoAP listener
             tmpPrf.coiotEndpoint = devInfo.coiot;
         }
+        tmpPrf.auth = devInfo.auth; // missing in /settings
 
         logger.debug("{}: Initializing device {}, type {}, Hardware: Rev: {}, batch {}; Firmware: {} / {} ({})",
                 thingName, tmpPrf.hostname, tmpPrf.deviceType, tmpPrf.hwRev, tmpPrf.hwBatchId, tmpPrf.fwVersion,
@@ -508,8 +509,8 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         if ((status.uptime < stats.lastUptime) && profile.isInitialized()) {
             alarm = ALARM_TYPE_RESTARTED;
             force = true;
-            stats.unexpectedRestarts++;
-            logger.debug("{}: Device restart #{} detected", thingName, stats.unexpectedRestarts);
+            stats.restarts++;
+            logger.debug("{}: Device restart #{} detected", thingName, stats.restarts);
 
             // Force re-initialization on next status update
             if (profile.alwaysOn) {

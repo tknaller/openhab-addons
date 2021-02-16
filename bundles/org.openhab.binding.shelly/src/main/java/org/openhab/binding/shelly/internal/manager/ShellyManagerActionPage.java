@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.shelly.internal.manager;
 
+import static org.openhab.binding.shelly.internal.ShellyBindingConstants.PROPERTY_SERVICE_NAME;
 import static org.openhab.binding.shelly.internal.manager.ShellyManagerConstants.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
@@ -50,16 +51,16 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
     public ShellyMgrResponse generateContent(String path, Map<String, String[]> parameters) throws ShellyApiException {
         String action = getUrlParm(parameters, "action");
         String uid = getUrlParm(parameters, "uid");
-        String update = getUrlParm(parameters, "update");
+        String update = getUrlParm(parameters, URLPARM_UPDATE);
         if (uid.isEmpty() || action.isEmpty()) {
             return new ShellyMgrResponse("Invalid URL parameters: " + parameters.toString(),
                     HttpStatus.BAD_REQUEST_400);
         }
 
         Map<String, String> properties = new HashMap<>();
-        properties.put("metaTag", "");
-        properties.put("cssHeader", "");
-        properties.put("cssFooter", "");
+        properties.put(ATTRIBUTE_METATAG, "");
+        properties.put(ATTRIBUTE_CSS_HEADER, "");
+        properties.put(ATTRIBUTE_CSS_FOOTER, "");
         String html = loadHTML(HEADER_HTML, properties);
 
         ShellyBaseHandler th = thingHandlers.get(uid);
@@ -69,7 +70,7 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
             Map<String, String> actions = getActions();
             String actionUrl = SHELLY_MGR_OVERVIEW_URI;
             String actionButtonLabel = "Perform Action"; // Default
-            String serviceName = getValue(properties, "serviceName");
+            String serviceName = getValue(properties, PROPERTY_SERVICE_NAME);
             String message = "";
 
             ShellyThingConfiguration config = getThingConfig(th, properties);
@@ -143,7 +144,7 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
             properties.put("actionButtonLabel", actionButtonLabel);
             properties.put("actionUrl", actionUrl);
             message = fillAttributes(message, properties);
-            properties.put("message", message);
+            properties.put(ATTRIBUTE_MESSAGE, message);
             html += loadHTML(ACTION_HTML, properties);
         }
 

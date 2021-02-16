@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsDimmer;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsGlobal;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsInput;
@@ -54,6 +55,7 @@ public class ShellyDeviceProfile {
     public String hostname = "";
     public String mode = "";
     public boolean discoverable = true;
+    public boolean auth = false;
     public boolean alwaysOn = true;
 
     public String hwRev = "";
@@ -120,7 +122,7 @@ public class ShellyDeviceProfile {
         hwRev = settings.hwinfo != null ? getString(settings.hwinfo.hwRevision) : "";
         hwBatchId = settings.hwinfo != null ? getString(settings.hwinfo.batchId.toString()) : "";
         fwDate = substringBefore(settings.fw, "/");
-        fwVersion = substringBetween(settings.fw, "/", "@");
+        fwVersion = extractFwVersion(settings.fw);
         fwId = substringAfter(settings.fw, "@");
         discoverable = (settings.discoverable == null) || settings.discoverable;
 
@@ -318,5 +320,18 @@ public class ShellyDeviceProfile {
             return settings.favorites.get(id).pos;
         }
         return -1;
+    }
+
+    public static String extractFwVersion(@Nullable String version) {
+        if (version != null) {
+            if (version.contains("@")) { // standard format
+                return substringBetween(getString(version), "/", "@");
+            }
+            if (version.indexOf('/') != version.lastIndexOf('/')) {
+                // includes 2 /, e.g. beta
+                return substringAfterLast(version, "/");
+            }
+        }
+        return "";
     }
 }

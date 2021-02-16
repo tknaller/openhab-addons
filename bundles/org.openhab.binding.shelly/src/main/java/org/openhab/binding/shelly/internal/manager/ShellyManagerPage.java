@@ -75,10 +75,10 @@ public class ShellyManagerPage {
     protected final int localPort;
 
     protected final Map<String, String> htmlTemplates = new HashMap<>();
-    protected Map<String, String> firmwareListHtml = new HashMap<>();
     protected final Gson gson = new Gson();
 
     protected final ShellyManagerCache<String, FwRepoEntry> firmwareRepo = new ShellyManagerCache<>(15 * 60 * 1000);
+    protected final ShellyManagerCache<String, FwArchList> firmwareArch = new ShellyManagerCache<>(15 * 60 * 1000);
 
     public static class ShellyMgrResponse {
         public @Nullable Object data = "";
@@ -115,14 +115,14 @@ public class ShellyManagerPage {
         }
     }
 
-    public static class FwaList {
-        public static class FwalEntry {
-            // {"version":"v1.5.10","file":"SHSW-1.zip"}
-            public @Nullable String version;
-            public @Nullable String file;
-        }
+    public static class FwArchEntry {
+        // {"version":"v1.5.10","file":"SHSW-1.zip"}
+        public @Nullable String version;
+        public @Nullable String file;
+    }
 
-        public @Nullable ArrayList<FwalEntry> versions;
+    public static class FwArchList {
+        public @Nullable ArrayList<FwArchEntry> versions;
     }
 
     public static class FwRepoEntry {
@@ -253,19 +253,19 @@ public class ShellyManagerPage {
             case UNINITIALIZED:
             case REMOVED:
             case REMOVING:
-                statusIcon = "imgDevStatusUNINITIALIZED";
+                statusIcon = ICON_UNINITIALIZED;
                 break;
             case OFFLINE:
                 ThingStatusDetail sd = th.getThing().getStatusInfo().getStatusDetail();
                 if (uid.contains(THING_TYPE_SHELLYUNKNOWN_STR) || (sd == ThingStatusDetail.CONFIGURATION_ERROR)
                         || (sd == ThingStatusDetail.HANDLER_CONFIGURATION_PENDING)) {
-                    statusIcon = "imgDevStatusCONFIG";
+                    statusIcon = ICON_CONFIG;
                     break;
                 }
             default:
-                statusIcon = "imgDevStatus" + ts.toString();
+                statusIcon = ts.toString();
         }
-        properties.put("imgDevStatus", statusIcon);
+        properties.put(ATTRIBUTE_STATUS_ICON, statusIcon.toLowerCase());
 
         return properties;
     }
@@ -277,7 +277,7 @@ public class ShellyManagerPage {
         if (state != UnDefType.NULL) {
             if (state instanceof DateTimeType) {
                 DateTimeType dt = (DateTimeType) state;
-                value = dt.toLocaleZone().format(null).replace('T', ' ').replace('-', '/');
+                value = dt.format(null).replace('T', ' ').replace('-', '/');
             } else {
                 value = state.toString();
             }
@@ -322,8 +322,8 @@ public class ShellyManagerPage {
         return value;
     }
 
-    public FwRepoEntry getFirmwareRepoEntry(String deviceType) throws ShellyApiException {
-        logger.debug("{}: Load firmware list from {}", FWREPO_PROD_URL);
+    protected FwRepoEntry getFirmwareRepoEntry(String deviceType) throws ShellyApiException {
+        logger.debug("ShellyManager: Load firmware list from {}", FWREPO_PROD_URL);
         FwRepoEntry fw = null;
         if (firmwareRepo.containsKey(deviceType)) {
             fw = firmwareRepo.get(deviceType);
@@ -348,9 +348,17 @@ public class ShellyManagerPage {
         return fw != null ? fw : new FwRepoEntry();
     }
 
-    public FwaList getFirmwareArchiveList(String deviceType) throws ShellyApiException {
-        FwaList list;
+    protected FwArchList getFirmwareArchiveList(String deviceType) throws ShellyApiException {
+        FwArchList list;
         String json = "";
+
+        if (firmwareArch.contains(deviceType)) {
+            list = firmwareArch.get(deviceType); // return from cache
+            if (list != null) {
+                return list;
+            }
+        }
+
         try {
             if (!deviceType.isEmpty()) {
                 json = httpGet(FWREPO_ARCH_URL + "?type=" + deviceType);
@@ -362,13 +370,16 @@ public class ShellyManagerPage {
         if (json.isEmpty() || json.startsWith("[]")) {
             // no files available for this device type
             logger.info("{}: No firmware files found for device type {}", LOG_PREFIX, deviceType);
-            list = new FwaList();
-            list.versions = new ArrayList<FwaList.FwalEntry>();
+            list = new FwArchList();
+            list.versions = new ArrayList<FwArchEntry>();
         } else {
             // Create selection list
             json = "{" + json.replace("[{", "\"versions\":[{") + "}"; // make it an named array
-            list = fromJson(gson, json, FwaList.class);
+            list = fromJson(gson, json, FwArchList.class);
         }
+
+        // save list to cache
+        firmwareArch.put(deviceType, list);
         return list;
     }
 
@@ -405,6 +416,14 @@ public class ShellyManagerPage {
 
     protected static String getDeviceName(Map<String, String> properties) {
         return getString(properties.get(PROPERTY_DEV_NAME));
+    }
+
+    protected static String getDisplayName(Map<String, String> properties) {
+        String name = getString(properties.get(PROPERTY_DEV_NAME));
+        if (name.isEmpty()) {
+            name = getString(properties.get(PROPERTY_SERVICE_NAME));
+        }
+        return name;
     }
 
     protected ShellyThingConfiguration getThingConfig(ShellyBaseHandler th, Map<String, String> properties) {

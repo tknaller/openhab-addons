@@ -17,7 +17,6 @@ import static org.openhab.binding.shelly.internal.util.ShellyUtils.substringAfte
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -37,7 +36,6 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 public class ShellyManagerImageLoader extends ShellyManagerPage {
     private final Logger logger = LoggerFactory.getLogger(ShellyManagerImageLoader.class);
-    private Map<String, byte[]> imageCache = new HashMap<>();
 
     public ShellyManagerImageLoader(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp,
             int localPort, Map<String, ShellyBaseHandler> thingHandlers) {
@@ -50,13 +48,6 @@ public class ShellyManagerImageLoader extends ShellyManagerPage {
     }
 
     protected ShellyMgrResponse loadImage(String image) throws ShellyApiException {
-        if (imageCache.containsKey(image)) {
-            byte[] img = imageCache.get(image);
-            if (img != null) {
-                return new ShellyMgrResponse(img, HttpStatus.OK_200);
-            }
-        }
-
         String file = IMAGE_PATH + image;
         logger.debug("Read Image from {}", file);
         ClassLoader cl = ShellyBaseHandler.class.getClassLoader();
@@ -65,11 +56,10 @@ public class ShellyManagerImageLoader extends ShellyManagerPage {
                 if (inputStream != null) {
                     byte[] buf = new byte[inputStream.available()];
                     inputStream.read(buf);
-                    imageCache.put(image, buf);
                     return new ShellyMgrResponse(buf, HttpStatus.OK_200, "image/png");
                 }
             } catch (IOException | RuntimeException e) {
-                logger.debug("ShellyManager: Unable to read " + image + " from bundle resources!", e);
+                logger.debug("ShellyManager: Unable to read {} from bundle resources!", image, e);
             }
         }
         return new ShellyMgrResponse("Unable to read " + image + " from bundle resources!", HttpStatus.NOT_FOUND_404);

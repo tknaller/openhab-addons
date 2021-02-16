@@ -51,14 +51,11 @@ public class ShellyManagerConstants {
     public static final String ATTRIBUTE_CSS_FOOTER = "cssFooter";
     public static final String ATTRIBUTE_URI = "uri";
     public static final String ATTRIBUTE_MESSAGE = "message";
+    public static final String ATTRIBUTE_STATUS_ICON = "iconStatus";
     public static final String ATTRIBUTE_DISPLAY_NAME = "displayName";
     public static final String ATTRIBUTE_DEV_STATUS = "deviceStatus";
     public static final String ATTRIBUTE_FIRMWARE_SEL = "firmwareSelection";
     public static final String ATTRIBUTE_ACTION_LIST = "actionList";
-
-    public static final String FWUPDATE_SOURCE_LOCAL = "local";
-    public static final String FWUPDATE_SOURCE_INTERNET = "internet";
-    public static final String FWUPDATE_SOURCE_CUSTOM = "custom";
 
     public static final String URLPARM_UID = "uid";
     public static final String URLPARM_DEVTYPE = "deviceType";
@@ -69,6 +66,24 @@ public class ShellyManagerConstants {
     public static final String URLPARM_UPDATE = "update";
     public static final String URLPARM_SOURCE = "source";
     public static final String URLPARM_URL = "url";
+
+    public static final String ACTION_REFRESH = "refresh";
+
+    public static final String FILTER_ONLINE = "online";
+    public static final String FILTER_INACTIVE = "inactive";
+    public static final String FILTER_ATTENTION = "attention";
+    public static final String FILTER_UPDATE = "update";
+    public static final String FILTER_UNPROTECTED = "unprotected";
+
+    public static final String ICON_ONLINE = "online";
+    public static final String ICON_OFFLINE = "offline";
+    public static final String ICON_UNINITIALIZED = "uninitialized";
+    public static final String ICON_CONFIG = "config";
+    public static final String ICON_ATTENTION = "attention";
+
+    public static final String FWUPDATE_SOURCE_LOCAL = "local";
+    public static final String FWUPDATE_SOURCE_INTERNET = "internet";
+    public static final String FWUPDATE_SOURCE_CUSTOM = "custom";
 
     public static final String FWPROD = "prod";
     public static final String FWBETA = "beta";

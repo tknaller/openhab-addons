@@ -358,9 +358,10 @@ public class ShellyComponents {
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION,
                         getOnOff(sdata.sensor.motion));
                 long timestamp = getLong(sdata.sensor.motionTimestamp);
-                updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION_TS,
-                        timestamp != 0 ? getTimestamp(getString(profile.settings.timezone), timestamp)
-                                : UnDefType.UNDEF);
+                if (timestamp != 0) {
+                    updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION_TS,
+                            getTimestamp(getString(profile.settings.timezone), timestamp));
+                }
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_VIBRATION,
                         getOnOff(sdata.sensor.vibration));
             }

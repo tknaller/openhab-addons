@@ -26,7 +26,7 @@ import org.openhab.binding.shelly.internal.util.ShellyUtils;
 @NonNullByDefault
 public class ShellyDeviceStats {
     public long lastUptime = 0;
-    public long unexpectedRestarts = 0;
+    public long restarts = 0;
     public long timeoutErrors = 0;
     public long timeoutsRecorvered = 0;
     public long remainingWatchdog = 0;
@@ -39,7 +39,7 @@ public class ShellyDeviceStats {
     public Map<String, String> asProperties(String timeZone) {
         Map<String, String> prop = new HashMap<>();
         prop.put("lastUptime", String.valueOf(lastUptime));
-        prop.put("unexpectedRestarts", String.valueOf(unexpectedRestarts));
+        prop.put("deviceRestarts", String.valueOf(restarts));
         prop.put("timeoutErrors", String.valueOf(timeoutErrors));
         prop.put("timeoutsRecovered", String.valueOf(timeoutsRecorvered));
         prop.put("remainingWatchdog", String.valueOf(remainingWatchdog));

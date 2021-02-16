@@ -333,6 +333,7 @@ public class ShellyBindingConstants {
     public static final String ALARM_TYPE_OVERPOWER = "OVERPOWER";
     public static final String ALARM_TYPE_OVERLOAD = "OVERLOAD";
     public static final String ALARM_TYPE_LOADERR = "LOAD_ERROR";
+    public static final String ALARM_TYPE_SENSOR_ERROR = "SENSOR_ERROR";
     public static final String ALARM_TYPE_LOW_BATTERY = "LOW_BATTERY";
 
     // Event types

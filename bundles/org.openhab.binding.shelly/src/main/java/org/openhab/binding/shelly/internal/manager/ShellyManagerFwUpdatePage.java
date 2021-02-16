@@ -42,6 +42,11 @@ import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * {@link ShellyManagerFwUpdatePage} implements the Shelly Manager's download proxy for images (load them from bundle)
+ *
+ * @author Markus Michels - Initial contribution
+ */
 @NonNullByDefault
 public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
     protected final Logger logger = LoggerFactory.getLogger(ShellyManagerFwUpdatePage.class);
@@ -163,7 +168,7 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
             headers.put("Last-Modified", modified);
             byte[] data = contentResponse.getContent();
             logger.info("ShellyManager: Firmware successfully loaded - size={}, ETag={}, last modified={}", data.length,
-                    modified);
+                    etag, modified);
             return new ShellyMgrResponse(data, HttpStatus.OK_200, contentResponse.getMediaType(), headers);
         } catch (ExecutionException | TimeoutException | InterruptedException | RuntimeException e) {
             logger.info("ShellyManager: {}", failure, e);
@@ -186,14 +191,14 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
                     FwRepoEntry fw = getFirmwareRepoEntry(deviceType);
                     String url = getString(prod ? fw.url : fw.beta_url);
                     logger.debug("ShellyManager: Map {} release to url {}, version {}", url,
-                            prod ? fw.version : fw.beta_ver);
+                            prod ? fw.url : fw.beta_url, prod ? fw.version : fw.beta_ver);
                     return url;
                 }
             default: // Update from firmware archive
-                FwaList list = getFirmwareArchiveList(deviceType);
-                ArrayList<FwaList.FwalEntry> versions = list.versions;
+                FwArchList list = getFirmwareArchiveList(deviceType);
+                ArrayList<FwArchEntry> versions = list.versions;
                 if (versions != null) {
-                    for (FwaList.FwalEntry e : versions) {
+                    for (FwArchEntry e : versions) {
                         String url = FWREPO_ARCFILE_URL + version + "/" + getString(e.file);
                         if (getString(e.version).equalsIgnoreCase(version)) {
                             return url;
