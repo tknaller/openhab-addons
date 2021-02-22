@@ -67,8 +67,6 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         Map<String, String> properties = new HashMap<>();
         properties.put(ATTRIBUTE_METATAG, "<meta http-equiv=\"refresh\" content=\"60\" />");
         properties.put(ATTRIBUTE_CSS_HEADER, loadHTML(OVERVIEW_HEADER, properties));
-        html = loadHTML(HEADER_HTML, properties);
-        html += loadHTML(OVERVIEW_HTML, properties);
 
         String deviceHtml = "";
         TreeMap<String, ShellyBaseHandler> sortedMap = new TreeMap<>();
@@ -77,12 +75,17 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
             String deviceName = getDisplayName(handler.getThing().getProperties());
             sortedMap.put(deviceName, handler);
         }
+
+        html = loadHTML(HEADER_HTML, properties);
+        html += loadHTML(OVERVIEW_HTML, properties);
+
+        int filteredDevices = 0;
         for (Map.Entry<String, ShellyBaseHandler> handler : sortedMap.entrySet()) {
             try {
                 ShellyBaseHandler th = handler.getValue();
                 ThingStatus status = th.getThing().getStatus();
+                ShellyDeviceProfile profile = th.getProfile();
                 String uid = getString(th.getThing().getUID().getAsString()); // handler.getKey();
-                Map<String, String> warnings = getStatusWarnings(th);
 
                 if (action.equals(ACTION_REFRESH) && (uidParm.isEmpty() || uidParm.equals(uid))) {
                     // Refresh thing status, this is asynchronosly and takes 0-3sec
@@ -90,7 +93,9 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                     th.requestUpdates(1, true);
                 }
 
+                Map<String, String> warnings = getStatusWarnings(th);
                 if (applyFilter(th, filter) || (filter.equals(FILTER_ATTENTION) && !warnings.isEmpty())) {
+                    filteredDevices++;
                     properties.clear();
                     fillProperties(properties, uid, handler.getValue());
                     String deviceType = getDeviceType(properties);
@@ -101,7 +106,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                         properties.put(ATTRIBUTE_STATUS_ICON, ICON_ATTENTION);
                     }
                     if (!deviceType.equalsIgnoreCase("unknown") && (status == ThingStatus.ONLINE)) {
-                        properties.put(ATTRIBUTE_FIRMWARE_SEL, fillFirmwareHtml(uid, deviceType));
+                        properties.put(ATTRIBUTE_FIRMWARE_SEL, fillFirmwareHtml(uid, deviceType, profile.mode));
                         properties.put(ATTRIBUTE_ACTION_LIST, fillActionHtml(th, uid));
                     } else {
                         properties.put(ATTRIBUTE_FIRMWARE_SEL, "");
@@ -115,12 +120,14 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         }
 
         properties.clear();
+        properties.put("numberDevices", "<span class=\"footerDevices\">" + "Number of devices: " + filteredDevices
+                + " of " + String.valueOf(thingHandlers.size()) + "&nbsp;</span>");
         properties.put(ATTRIBUTE_CSS_FOOTER, loadHTML(OVERVIEW_FOOTER, properties));
         html += deviceHtml + loadHTML(FOOTER_HTML, properties);
         return new ShellyMgrResponse(fillAttributes(html, properties), HttpStatus.OK_200);
     }
 
-    private String fillFirmwareHtml(String uid, String deviceType) throws ShellyApiException {
+    private String fillFirmwareHtml(String uid, String deviceType, String mode) throws ShellyApiException {
         String html = "\n\t\t\t\t<select name=\"fwList\" id=\"fwList\" onchange=\"location = this.options[this.selectedIndex].value;\">\n";
         html += "\t\t\t\t\t<option value=\"\" selected disabled hidden>update to</option>\n";
 
@@ -130,7 +137,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         try {
             // Get current prod + beta version from original firmware repo
             logger.debug("{}: Load firmware version list for device type {}", LOG_PREFIX, deviceType);
-            FwRepoEntry fw = getFirmwareRepoEntry(deviceType);
+            FwRepoEntry fw = getFirmwareRepoEntry(deviceType, mode);
             pVersion = extractFwVersion(fw.version);
             if (!pVersion.isEmpty()) {
                 html += "\t\t\t\t\t<option value=\"" + updateUrl + "&" + URLPARM_VERSION + "=" + FWPROD + "\">Release "
@@ -153,6 +160,8 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                 FwArchList list = getFirmwareArchiveList(deviceType);
                 ArrayList<FwArchEntry> versions = list.versions;
                 if (versions != null) {
+                    html += "\t\t\t\t\t<option class=\"select-hr\" value=\"" + SHELLY_MGR_FWUPDATE_URI + "?uid=" + uid
+                            + "&connection=custom\">Custom URL</option>\n";
                     html += "\t\t\t\t\t<option value=\"\" disabled>-- Archive:</option>\n";
                     for (int i = versions.size() - 1; i >= 0; i--) {
                         FwArchEntry e = versions.get(i);
@@ -166,6 +175,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                     }
                     html += "\t\t\t\t</select>\n\t\t\t";
                 }
+
             }
         } catch (ShellyApiException e) {
             logger.debug("{}: Unable to retrieve firmware list: {}", LOG_PREFIX, e.toString());
@@ -175,15 +185,22 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
 
     private String fillActionHtml(ShellyBaseHandler handler, String uid) {
         ThingStatus status = handler.getThing().getStatus();
-        Map<String, String> actionList = ShellyManagerActionPage.getActions();
         String html = "\n\t\t\t\t<select name=\"actionList\" id=\"actionList\" onchange=\"location = '"
                 + SHELLY_MGR_ACTION_URI + "?uid=" + urlEncode(uid) + "&" + URLPARM_ACTION
                 + "='+this.options[this.selectedIndex].value;\">\n";
         html += "\t\t\t\t\t<option value=\"\" selected disabled>select</option>\n";
+
+        Map<String, String> actionList = ShellyManagerActionPage.getActions();
         for (Map.Entry<String, String> a : actionList.entrySet()) {
             String value = a.getValue();
-            html += "\t\t\t\t\t<option value=\"" + a.getKey() + (value.startsWith(ACTION_NONE) ? " disabled " : "")
-                    + "\">" + value + "</option>\n";
+            String seperator = "";
+            if (value.startsWith("-")) {
+                // seperator = "class=\"select-hr\" ";
+                html += "\t\t\t\t\t<option class=\"select-hr\" role=\"seperator\" disabled>&nbsp;</option>\n";
+                value = substringAfterLast(value, "-");
+            }
+            html += "\t\t\t\t\t<option " + seperator + "value=\"" + a.getKey()
+                    + (value.startsWith(ACTION_NONE) ? " disabled " : "") + "\">" + value + "</option>\n";
         }
         html += "\t\t\t\t</select>\n\t\t\t";
         return html;
@@ -227,6 +244,9 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                 && ((wifiSignal != UnDefType.NULL) && (((DecimalType) wifiSignal).intValue() < 2))) {
             result.put("Weak Signal", wifiSignal.toString());
         }
+        if (stats.lastAlarm.equalsIgnoreCase(ALARM_TYPE_RESTARTED)) {
+            result.put("Device Alarm", ALARM_TYPE_RESTARTED + " (" + convertTimestamp(stats.lastAlarmTs) + ")");
+        }
         if (profile.hasBattery) {
             State lowBattery = handler.getChannelValue(CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LOW);
             if ((lowBattery == OnOffType.ON)) {
@@ -243,9 +263,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         if (getBool(profile.status.loaderror)) {
             result.put("Device Alarm", ALARM_TYPE_LOADERR);
         }
-        if (stats.lastAlarm.equalsIgnoreCase(ALARM_TYPE_RESTARTED)) {
-            result.put("Device Alarm", ALARM_TYPE_RESTARTED + " (" + convertTimestamp(stats.lastAlarmTs) + ")");
-        }
+
         if (profile.isSensor) {
             State sensorError = handler.getChannelValue(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ERROR);
             if (sensorError != UnDefType.NULL) {
@@ -254,12 +272,11 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                 }
             }
         }
-        if (status == ThingStatus.ONLINE) {
+        if (profile.alwaysOn && (status == ThingStatus.ONLINE)) {
             if (config.eventsCoIoT) {
                 if (stats.coiotMessages == 0) {
                     result.put("CoIoT", "NO_DISCOVERY");
-                }
-                if (stats.coiotMessages < 2) {
+                } else if (stats.coiotMessages < 2) {
                     result.put("CoIoT", "NO_MULTICAST");
                 }
             }
@@ -269,7 +286,11 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
     }
 
     private String fillDeviceStatus(Map<String, String> devStatus) {
-        String result = "";
+        if (devStatus.isEmpty()) {
+            return "";
+        }
+
+        String result = "\t\t\t\t<tr><td colspan = \"2\">Notifications:</td></tr>";
         for (Map.Entry<String, String> ds : devStatus.entrySet()) {
             result += "\t\t\t\t<tr><td>" + ds.getKey() + "</td><td>" + ds.getValue() + "</td></tr>\n";
         }

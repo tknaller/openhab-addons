@@ -26,6 +26,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsLogin;
+import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api.ShellyHttpApi;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
@@ -49,8 +50,8 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
 
     @Override
     public ShellyMgrResponse generateContent(String path, Map<String, String[]> parameters) throws ShellyApiException {
-        String action = getUrlParm(parameters, "action");
-        String uid = getUrlParm(parameters, "uid");
+        String action = getUrlParm(parameters, URLPARM_ACTION);
+        String uid = getUrlParm(parameters, URLPARM_UID);
         String update = getUrlParm(parameters, URLPARM_UPDATE);
         if (uid.isEmpty() || action.isEmpty()) {
             return new ShellyMgrResponse("Invalid URL parameters: " + parameters.toString(),
@@ -74,8 +75,11 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
             String message = "";
 
             ShellyThingConfiguration config = getThingConfig(th, properties);
-            ShellyHttpApi api = new ShellyHttpApi(uid, config, httpClient);
+            ShellyDeviceProfile profile = th.getProfile();
+            ShellyHttpApi api = th.getApi();
+            new ShellyHttpApi(uid, config, httpClient);
 
+            int refreshTimer = 5; // standard
             switch (action) {
                 case ACTION_RESTART:
                     if (update.equalsIgnoreCase("yes")) {
@@ -89,8 +93,9 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                             }
                             setRestarted(th, uid); // refresh 20s after reboot
                         }).start();
+                        refreshTimer = profile.isMotion ? 30 : 15;
                     } else {
-                        message = "The device will restart and reconnects to WiFi.";
+                        message = "<span class\"info\">The device will restart and reconnects to WiFi.</span>";
                         actionUrl = buildActionUrl(uid, action);
                     }
                     break;
@@ -124,17 +129,26 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                     if (!update.equalsIgnoreCase("yes")) {
                         ShellySettingsLogin status = api.getLoginSettings();
                         message = "Device protection is currently " + (status.enabled ? "enabled" : "disabled<br/>");
-                        message += "<p style=\"color:yellow;\">Device login will be set to user ${userId} with password ${password}.</p>";
+                        message += "<p class=\"info\">Device login will be set to user ${userId} with password ${password}.</p>";
                         actionUrl = buildActionUrl(uid, action);
                     } else {
                         api.setLoginCredentials(config.userId, config.password);
-                        message = "<p style=\"color:green;\">Device login was updated to user ${userId} with password ${password}.</p>";
+                        message = "<p class=\"info\">Device login was updated to user ${userId} with password ${password}.</p>";
                         actionButtonLabel = "Ok";
                     }
                     break;
                 case ACTION_RES_STATS:
                     th.resetStats();
+                    message = "<p class=\"info\">Device statistics and alarm has been reset.</p>";
                     actionButtonLabel = "Ok";
+                    break;
+                case ACTION_ENCLOUD:
+                case ACTION_DISCLOUD:
+                    boolean enabled = action.equals(ACTION_ENCLOUD);
+                    api.setCloud(enabled);
+                    message = "<p class=\"info\">Cloud function is now " + (enabled ? "enabled" : "disabled") + ".</p>";
+                    actionButtonLabel = "Ok";
+                    refreshTimer = 15;
                     break;
                 case ACTION_NONE:
                     break;
@@ -142,12 +156,14 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                     logger.warn("{}: Unknown action {} requested", LOG_PREFIX, action);
             }
 
-            properties.put("action", getString(actions.get(action))); // get description for command
-            properties.put("actionButtonLabel", actionButtonLabel);
-            properties.put("actionUrl", actionUrl);
+            properties.put(ATTRIBUTE_ACTION, getString(actions.get(action))); // get description for command
+            properties.put(ATTRIBUTE_ACTION_BUTTON, actionButtonLabel);
+            properties.put(ATTRIBUTE_ACTION_URL, actionUrl);
             message = fillAttributes(message, properties);
             properties.put(ATTRIBUTE_MESSAGE, message);
+            properties.put(ATTRIBUTE_REFRESH, String.valueOf(refreshTimer));
             html += loadHTML(ACTION_HTML, properties);
+            th.requestUpdates(1, false); // trigger background update
         }
 
         properties.clear();
@@ -161,15 +177,15 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
         list.put(ACTION_RESTART, "Reboot Device");
         // list.put(ACTION_NONE, "----------------");
         list.put(ACTION_PROTECT, "Protect Device");
-        // list.put(ACTION_SETCLOUD, "Set Timezone");
-        // list.put(ACTION_SETCLOUD, "Cloud on/off");
-        list.put(ACTION_NONE, "----------------");
-        list.put(ACTION_RESET, "Factory Reset");
+        list.put(ACTION_ENCLOUD, "Enable Cloud");
+        list.put(ACTION_DISCLOUD, "Disable Cloud");
+        list.put(ACTION_RESET, "-Factory Reset");
         return list;
     }
 
     private String buildActionUrl(String uid, String action) {
-        return SHELLY_MGR_ACTION_URI + "?action=" + action + "&uid=" + urlEncode(uid) + "&update=yes";
+        return SHELLY_MGR_ACTION_URI + "?" + URLPARM_ACTION + "=" + action + "&" + URLPARM_UID + "=" + urlEncode(uid)
+                + "&" + URLPARM_UPDATE + "=yes";
     }
 
     private void setRestarted(ShellyBaseHandler th, String uid) {

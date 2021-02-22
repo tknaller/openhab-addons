@@ -250,6 +250,10 @@ public class ShellyHttpApi {
         return callApi("/ota?" + uri, ShellySettingsUpdate.class);
     }
 
+    public String setCloud(boolean enabled) throws ShellyApiException {
+        return callApi("/settings/cloud/?enabled=" + (enabled ? "1" : "0"), String.class);
+    }
+
     /**
      * Change between White and Color Mode
      *

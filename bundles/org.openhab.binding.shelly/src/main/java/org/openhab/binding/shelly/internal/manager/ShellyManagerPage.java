@@ -52,6 +52,7 @@ import org.openhab.binding.shelly.internal.api.ShellyHttpApi;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
+import org.openhab.binding.shelly.internal.handler.ShellyDeviceStats;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
@@ -179,7 +180,7 @@ public class ShellyManagerPage {
     }
 
     protected String loadHTML(String template, Map<String, String> properties) throws ShellyApiException {
-        properties.put("uri", SHELLY_MANAGER_URI);
+        properties.put(ATTRIBUTE_URI, SHELLY_MANAGER_URI);
         String html = loadHTML(template);
         return fillAttributes(html, properties);
     }
@@ -193,17 +194,21 @@ public class ShellyManagerPage {
         }
 
         properties.putAll(th.getThing().getProperties());
-        properties.putAll(th.getStatsProp());
 
         Thing thing = th.getThing();
+        ThingStatus status = thing.getStatus();
         properties.put("thingName", getString(thing.getLabel()));
-        properties.put("thingStatus", getString(thing.getStatus().toString()));
+        properties.put("thingStatus", status.toString());
         ThingStatusDetail detail = thing.getStatusInfo().getStatusDetail();
         properties.put("thingStatusDetail", detail.equals(ThingStatusDetail.NONE) ? "" : getString(detail.toString()));
         properties.put("thingStatusDescr", getString(thing.getStatusInfo().getDescription()));
-        properties.put("uid", uid);
+        properties.put(ATTRIBUTE_UID, uid);
+
         ShellyDeviceProfile profile = th.getProfile();
         ShellyThingConfiguration config = thing.getConfiguration().as(ShellyThingConfiguration.class);
+        ShellyDeviceStats stats = th.getStats();
+        properties.putAll(stats.asProperties());
+
         for (Map.Entry<String, Object> p : thing.getConfiguration().getProperties().entrySet()) {
             String key = p.getKey();
             if (p.getValue() != null) {
@@ -238,6 +243,14 @@ public class ShellyManagerPage {
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ALARM);
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_CHARGER);
 
+        properties.put(ATTRIBUTE_DISCOVERABLE, String.valueOf(getBool(profile.settings.discoverable)));
+        properties.put(ATTRIBUTE_TIMEZONE,
+                getString(profile.settings.timezone) + ", auto-detect: " + getBool(profile.settings.tzautodetect));
+        properties.put(ATTRIBUTE_WIFI_RECOVERY, String.valueOf(getBool(profile.settings.wifiRecoveryReboot)));
+        properties.put(ATTRIBUTE_ACTIONS_SKIPPED,
+                profile.status.astats != null ? String.valueOf(profile.status.astats.skipped) : "n/a");
+        properties.put(ATTRIBUTE_MAX_ITEMP, stats.maxInternalTemp > 0 ? String.valueOf(stats.maxInternalTemp) : "n/a");
+
         // Shelly H&T: When external power is connected the battery level is not valid
         if (!profile.isHT || (getInteger(profile.settings.externalPower) == 0)) {
             addAttribute(properties, th, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LEVEL);
@@ -246,7 +259,34 @@ public class ShellyManagerPage {
         }
 
         String wiFiSignal = getString(properties.get(CHANNEL_DEVST_RSSI));
-        properties.put("imgWiFi", !wiFiSignal.isEmpty() ? "imgWiFi" + wiFiSignal : "");
+        if (!wiFiSignal.isEmpty()) {
+            properties.put("wifiSignalRssi", wiFiSignal + " / " + stats.wifiRssi + " dBm");
+            properties.put("imgWiFi", "imgWiFi" + wiFiSignal);
+        }
+
+        if (profile.settings.sntp != null) {
+            properties.put(ATTRIBUTE_SNTP_SERVER,
+                    getString(profile.settings.sntp.server) + ", enabled: " + getBool((profile.settings.sntp.enabled)));
+        }
+
+        properties.put(ATTRIBUTE_COIOT_STATUS, config.eventsCoIoT ? "enabled" : "disabled");
+        if (profile.status.cloud != null) {
+            properties.put(ATTRIBUTE_CLOUD_STATUS,
+                    getBool(profile.settings.cloud.enabled)
+                            ? getBool(profile.status.cloud.connected) ? "connected" : "enabled"
+                            : "disabled");
+        } else {
+            properties.put(ATTRIBUTE_CLOUD_STATUS, "unknown");
+        }
+        if (profile.status.mqtt != null) {
+            properties.put(ATTRIBUTE_MQTT_STATUS,
+                    getBool(profile.settings.mqtt.enable)
+                            ? getBool(profile.status.mqtt.connected) ? "connected" : "enabled"
+                            : "disabled");
+        } else {
+            properties.put(ATTRIBUTE_MQTT_STATUS, "unknown");
+        }
+
         String statusIcon = "";
         ThingStatus ts = th.getThing().getStatus();
         switch (ts) {
@@ -329,7 +369,7 @@ public class ShellyManagerPage {
         return value;
     }
 
-    protected FwRepoEntry getFirmwareRepoEntry(String deviceType) throws ShellyApiException {
+    protected FwRepoEntry getFirmwareRepoEntry(String deviceType, String mode) throws ShellyApiException {
         logger.debug("ShellyManager: Load firmware list from {}", FWREPO_PROD_URL);
         FwRepoEntry fw = null;
         if (firmwareRepo.containsKey(deviceType)) {
@@ -349,6 +389,20 @@ public class ShellyManagerPage {
              * },
              */
             fw = fromJson(gson, entry, FwRepoEntry.class);
+            if (!mode.isEmpty()) {
+                // check for spilt firmware
+                String url = substringBefore(fw.url.toLowerCase(), ".zip") + "-" + mode + ".zip";
+                if (testUrl(url)) {
+                    fw.beta_url = url;
+                    logger.debug("ShellyManager: Release Split-URL for device type {} is {}", deviceType, url);
+                }
+                url = substringBefore(fw.url.toLowerCase(), ".zip") + "-" + mode + ".zip";
+                if (testUrl(url)) {
+                    fw.beta_url = url;
+                    logger.debug("ShellyManager: Beta Split-URL for device type {} is {}", deviceType, url);
+                }
+            }
+
             firmwareRepo.put(deviceType, fw);
         }
 
@@ -390,14 +444,31 @@ public class ShellyManagerPage {
         return list;
     }
 
+    protected boolean testUrl(String url) {
+        try {
+            String result = httpHeadl(url);
+            return true;
+        } catch (ShellyApiException e) {
+        }
+        return false;
+    }
+
     protected String httpGet(String url) throws ShellyApiException {
+        return httpRequest(HttpMethod.GET, url);
+    }
+
+    protected String httpHeadl(String url) throws ShellyApiException {
+        return httpRequest(HttpMethod.HEAD, url);
+    }
+
+    protected String httpRequest(HttpMethod method, String url) throws ShellyApiException {
         ShellyApiResult apiResult = new ShellyApiResult();
 
         try {
-            Request request = httpClient.newRequest(url).method(HttpMethod.GET).timeout(SHELLY_API_TIMEOUT_MS,
+            Request request = httpClient.newRequest(url).method(method).timeout(SHELLY_API_TIMEOUT_MS,
                     TimeUnit.MILLISECONDS);
             request.header(HttpHeader.ACCEPT, ShellyHttpApi.CONTENT_TYPE_JSON);
-            logger.trace("{}: HTTP GET {}", LOG_PREFIX, url);
+            logger.trace("{}: HTTP {} {}", LOG_PREFIX, method, url);
             ContentResponse contentResponse = request.send();
             apiResult = new ShellyApiResult(contentResponse);
             String response = contentResponse.getContentAsString().replace("\t", "").replace("\r\n", "").trim();

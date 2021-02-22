@@ -369,10 +369,9 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
                     initializeThing(); // may fire an exception if initialization failed
                 }
                 // Get profile, if refreshSettings == true reload settings from device
-                profile = getProfile(refreshSettings);
-
-                logger.trace("{}: Updating status", thingName);
+                logger.trace("{}: Updating status (refreshSettings={})", thingName, refreshSettings);
                 ShellySettingsStatus status = api.getStatus();
+                profile = getProfile(refreshSettings || checkRestarted(status));
                 profile.status = status;
                 profile.updateFromStatus(status);
 
@@ -497,6 +496,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
 
         // Update uptime and WiFi, internal temp
         ShellyComponents.updateDeviceStatus(this, status);
+        stats.wifiRssi = status.wifiSta.rssi;
 
         if (api.isInitialized()) {
             stats.timeoutErrors = api.getTimeoutErrors();
@@ -506,12 +506,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
 
         // Check various device indicators like overheating
         logger.debug("{}: status.update={}, lastUpdate={}", thingName, status.uptime, stats.lastUptime);
-        if ((status.uptime < stats.lastUptime) && profile.isInitialized()) {
-            alarm = ALARM_TYPE_RESTARTED;
-            force = true;
-            stats.restarts++;
-            logger.debug("{}: Device restart #{} detected", thingName, stats.restarts);
-
+        if (checkRestarted(status)) {
             // Force re-initialization on next status update
             if (profile.alwaysOn) {
                 reinitializeThing();
@@ -523,6 +518,15 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         } else if (getBool(status.loaderror)) {
             alarm = ALARM_TYPE_LOADERR;
         }
+        State internalTemp = getChannelValue(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ITEMP);
+        if (internalTemp != UnDefType.NULL) {
+            int temp = ((Number) internalTemp).intValue();
+            if (temp > stats.maxInternalTemp) {
+                logger.debug("{}: Max Internal Temp for device changed to {}", thingName, temp);
+                stats.maxInternalTemp = temp;
+            }
+        }
+
         stats.lastUptime = getLong(status.uptime);
         stats.coiotMessages = coap.getMessageCount();
         stats.coiotErrors = coap.getErrorCount();
@@ -530,6 +534,25 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         if (!alarm.isEmpty()) {
             postEvent(alarm, force);
         }
+    }
+
+    /**
+     * Check if device has restarted and needs a new Thing initialization
+     *
+     * @return true: restart detected
+     */
+
+    private boolean checkRestarted(ShellySettingsStatus status) {
+        if (profile.isInitialized()
+                && ((status.uptime < stats.lastUptime) || (!profile.status.update.oldVersion.isEmpty()
+                        && !status.update.oldVersion.equals(profile.status.update.oldVersion)))) {
+            logger.debug("{}: Device restart #{} detected", thingName, stats.restarts);
+            stats.restarts++;
+            postEvent(ALARM_TYPE_RESTARTED, true);
+            updateProperties(profile, status);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -754,7 +777,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
                 logger.info("{}: {}", prf.hostname, messages.get("versioncheck.beta", prf.fwVersion, prf.fwDate,
                         prf.fwId, SHELLY_API_MIN_FWVERSION));
             } else {
-                if (version.compare(prf.fwVersion, SHELLY_API_MIN_FWVERSION) < 0) {
+                if ((version.compare(prf.fwVersion, SHELLY_API_MIN_FWVERSION) < 0) && !profile.isMotion) {
                     logger.warn("{}: {}", prf.hostname, messages.get("versioncheck.tooold", prf.fwVersion, prf.fwDate,
                             prf.fwId, SHELLY_API_MIN_FWVERSION));
                 }
@@ -1190,6 +1213,10 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
 
     public ShellyDeviceStats getStats() {
         return stats;
+    }
+
+    public ShellyHttpApi getApi() {
+        return api;
     }
 
     public Map<String, String> getStatsProp() {

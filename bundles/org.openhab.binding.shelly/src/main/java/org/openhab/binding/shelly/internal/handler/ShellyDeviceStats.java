@@ -35,6 +35,8 @@ public class ShellyDeviceStats {
     public long lastAlarmTs = 0;
     public long coiotMessages = 0;
     public long coiotErrors = 0;
+    public int wifiRssi = 0;
+    public int maxInternalTemp = 0;
 
     public Map<String, String> asProperties() {
         Map<String, String> prop = new HashMap<>();
@@ -48,6 +50,7 @@ public class ShellyDeviceStats {
         prop.put("lastAlarmTs", ShellyUtils.convertTimestamp(lastAlarmTs));
         prop.put("coiotMessages", String.valueOf(coiotMessages));
         prop.put("coiotErrors", String.valueOf(coiotErrors));
+        prop.put("wifiRssi", String.valueOf(wifiRssi));
         return prop;
     }
 }

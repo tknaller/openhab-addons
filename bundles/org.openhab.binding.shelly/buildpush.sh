@@ -29,10 +29,9 @@ then
 	echo Build version 3 failed
 	exit
 fi
-cp target/org.openhab.binding.shelly-3.*-SNAPSHOT.jar ~/Dev/myfiles/shelly/
+cp target/org.openhab.binding.shelly-3.1.0-SNAPSHOT.jar ~/Dev/myfiles/shelly/
 
 echo Pushing updates
 cd ~/Dev/myfiles
 ./push.sh
 
-cd ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.shelly

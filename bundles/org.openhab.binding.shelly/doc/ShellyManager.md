@@ -6,12 +6,14 @@ To open the Shelly Manage launch the following URL in your browser
 - http://&lt;openHAB IP address&gt;:8080/shelly/manager or
 - http://&lt;openHAB IP address&gt;:80443/shelly/manager
 
-Mybe you need to change the port matching your setup.
+Maybe you need to change the port matching your setup.
 
 ## Overview
 
 Once the Shelly Manager is opened an overview of all Shelly devices added as a Thing are displayed. 
 Things which are not discovered or still site in the Inbox will not be displayed.
+
+![](images/manager/overview.png)
 
 You'll see a bunch of technical details, which are not available as channels or in the Thing properties.
 This includes information on the device communication stability. 
@@ -25,45 +27,63 @@ The following information is available
 |Name                |Device name - hover over the name to get more details                            |
 |WiFi Network        |SSID of the connected WiFi network                                               |
 |WiFi Signal         |WiFi signal strength, 0=none, 4=very good                                        |
-|Last Heartbeat      |Last time a response or an event was received from the device                    |
-|Action              |Drop down with some actions, see below                                           |
+|Battery Level       |Remaining capacity of the battery                                                |
+|Heartbeat           |Last time a response or an event was received from the device                    |
+|Actions             |Drop down with some actions, see below                                           |
+|Refresh button      |Trigger a status refresh in background, maybe you need to click more than once   |
 |Firmware            |Current firmware release                                                         |
 |Update avail        |yes indicates that a firmware update is available                                |
-|Version             |List available firmware versions: prod, beta or archived                         |
+|Version s           |List available firmware versions: prod, beta or archived                         |
 |Uptime              |Number of seconds since last device restart                                      |
+|Device internal Temp|Internal device temperature. Max is depending on device type.                    |
 |Update Period       |Timeout for device refresh                                                       |
-|Alarms              |Number of alarms received from device                                            |
-|Last Alarm          |Type of last alarm (refer README.md for details)                                 |
-|Unexpected Restarts |Number of unexpected restarts, could indicate a firmware instability             |
+|Remaining Watchdog  |Shows number of seconds until device will go offline if no update is received    |
+|Event Count         |Increases on every event triggered by the device or the binding                  |
+|Last Event          |Type of last event or alarm (refer README.md for details)                        |
+|Event Time          |When was last event received                                                     |
+|Device Restarts     |Number of detected restarts. This is ok on firmware updates, otherwise indicates a crash |
 |Timeout Errors      |Number of API timeouts, could be an indication for an unstable connection        |
 |Timeouts recovered  |The binding does retries and timeouts and counts successful recoveries           |
-|Remaining Watchdog  |Number of seconds before device goes offline, each activity restarts the watchdog|
-|Battery Level       |Remaining capacity of the battery                                                |
-|Device internal Temp|Internal device temperature. Max is depending on device type.                    |
+|CoIoT Messages      |Number of received CoIoT messages, must be >= 2 to indicate CoIoT working        |
+|CoIoT Errors        |Number of CoIoT messages, which can't be processed. >0 indicates firmware issues |
 
-The column S and Name display more information when hovering with the mouse over the entries.   
+The column S and Name display more information when hovering with the mouse over the entries.
 
-## Actions
+![](images/manager/overview_devstatus.png)
+![](images/manager/overview_devsettings.png)
 
-The Shelly Manager provides the following actions when the Thing is ONLINE:
 
-|Action |Description                                                                       |
-|-------|----------------------------------------------------------------------------------|
-|Restart|Restart the device and reconnect to WiFi                                          |
-|Protect|Use binding's default credentials to protect device access with user and password |
+### Actions
 
-## Firmware Upgrade
+The Shelly Manager provides the following actions when the Thing is ONLINE. 
+They are available in the dropdown list in column Actions.
 
-The Shelly Manager simplifies the firmware upgrade.
+![](images/manager/overview_actions.png)
+
+
+|Action          |Description                                                                      |
+|----------------|---------------------------------------------------------------------------------|
+|Reset Statistics|Resets device statistic and clear the last alarm                                 |
+|Restart         |Restart the device and reconnect to WiFi                                         |
+|Protect         |Use binding's default credentials to protect device access with user and password|
+|Reset           |Do a firmware reset. Attention: The device will loose it's configuration         |
+
+## Firmware Update
+
+The Shelly Manager simplifies the firmware update.
 You could select between different versions using the drop down list on the overview page.
-Shelly Manager integrates 2 sources
+Shelly Manager integrates different sources
 - Allterco official releases: production and beta release (like in the device UI)
-- Older firmware release from the firmware archive - this service is provided by 
+- Older firmware release from the firmware archive - this is a community service
+- You could specify any custom url providing the firmware image, which is acceable for the device using http
 
-All firmware releases are combined to the selection list.
-Click on the version you want to install and Shelly Manager will generate the requested URL to trigger the firmware upgrade.
-This URL is displayed on the following page.
+|-|-|
+|![](images/manager/overview_versions.png)|All firmware releases are combined to the selection list.<br/>
+  Click on the version you want to install and Shelly Manager will generate the requested URL to trigger the firmware upgrade.|
+
 The upgrade starts if you click "Perform Update".
+
+![](images/manager/overview_fwupgrade.png
 
 The device will download the firmware file, installs the update and restarts the device.
 Depending on the device type this takes between 10 and 60 seconds.

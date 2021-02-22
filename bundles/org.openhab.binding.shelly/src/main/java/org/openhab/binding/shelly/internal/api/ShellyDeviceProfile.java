@@ -118,7 +118,7 @@ public class ShellyDeviceProfile {
         hostname = settings.device.hostname != null && !settings.device.hostname.isEmpty()
                 ? settings.device.hostname.toLowerCase()
                 : "shelly-" + mac.toUpperCase().substring(6, 11);
-        mode = !getString(settings.mode).isEmpty() ? getString(settings.mode).toLowerCase() : "";
+        mode = getString(settings.mode).toLowerCase();
         hwRev = settings.hwinfo != null ? getString(settings.hwinfo.hwRevision) : "";
         hwBatchId = settings.hwinfo != null ? getString(settings.hwinfo.batchId.toString()) : "";
         fwDate = substringBefore(settings.fw, "/");
