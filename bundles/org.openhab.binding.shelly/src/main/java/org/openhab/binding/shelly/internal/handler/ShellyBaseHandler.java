@@ -505,7 +505,6 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         stats.remainingWatchdog = watchdog > 0 ? now() - watchdog : 0;
 
         // Check various device indicators like overheating
-        logger.debug("{}: status.update={}, lastUpdate={}", thingName, status.uptime, stats.lastUptime);
         if (checkRestarted(status)) {
             // Force re-initialization on next status update
             if (profile.alwaysOn) {

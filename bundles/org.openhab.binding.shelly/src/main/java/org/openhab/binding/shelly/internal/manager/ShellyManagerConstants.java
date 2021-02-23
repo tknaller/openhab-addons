@@ -85,6 +85,7 @@ public class ShellyManagerConstants {
     public static final String ATTRIBUTE_WIFI_RECOVERY = "wifiAutoRecovery";
     public static final String ATTRIBUTE_MAX_ITEMP = "maxInternalTemp";
     public static final String ATTRIBUTE_TIMEZONE = "deviceTimezone";
+    public static final String ATTRIBUTE_PWD_PROTECT = "passwordProtected";
 
     public static final String URLPARM_UID = "uid";
     public static final String URLPARM_DEVTYPE = "deviceType";

@@ -235,7 +235,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                 }
             }
 
-            if ((command == UpDownType.UP) || (command == OnOffType.ON)) {
+            if (command == UpDownType.UP || command == OnOffType.ON) {
                 logger.debug("{}: Open roller", thingName);
                 api.setRollerTurn(index, SHELLY_ALWD_ROLLER_TURN_OPEN);
                 int pos = profile.getRollerFav(config.favoriteUP - 1);
@@ -244,8 +244,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                     logger.debug("{}: Use favoriteUP id {} for positioning roller({}%)", thingName, config.favoriteUP,
                             pos);
                 }
-            }
-            if ((command == UpDownType.DOWN) || ((command == OnOffType.OFF))) {
+            } else if (command == UpDownType.DOWN || command == OnOffType.OFF) {
                 logger.debug("{}: Closing roller", thingName);
                 int pos = profile.getRollerFav(config.favoriteDOWN - 1);
                 if (pos > 0) {
@@ -289,8 +288,10 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
             // make sure both are in sync
             if (isControl) {
                 int pos = SHELLY_MAX_ROLLER_POS - Math.max(0, Math.min(position, SHELLY_MAX_ROLLER_POS));
+                logger.debug("{}: Set roller position for control channel to {}", pos);
                 updateChannel(groupName, CHANNEL_ROL_CONTROL_CONTROL, new PercentType(pos));
             } else {
+                logger.debug("{}: Set roller position channel to {}", position);
                 updateChannel(groupName, CHANNEL_ROL_CONTROL_POS, new PercentType(position));
             }
         }
@@ -400,6 +401,8 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                     String state = getString(control.state);
                     if (state.equals(SHELLY_ALWD_ROLLER_TURN_STOP)) { // only valid in stop state
                         int pos = Math.max(SHELLY_MIN_ROLLER_POS, Math.min(control.currentPos, SHELLY_MAX_ROLLER_POS));
+                        logger.debug("{}: REST Update roller position: control={}, position={}", thingName,
+                                SHELLY_MAX_ROLLER_POS - pos, pos);
                         updated |= updateChannel(groupName, CHANNEL_ROL_CONTROL_CONTROL,
                                 toQuantityType((double) (SHELLY_MAX_ROLLER_POS - pos), SmartHomeUnits.PERCENT));
                         updated |= updateChannel(groupName, CHANNEL_ROL_CONTROL_POS,

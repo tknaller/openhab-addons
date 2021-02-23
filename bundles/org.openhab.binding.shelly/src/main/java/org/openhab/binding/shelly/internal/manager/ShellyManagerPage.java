@@ -244,12 +244,14 @@ public class ShellyManagerPage {
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_CHARGER);
 
         properties.put(ATTRIBUTE_DISCOVERABLE, String.valueOf(getBool(profile.settings.discoverable)));
+        properties.put(ATTRIBUTE_WIFI_RECOVERY, String.valueOf(getBool(profile.settings.wifiRecoveryReboot)));
+        properties.put(ATTRIBUTE_PWD_PROTECT,
+                profile.auth ? "enabled, user=" + getString(profile.settings.login.username) : "disabled");
         properties.put(ATTRIBUTE_TIMEZONE,
                 getString(profile.settings.timezone) + ", auto-detect: " + getBool(profile.settings.tzautodetect));
-        properties.put(ATTRIBUTE_WIFI_RECOVERY, String.valueOf(getBool(profile.settings.wifiRecoveryReboot)));
         properties.put(ATTRIBUTE_ACTIONS_SKIPPED,
                 profile.status.astats != null ? String.valueOf(profile.status.astats.skipped) : "n/a");
-        properties.put(ATTRIBUTE_MAX_ITEMP, stats.maxInternalTemp > 0 ? String.valueOf(stats.maxInternalTemp) : "n/a");
+        properties.put(ATTRIBUTE_MAX_ITEMP, stats.maxInternalTemp > 0 ? stats.maxInternalTemp + " °C" : "n/a");
 
         // Shelly H&T: When external power is connected the battery level is not valid
         if (!profile.isHT || (getInteger(profile.settings.externalPower) == 0)) {
@@ -391,12 +393,12 @@ public class ShellyManagerPage {
             fw = fromJson(gson, entry, FwRepoEntry.class);
             if (!mode.isEmpty()) {
                 // check for spilt firmware
-                String url = substringBefore(fw.url.toLowerCase(), ".zip") + "-" + mode + ".zip";
+                String url = substringBefore(fw.url, ".zip") + "-" + mode + ".zip";
                 if (testUrl(url)) {
-                    fw.beta_url = url;
+                    fw.url = url;
                     logger.debug("ShellyManager: Release Split-URL for device type {} is {}", deviceType, url);
                 }
-                url = substringBefore(fw.url.toLowerCase(), ".zip") + "-" + mode + ".zip";
+                url = substringBefore(fw.beta_url, ".zip") + "-" + mode + ".zip";
                 if (testUrl(url)) {
                     fw.beta_url = url;
                     logger.debug("ShellyManager: Beta Split-URL for device type {} is {}", deviceType, url);
