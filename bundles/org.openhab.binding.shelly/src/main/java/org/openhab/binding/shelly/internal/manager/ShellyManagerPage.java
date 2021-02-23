@@ -17,8 +17,10 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.manager.ShellyManagerConstants.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,8 +30,8 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
-import org.apache.commons.io.IOUtils;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
@@ -45,14 +47,15 @@ import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.UnDefType;
+import org.openhab.binding.shelly.internal.ShellyHandlerFactory;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyApiResult;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api.ShellyHttpApi;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
-import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyDeviceStats;
+import org.openhab.binding.shelly.internal.handler.ShellyManagerInterface;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
@@ -68,7 +71,7 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class ShellyManagerPage {
     private final Logger logger = LoggerFactory.getLogger(ShellyManagerPage.class);
-    protected final Map<String, ShellyBaseHandler> thingHandlers;
+    private final ShellyHandlerFactory handlerFactory;
     protected final HttpClient httpClient;
     protected final ConfigurationAdmin configurationAdmin;
     protected final ShellyBindingConfiguration bindingConfig = new ShellyBindingConfiguration();
@@ -135,9 +138,9 @@ public class ShellyManagerPage {
     }
 
     public ShellyManagerPage(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp,
-            int localPort, Map<String, ShellyBaseHandler> thingHandlers) {
+            int localPort, ShellyHandlerFactory handlerFactory) {
         this.configurationAdmin = configurationAdmin;
-        this.thingHandlers = thingHandlers;
+        this.handlerFactory = handlerFactory;
         this.httpClient = httpClient;
         this.localIp = localIp;
         this.localPort = localPort;
@@ -164,12 +167,12 @@ public class ShellyManagerPage {
         String html = "";
         String file = TEMPLATE_PATH + template;
         logger.debug("Read HTML from {}", file);
-        ClassLoader cl = ShellyBaseHandler.class.getClassLoader();
+        ClassLoader cl = ShellyManagerInterface.class.getClassLoader();
         if (cl != null) {
             try (InputStream inputStream = cl.getResourceAsStream(file)) {
                 if (inputStream != null) {
-                    // String html = IOUtils.toString(inputStream, UTF_8);
-                    html = IOUtils.toString(inputStream);
+                    html = new BufferedReader(new InputStreamReader(inputStream)).lines()
+                            .collect(Collectors.joining("\n"));
                     htmlTemplates.put(template, html);
                 }
             } catch (IOException e) {
@@ -185,7 +188,8 @@ public class ShellyManagerPage {
         return fillAttributes(html, properties);
     }
 
-    protected Map<String, String> fillProperties(Map<String, String> properties, String uid, ShellyBaseHandler th) {
+    protected Map<String, String> fillProperties(Map<String, String> properties, String uid,
+            ShellyManagerInterface th) {
         try {
             Configuration serviceConfig = configurationAdmin.getConfiguration("binding." + BINDING_ID);
             bindingConfig.updateFromProperties(serviceConfig.getProperties());
@@ -312,7 +316,7 @@ public class ShellyManagerPage {
         return properties;
     }
 
-    private void addAttribute(Map<String, String> properties, ShellyBaseHandler thingHandler, String group,
+    private void addAttribute(Map<String, String> properties, ShellyManagerInterface thingHandler, String group,
             String attribute) {
         State state = thingHandler.getChannelValue(group, attribute);
         String value = "";
@@ -506,7 +510,7 @@ public class ShellyManagerPage {
         return name;
     }
 
-    protected ShellyThingConfiguration getThingConfig(ShellyBaseHandler th, Map<String, String> properties) {
+    protected ShellyThingConfiguration getThingConfig(ShellyManagerInterface th, Map<String, String> properties) {
         Thing thing = th.getThing();
         ShellyThingConfiguration config = thing.getConfiguration().as(ShellyThingConfiguration.class);
         if (config.userId.isEmpty()) {
@@ -516,7 +520,7 @@ public class ShellyManagerPage {
         return config;
     }
 
-    protected void scheduleUpdate(ShellyBaseHandler th, String name, int delay) {
+    protected void scheduleUpdate(ShellyManagerInterface th, String name, int delay) {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
@@ -525,5 +529,13 @@ public class ShellyManagerPage {
         };
         Timer timer = new Timer(name);
         timer.schedule(task, delay * 1000);
+    }
+
+    protected Map<String, ShellyManagerInterface> getThingHandlers() {
+        return handlerFactory.getThingHandlers();
+    }
+
+    protected @Nullable ShellyManagerInterface getThingHandler(String uid) {
+        return getThingHandlers().get(uid);
     }
 }

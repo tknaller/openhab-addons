@@ -32,12 +32,13 @@ import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
+import org.openhab.binding.shelly.internal.ShellyHandlerFactory;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsUpdate;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api.ShellyHttpApi;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
-import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
+import org.openhab.binding.shelly.internal.handler.ShellyManagerInterface;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,8 +53,8 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
     protected final Logger logger = LoggerFactory.getLogger(ShellyManagerFwUpdatePage.class);
 
     public ShellyManagerFwUpdatePage(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp,
-            int localPort, Map<String, ShellyBaseHandler> thingHandlers) {
-        super(configurationAdmin, httpClient, localIp, localPort, thingHandlers);
+            int localPort, ShellyHandlerFactory handlerFactory) {
+        super(configurationAdmin, httpClient, localIp, localPort, handlerFactory);
     }
 
     @Override
@@ -71,13 +72,13 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
         String update = getUrlParm(parameters, URLPARM_UPDATE);
         String connection = getUrlParm(parameters, URLPARM_CONNECTION);
         String url = getUrlParm(parameters, URLPARM_URL);
-        if (uid.isEmpty() || (version.isEmpty() && connection.isEmpty()) || !thingHandlers.containsKey(uid)) {
+        if (uid.isEmpty() || (version.isEmpty() && connection.isEmpty()) || !getThingHandlers().containsKey(uid)) {
             return new ShellyMgrResponse("Invalid URL parameters: " + parameters, HttpStatus.BAD_REQUEST_400);
         }
 
         Map<String, String> properties = new HashMap<>();
         String html = loadHTML(HEADER_HTML, properties);
-        ShellyBaseHandler th = thingHandlers.get(uid);
+        ShellyManagerInterface th = getThingHandlers().get(uid);
         if (th != null) {
             properties = fillProperties(new HashMap<>(), uid, th);
             ShellyThingConfiguration config = getThingConfig(th, properties);
@@ -123,13 +124,14 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
                         ShellyHttpApi api = new ShellyHttpApi(uid, config, httpClient);
                         ShellySettingsUpdate result = api.firmwareUpdate(updateUrl);
                         String status = getString(result.status);
-                        logger.info("{}: Firmware update initiated, device returned status {}", th.thingName, status);
+                        logger.info("{}: Firmware update initiated, device returned status {}", th.getThingName(),
+                                status);
 
                         // Shelly Motion needs almost 2min for upgrade
                         scheduleUpdate(th, uid + "_upgrade", profile.isMotion ? 110 : 30);
                     } catch (ShellyApiException e) {
                         // maybe the device restarts before returning the http response
-                        logger.warn("{}: Firmware updated failed: {}", th.thingName, e.toString());
+                        logger.warn("{}: Firmware updated failed: {}", th.getThingName(), e.toString());
                     }
                 }).start();
             } else {

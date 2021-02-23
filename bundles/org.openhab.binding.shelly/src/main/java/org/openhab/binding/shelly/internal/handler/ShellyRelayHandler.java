@@ -288,10 +288,10 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
             // make sure both are in sync
             if (isControl) {
                 int pos = SHELLY_MAX_ROLLER_POS - Math.max(0, Math.min(position, SHELLY_MAX_ROLLER_POS));
-                logger.debug("{}: Set roller position for control channel to {}", pos);
+                logger.debug("{}: Set roller position for control channel to {}", thingName, pos);
                 updateChannel(groupName, CHANNEL_ROL_CONTROL_CONTROL, new PercentType(pos));
             } else {
-                logger.debug("{}: Set roller position channel to {}", position);
+                logger.debug("{}: Set roller position channel to {}", thingName, position);
                 updateChannel(groupName, CHANNEL_ROL_CONTROL_POS, new PercentType(position));
             }
         }

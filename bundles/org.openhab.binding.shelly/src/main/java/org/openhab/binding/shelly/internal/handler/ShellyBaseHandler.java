@@ -72,7 +72,7 @@ import org.slf4j.LoggerFactory;
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceListener {
+public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceListener, ShellyManagerInterface {
     protected final Logger logger = LoggerFactory.getLogger(ShellyBaseHandler.class);
     protected final ShellyChannelDefinitions channelDefinitions;
 
@@ -446,6 +446,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         return getThing().getStatus() == ThingStatus.OFFLINE;
     }
 
+    @Override
     public void setThingOnline() {
         if (!isThingOnline()) {
             updateStatus(ThingStatus.ONLINE);
@@ -456,6 +457,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         restartWatchdog();
     }
 
+    @Override
     public void setThingOffline(ThingStatusDetail detail, String messageKey) {
         if (!isThingOffline()) {
             logger.info("{}: Thing goes OFFLINE: {}", thingName, messages.get(messageKey));
@@ -862,6 +864,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
      * @return true=Update schedule, false=skipped (too many updates already
      *         scheduled)
      */
+    @Override
     public boolean requestUpdates(int requestCount, boolean refreshSettings) {
         this.refreshSettings |= refreshSettings;
         if (refreshSettings) {
@@ -965,6 +968,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         return !stopping && cache.updateChannel(channelId, value, force);
     }
 
+    @Override
     public State getChannelValue(String group, String channel) {
         return cache.getValue(group, channel);
     }
@@ -1137,6 +1141,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
      * @return ShellyDeviceProfile instance
      * @throws ShellyApiException
      */
+    @Override
     public ShellyDeviceProfile getProfile(boolean forceRefresh) throws ShellyApiException {
         try {
             refreshSettings |= forceRefresh;
@@ -1152,6 +1157,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         return profile;
     }
 
+    @Override
     public ShellyDeviceProfile getProfile() {
         return profile;
     }
@@ -1210,20 +1216,27 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         return false;
     }
 
+    @Override
+    public String getThingName() {
+        return thingName;
+    }
+
+    public void resetStats() {
+        // reset statistics
+        stats = new ShellyDeviceStats();
+    }
+
+    @Override
     public ShellyDeviceStats getStats() {
         return stats;
     }
 
+    @Override
     public ShellyHttpApi getApi() {
         return api;
     }
 
     public Map<String, String> getStatsProp() {
         return stats.asProperties();
-    }
-
-    public void resetStats() {
-        // reset statistics
-        stats = new ShellyDeviceStats();
     }
 }

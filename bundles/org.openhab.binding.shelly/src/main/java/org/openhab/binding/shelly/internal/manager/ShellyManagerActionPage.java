@@ -24,12 +24,13 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
+import org.openhab.binding.shelly.internal.ShellyHandlerFactory;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.ShellySettingsLogin;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api.ShellyHttpApi;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
-import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
+import org.openhab.binding.shelly.internal.handler.ShellyManagerInterface;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +45,8 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
     private final Logger logger = LoggerFactory.getLogger(ShellyManagerActionPage.class);
 
     public ShellyManagerActionPage(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp,
-            int localPort, Map<String, ShellyBaseHandler> thingHandlers) {
-        super(configurationAdmin, httpClient, localIp, localPort, thingHandlers);
+            int localPort, ShellyHandlerFactory handlerFactory) {
+        super(configurationAdmin, httpClient, localIp, localPort, handlerFactory);
     }
 
     @Override
@@ -64,7 +65,7 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
         properties.put(ATTRIBUTE_CSS_FOOTER, "");
         String html = loadHTML(HEADER_HTML, properties);
 
-        ShellyBaseHandler th = thingHandlers.get(uid);
+        ShellyManagerInterface th = getThingHandler(uid);
         if (th != null) {
             fillProperties(properties, uid, th);
 
@@ -188,7 +189,7 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                 + "&" + URLPARM_UPDATE + "=yes";
     }
 
-    private void setRestarted(ShellyBaseHandler th, String uid) {
+    private void setRestarted(ShellyManagerInterface th, String uid) {
         th.setThingOffline(ThingStatusDetail.GONE, "offline.status-error-restarted");
         scheduleUpdate(th, uid + "_upgrade", 20); // wait 20s before refresh
     }

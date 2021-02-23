@@ -22,8 +22,9 @@ import java.util.Map;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.http.HttpStatus;
+import org.openhab.binding.shelly.internal.ShellyHandlerFactory;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
-import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
+import org.openhab.binding.shelly.internal.handler.ShellyManagerInterface;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +39,8 @@ public class ShellyManagerImageLoader extends ShellyManagerPage {
     private final Logger logger = LoggerFactory.getLogger(ShellyManagerImageLoader.class);
 
     public ShellyManagerImageLoader(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp,
-            int localPort, Map<String, ShellyBaseHandler> thingHandlers) {
-        super(configurationAdmin, httpClient, localIp, localPort, thingHandlers);
+            int localPort, ShellyHandlerFactory handlerFactory) {
+        super(configurationAdmin, httpClient, localIp, localPort, handlerFactory);
     }
 
     @Override
@@ -50,7 +51,7 @@ public class ShellyManagerImageLoader extends ShellyManagerPage {
     protected ShellyMgrResponse loadImage(String image) throws ShellyApiException {
         String file = IMAGE_PATH + image;
         logger.debug("Read Image from {}", file);
-        ClassLoader cl = ShellyBaseHandler.class.getClassLoader();
+        ClassLoader cl = ShellyManagerInterface.class.getClassLoader();
         if (cl != null) {
             try (InputStream inputStream = cl.getResourceAsStream(file)) {
                 if (inputStream != null) {

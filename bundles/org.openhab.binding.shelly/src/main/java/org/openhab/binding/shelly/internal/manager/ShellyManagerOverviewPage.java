@@ -31,11 +31,12 @@ import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.UnDefType;
+import org.openhab.binding.shelly.internal.ShellyHandlerFactory;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
-import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyDeviceStats;
+import org.openhab.binding.shelly.internal.handler.ShellyManagerInterface;
 import org.openhab.binding.shelly.internal.util.ShellyVersionDTO;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
@@ -51,8 +52,8 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
     private final Logger logger = LoggerFactory.getLogger(ShellyManagerOverviewPage.class);
 
     public ShellyManagerOverviewPage(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp,
-            int localPort, Map<String, ShellyBaseHandler> thingHandlers) {
-        super(configurationAdmin, httpClient, localIp, localPort, thingHandlers);
+            int localPort, ShellyHandlerFactory handlerFactory) {
+        super(configurationAdmin, httpClient, localIp, localPort, handlerFactory);
     }
 
     @Override
@@ -61,7 +62,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         String action = getUrlParm(parameters, URLPARM_ACTION).toLowerCase();
         String uidParm = getUrlParm(parameters, URLPARM_UID).toLowerCase();
 
-        logger.debug("Generating overview for {} devices", thingHandlers.size());
+        logger.debug("Generating overview for {} devices", getThingHandlers().size());
 
         String html = "";
         Map<String, String> properties = new HashMap<>();
@@ -69,9 +70,9 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         properties.put(ATTRIBUTE_CSS_HEADER, loadHTML(OVERVIEW_HEADER, properties));
 
         String deviceHtml = "";
-        TreeMap<String, ShellyBaseHandler> sortedMap = new TreeMap<>();
-        for (Map.Entry<String, ShellyBaseHandler> th : thingHandlers.entrySet()) { // sort by Device Name
-            ShellyBaseHandler handler = th.getValue();
+        TreeMap<String, ShellyManagerInterface> sortedMap = new TreeMap<>();
+        for (Map.Entry<String, ShellyManagerInterface> th : getThingHandlers().entrySet()) { // sort by Device Name
+            ShellyManagerInterface handler = th.getValue();
             String deviceName = getDisplayName(handler.getThing().getProperties());
             sortedMap.put(deviceName, handler);
         }
@@ -80,9 +81,9 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         html += loadHTML(OVERVIEW_HTML, properties);
 
         int filteredDevices = 0;
-        for (Map.Entry<String, ShellyBaseHandler> handler : sortedMap.entrySet()) {
+        for (Map.Entry<String, ShellyManagerInterface> handler : sortedMap.entrySet()) {
             try {
-                ShellyBaseHandler th = handler.getValue();
+                ShellyManagerInterface th = handler.getValue();
                 ThingStatus status = th.getThing().getStatus();
                 ShellyDeviceProfile profile = th.getProfile();
                 String uid = getString(th.getThing().getUID().getAsString()); // handler.getKey();
@@ -121,7 +122,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
 
         properties.clear();
         properties.put("numberDevices", "<span class=\"footerDevices\">" + "Number of devices: " + filteredDevices
-                + " of " + String.valueOf(thingHandlers.size()) + "&nbsp;</span>");
+                + " of " + String.valueOf(getThingHandlers().size()) + "&nbsp;</span>");
         properties.put(ATTRIBUTE_CSS_FOOTER, loadHTML(OVERVIEW_FOOTER, properties));
         html += deviceHtml + loadHTML(FOOTER_HTML, properties);
         return new ShellyMgrResponse(fillAttributes(html, properties), HttpStatus.OK_200);
@@ -183,8 +184,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         return html;
     }
 
-    private String fillActionHtml(ShellyBaseHandler handler, String uid) {
-        ThingStatus status = handler.getThing().getStatus();
+    private String fillActionHtml(ShellyManagerInterface handler, String uid) {
         String html = "\n\t\t\t\t<select name=\"actionList\" id=\"actionList\" onchange=\"location = '"
                 + SHELLY_MGR_ACTION_URI + "?uid=" + urlEncode(uid) + "&" + URLPARM_ACTION
                 + "='+this.options[this.selectedIndex].value;\">\n";
@@ -206,7 +206,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         return html;
     }
 
-    private boolean applyFilter(ShellyBaseHandler handler, String filter) {
+    private boolean applyFilter(ShellyManagerInterface handler, String filter) {
         ThingStatus status = handler.getThing().getStatus();
         ShellyDeviceProfile profile = handler.getProfile();
 
@@ -228,7 +228,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         }
     }
 
-    private Map<String, String> getStatusWarnings(ShellyBaseHandler handler) {
+    private Map<String, String> getStatusWarnings(ShellyManagerInterface handler) {
         Thing thing = handler.getThing();
         ThingStatus status = handler.getThing().getStatus();
         ShellyDeviceStats stats = handler.getStats();

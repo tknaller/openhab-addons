@@ -72,7 +72,7 @@ public class ShellyManagerServlet extends HttpServlet {
         String localIp = getString(networkAddressService.getPrimaryIpv4HostAddress());
         int localPort = HttpServiceUtil.getHttpServicePort(componentContext.getBundleContext());
         this.manager = new ShellyManager(configurationAdmin, httpClientFactory.getCommonHttpClient(), localIp,
-                localPort, handlerFactory.getThingHandlers());
+                localPort, handlerFactory);
 
         try {
             httpService.registerServlet(SERVLET_URI, this, null, httpService.createDefaultHttpContext());
