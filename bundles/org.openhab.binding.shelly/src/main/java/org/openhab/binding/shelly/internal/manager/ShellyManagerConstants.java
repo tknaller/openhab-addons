@@ -109,6 +109,11 @@ public class ShellyManagerConstants {
     public static final String FILTER_UPDATE = "update";
     public static final String FILTER_UNPROTECTED = "unprotected";
 
+    // Message classes for visual style
+    public static final String MCMESSAGE = "message";
+    public static final String MCINFO = "info";
+    public static final String MCWARNING = "warning";
+
     public static final String ICON_ONLINE = "online";
     public static final String ICON_OFFLINE = "offline";
     public static final String ICON_UNINITIALIZED = "uninitialized";

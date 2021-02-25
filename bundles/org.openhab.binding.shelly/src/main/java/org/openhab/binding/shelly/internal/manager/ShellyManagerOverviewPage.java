@@ -277,8 +277,10 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
             }
         }
         if (profile.alwaysOn && (status == ThingStatus.ONLINE)) {
-            if (config.eventsCoIoT) {
-                if (stats.coiotMessages == 0) {
+            if ((config.eventsCoIoT) && (profile.settings.coiot != null)) {
+                if ((profile.settings.coiot.enabled != null) && !profile.settings.coiot.enabled) {
+                    result.put("CoIoT Status", "COIOT_DISABLED");
+                } else if (stats.coiotMessages == 0) {
                     result.put("CoIoT Discovery", "NO_COIOT_DISCOVERY");
                 } else if (stats.coiotMessages < 2) {
                     result.put("CoIoT Multicast", "NO_COIOT_MULTICAST");

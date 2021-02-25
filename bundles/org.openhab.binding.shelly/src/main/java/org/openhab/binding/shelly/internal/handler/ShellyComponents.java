@@ -357,6 +357,8 @@ public class ShellyComponents {
                         getOnOff(sdata.motion));
             }
             if (sdata.sensor != null) { // Shelly Motion
+                updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION_ACT,
+                        getOnOff(sdata.sensor.motionActive));
                 updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION,
                         getOnOff(sdata.sensor.motion));
                 long timestamp = getLong(sdata.sensor.motionTimestamp);

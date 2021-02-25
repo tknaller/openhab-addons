@@ -9,13 +9,13 @@
 		<description>Shelly H&amp;T Sensor</description>
 
 		<channel-groups>
-			<channel-group id="sensors" typeId="sensorData" />
-			<channel-group id="battery" typeId="batteryStatus" />
-			<channel-group id="device" typeId="deviceStatus" />
+			<channel-group id="sensors" typeId="sensorData"/>
+			<channel-group id="battery" typeId="batteryStatus"/>
+			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
 		<representation-property>deviceName</representation-property>
-		<config-description-ref uri="thing-type:shelly:battery" />
+		<config-description-ref uri="thing-type:shelly:battery"/>
 	</thing-type>
 
 	<thing-type id="shellysmoke">
@@ -23,13 +23,13 @@
 		<description>Shelly Smoke Sensor (battery powered)</description>
 
 		<channel-groups>
-			<channel-group id="sensors" typeId="sensorData" />
-			<channel-group id="battery" typeId="batteryStatus" />
-			<channel-group id="device" typeId="deviceStatus" />
+			<channel-group id="sensors" typeId="sensorData"/>
+			<channel-group id="battery" typeId="batteryStatus"/>
+			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
 		<representation-property>deviceName</representation-property>
-		<config-description-ref uri="thing-type:shelly:battery" />
+		<config-description-ref uri="thing-type:shelly:battery"/>
 	</thing-type>
 
 	<thing-type id="shellygas">
@@ -37,25 +37,25 @@
 		<description>Shelly Gas Sensor</description>
 
 		<channel-groups>
-			<channel-group id="sensors" typeId="sensorData" />
-			<channel-group id="device" typeId="deviceStatus" />
+			<channel-group id="sensors" typeId="sensorData"/>
+			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
 		<representation-property>deviceName</representation-property>
-		<config-description-ref uri="thing-type:shelly:basic" />
+		<config-description-ref uri="thing-type:shelly:basic"/>
 	</thing-type>
 
 	<thing-type id="shellyflood">
 		<label>Shelly Flood (SHWT-1)</label>
 		<description>Shelly Flood Sensor (battery powered)</description>
 		<channel-groups>
-			<channel-group id="sensors" typeId="sensorData" />
-			<channel-group id="battery" typeId="batteryStatus" />
-			<channel-group id="device" typeId="deviceStatus" />
+			<channel-group id="sensors" typeId="sensorData"/>
+			<channel-group id="battery" typeId="batteryStatus"/>
+			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
 		<representation-property>deviceName</representation-property>
-		<config-description-ref uri="thing-type:shelly:battery" />
+		<config-description-ref uri="thing-type:shelly:battery"/>
 	</thing-type>
 
 	<thing-type id="shellydw">
@@ -63,13 +63,13 @@
 		<description>Shelly Door/Window Sensor (battery powered)</description>
 
 		<channel-groups>
-			<channel-group id="sensors" typeId="sensorData" />
-			<channel-group id="battery" typeId="batteryStatus" />
-			<channel-group id="device" typeId="deviceStatus" />
+			<channel-group id="sensors" typeId="sensorData"/>
+			<channel-group id="battery" typeId="batteryStatus"/>
+			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
 		<representation-property>deviceName</representation-property>
-		<config-description-ref uri="thing-type:shelly:battery" />
+		<config-description-ref uri="thing-type:shelly:battery"/>
 	</thing-type>
 
 	<thing-type id="shellydw2">
@@ -77,27 +77,27 @@
 		<description>Shelly Door/Window 2 Sensor (battery powered)</description>
 
 		<channel-groups>
-			<channel-group id="sensors" typeId="sensorData" />
-			<channel-group id="battery" typeId="batteryStatus" />
-			<channel-group id="device" typeId="deviceStatus" />
+			<channel-group id="sensors" typeId="sensorData"/>
+			<channel-group id="battery" typeId="batteryStatus"/>
+			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
 		<representation-property>deviceName</representation-property>
-		<config-description-ref uri="thing-type:shelly:battery" />
+		<config-description-ref uri="thing-type:shelly:battery"/>
 	</thing-type>
 
 	<thing-type id="shellysense">
 		<label>Shelly Sense (SHSEN-1)</label>
 		<description>Shelly Sense Remote IR Controller</description>
 		<channel-groups>
-			<channel-group id="control" typeId="senseControl" />
-			<channel-group id="sensors" typeId="sensorData" />
-			<channel-group id="battery" typeId="batteryStatus" />
-			<channel-group id="device" typeId="deviceStatus" />
+			<channel-group id="control" typeId="senseControl"/>
+			<channel-group id="sensors" typeId="sensorData"/>
+			<channel-group id="battery" typeId="batteryStatus"/>
+			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
 		<representation-property>deviceName</representation-property>
-		<config-description-ref uri="thing-type:shelly:battery" />
+		<config-description-ref uri="thing-type:shelly:battery"/>
 	</thing-type>
 
 	<thing-type id="shellybutton1">
@@ -105,13 +105,13 @@
 		<description>Shelly Button 1 (battery powered)</description>
 
 		<channel-groups>
-			<channel-group id="status" typeId="buttonState" />
-			<channel-group id="battery" typeId="batteryStatus" />
-			<channel-group id="device" typeId="deviceStatus" />
+			<channel-group id="status" typeId="buttonState"/>
+			<channel-group id="battery" typeId="batteryStatus"/>
+			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
 		<representation-property>deviceName</representation-property>
-		<config-description-ref uri="thing-type:shelly:battery" />
+		<config-description-ref uri="thing-type:shelly:battery"/>
 	</thing-type>
 
 	<thing-type id="shellymotion">
@@ -119,13 +119,13 @@
 		<description>Shelly Motion Sensor (battery powered)</description>
 
 		<channel-groups>
-			<channel-group id="sensors" typeId="sensorData" />
-			<channel-group id="battery" typeId="batteryStatus" />
-			<channel-group id="device" typeId="deviceStatus" />
+			<channel-group id="sensors" typeId="sensorData"/>
+			<channel-group id="battery" typeId="batteryStatus"/>
+			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
 		<representation-property>deviceName</representation-property>
-		<config-description-ref uri="thing-type:shelly:battery" />
+		<config-description-ref uri="thing-type:shelly:battery"/>
 	</thing-type>
 
 	<channel-group-type id="sensorData">
@@ -140,7 +140,7 @@
 		<label>Sense Control</label>
 		<description>Sense Settings</description>
 		<channels>
-			<channel id="key" typeId="senseKey" />
+			<channel id="key" typeId="senseKey"/>
 		</channels>
 	</channel-group-type>
 	<channel-group-type id="buttonState">
@@ -251,7 +251,7 @@
 		<tags>
 			<tag>CurrentHumidity</tag>
 		</tags>
-		<state readOnly="true" pattern="%.1f %unit%" />
+		<state readOnly="true" pattern="%.1f %unit%"/>
 	</channel-type>
 	<channel-type id="sensorFlood">
 		<item-type>Switch</item-type>
@@ -290,6 +290,13 @@
 		<item-type>DateTime</item-type>
 		<label>Last motion</label>
 		<description>Timestamp of last detected motion</description>
+		<state readOnly="true">
+		</state>
+	</channel-type>
+	<channel-type id="motionActive" advanced="true">
+		<item-type>Switch</item-type>
+		<label>@text/channel-type.shelly.motionActive.label</label>
+		<description>channel-type.shelly.motionActive.description</description>
 		<state readOnly="true">
 		</state>
 	</channel-type>

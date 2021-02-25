@@ -335,7 +335,8 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
                 case CHANNEL_DEVST_SENSOR_SLEEPTIME:
                     logger.debug("{}: Set sensor sleep time to {}", thingName, command);
                     int value = ((DecimalType) command).intValue();
-                    value = Math.max(SHELLY_MOTION_SLEEPTIME_OFFSET, value - SHELLY_MOTION_SLEEPTIME_OFFSET);
+                    value = value > 0 ? Math.max(SHELLY_MOTION_SLEEPTIME_OFFSET, value - SHELLY_MOTION_SLEEPTIME_OFFSET)
+                            : 0;
                     api.setSleepTime(value);
                     break;
 

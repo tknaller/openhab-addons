@@ -126,18 +126,17 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
                         ShellyHttpApi api = new ShellyHttpApi(uid, config, httpClient);
                         ShellySettingsUpdate result = api.firmwareUpdate(updateUrl);
                         String status = getString(result.status);
-                        logger.info("{}: Firmware update initiated, device returned status {}", th.getThingName(),
-                                status);
+                        logger.info("{}: {}", th.getThingName(), getMessage("fwupdate.initiated", status));
 
                         // Shelly Motion needs almost 2min for upgrade
                         scheduleUpdate(th, uid + "_upgrade", profile.isMotion ? 110 : 30);
                     } catch (ShellyApiException e) {
                         // maybe the device restarts before returning the http response
-                        logger.warn("{}: Firmware updated failed: {}", th.getThingName(), e.toString());
+                        logger.warn("{}: {}", th.getThingName(), getMessage("fwupdate.initiated", e.toString()));
                     }
                 }).start();
             } else {
-                String message = "Do not power-off or restart device while updading the firmware!<p/>";
+                String message = getMessageP("fwupdate.confirm", MCINFO);
                 properties.put(ATTRIBUTE_MESSAGE, message);
                 html += loadHTML(FWUPDATE1_HTML, properties);
             }
@@ -152,10 +151,9 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
         String deviceMode = getUrlParm(parameters, URLPARM_DEVMODE);
         String version = getUrlParm(parameters, URLPARM_VERSION);
         String url = getUrlParm(parameters, URLPARM_URL);
-        logger.info("ShellyManager: Update firmware (deviceType={}, version={}, url={})", deviceType, version, url);
+        logger.info("ShellyManager: {}", getMessage("fwupdate.info", deviceType, version, url));
 
-        String failure = "Unable to find firmware for device type " + deviceType + ", version " + version + ", url="
-                + url;
+        String failure = getMessage("fwupdate.notfound", deviceType, version, url);
         try {
             if (url.isEmpty()) {
                 url = getFirmwareUrl("", deviceType, deviceMode, version, true);
@@ -181,8 +179,7 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
             headers.put("accept-ranges", ranges);
             headers.put("Last-Modified", modified);
             byte[] data = contentResponse.getContent();
-            logger.info("ShellyManager: Firmware successfully loaded - size={}, ETag={}, last modified={}", data.length,
-                    etag, modified);
+            logger.info("ShellyManager: {}", getMessage("fwupdate.success", data.length, etag, modified));
             return new ShellyMgrResponse(data, HttpStatus.OK_200, contentResponse.getMediaType(), headers);
         } catch (ExecutionException | TimeoutException | InterruptedException | RuntimeException e) {
             logger.info("ShellyManager: {}", failure, e);

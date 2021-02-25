@@ -13,7 +13,6 @@
 package org.openhab.binding.shelly.internal.manager;
 
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.PROPERTY_SERVICE_NAME;
-import static org.openhab.binding.shelly.internal.api.ShellyApiJsonDTO.SHELLY_COIOT_MCAST;
 import static org.openhab.binding.shelly.internal.manager.ShellyManagerConstants.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
@@ -85,9 +84,14 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
 
             int refreshTimer = 0;
             switch (action) {
+                case ACTION_RES_STATS:
+                    th.resetStats();
+                    message = getMessageP("action.resstats.confirm", MCINFO);
+                    refreshTimer = 3;
+                    break;
                 case ACTION_RESTART:
                     if (update.equalsIgnoreCase("yes")) {
-                        message = "The device is restarting and reconnects to WiFi. It will take a moment until device status is refreshed in openHAB.";
+                        message = getMessageP("action.restart.info", MCINFO);
                         actionButtonLabel = "Ok";
                         new Thread(() -> { // schedule asynchronous reboot
                             try {
@@ -99,19 +103,71 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                         }).start();
                         refreshTimer = profile.isMotion ? 60 : 30;
                     } else {
-                        message = "<span class\"info\">The device will restart and reconnects to WiFi.</span>";
+                        message = getMessageS("action.restart.confirm", MCINFO);
                         actionUrl = buildActionUrl(uid, action);
                     }
                     break;
-                case ACTION_RESET:
+                case ACTION_PROTECT:
+                    // Get device settings
+                    if (config.userId.isEmpty() || config.password.isEmpty()) {
+                        message = getMessageP("action.protect.id-missing", MCWARNING);
+                        break;
+                    }
+
                     if (!update.equalsIgnoreCase("yes")) {
-                        message = "<p class=\"warning\">Attention: Performing this action will reset the device to factory defaults.<br/>"
-                                + "All configuration data incl. WiFi settings get lost and device will return to Access Point mode (WiFi "
-                                + serviceName + ").</p>";
+                        ShellySettingsLogin status = api.getLoginSettings();
+                        message = getMessage("action.protect.status", getBool(status.enabled) ? "enabled" : "disabled",
+                                status.username)
+                                + getMessageP("action.protect.new", MCINFO, config.userId, config.password);
                         actionUrl = buildActionUrl(uid, action);
                     } else {
-                        message = "<p class=\"info\">Factorry reset was performed. Connect to WiFi network "
-                                + serviceName + " and open http://192.168.33.1 to restart with device setup.</p>";
+                        api.setLoginCredentials(config.userId, config.password);
+                        message = getMessageP("action.protect.confirm", MCINFO, config.userId, config.password);
+                        refreshTimer = 3;
+                    }
+                    break;
+                case ACTION_SETCOIOT_MCAST:
+                case ACTION_SETCOIOT_PEER:
+                    if ((profile.settings.coiot == null) || (profile.settings.coiot.peer == null)) {
+                        // feature not available
+                        message = getMessage("coiot.mode-not-suppored", MCWARNING, action);
+                        break;
+                    }
+
+                    String peer = getString(profile.settings.coiot.peer);
+                    boolean mcast = peer.isEmpty();
+                    String newPeer = mcast ? "" : localIp + ":" + ShellyCoapJSonDTO.COIOT_PORT;
+                    String displayPeer = mcast ? "Multicast" : newPeer;
+
+                    if (profile.isMotion && action.equalsIgnoreCase(ACTION_SETCOIOT_MCAST)) {
+                        // feature not available
+                        message = getMessageP("coiot.multicast-not-supported", "warning", displayPeer);
+                        break;
+                    }
+
+                    if (!update.equalsIgnoreCase("yes")) {
+                        message = getMessageP("coiot.current-peer", MCMESSAGE, mcast ? "Multicast" : peer)
+                                + getMessageP("coiot.new-peer", MCINFO, displayPeer)
+                                + getMessageP(mcast ? "coiot.mode-mcast" : "coiot.mode-peer", MCMESSAGE);
+                        actionUrl = buildActionUrl(uid, action);
+                    } else {
+                        api.setCoIoTPeer(newPeer);
+                        th.requestUpdates(1, true);
+                        refreshTimer = 5;
+                    }
+                    break;
+                case ACTION_ENCLOUD:
+                case ACTION_DISCLOUD:
+                    boolean enabled = action.equals(ACTION_ENCLOUD);
+                    api.setCloud(enabled);
+                    message = getMessageP("action.setcloud.config", MCINFO, enabled ? "enabled" : "disabled");
+                    refreshTimer = 20;
+                    break;
+                case ACTION_RESET:
+                    if (!update.equalsIgnoreCase("yes")) {
+                        message = getMessageP("action.reset.warning", MCWARNING, serviceName);
+                        actionUrl = buildActionUrl(uid, action);
+                    } else {
                         new Thread(() -> { // schedule asynchronous reboot
                             try {
                                 api.factoryReset();
@@ -120,71 +176,13 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                             }
                             setRestarted(th, uid);
                         }).start();
+                        message = getMessageP("action.reset.confirm", MCINFO, serviceName);
                     }
-                    break;
-                case ACTION_PROTECT:
-                    // Get device settings
-                    if (config.userId.isEmpty() || config.password.isEmpty()) {
-                        message = "<p class=\"warning\">To use this feature you need to set default credentials in the Shelly Binding settings.</p>";
-                        break;
-                    }
-
-                    if (!update.equalsIgnoreCase("yes")) {
-                        ShellySettingsLogin status = api.getLoginSettings();
-                        message = "Device protection is currently " + (status.enabled ? "enabled" : "disabled<br/>");
-                        message += "<p class=\"info\">Device login will be set to user ${userId} with password ${password}.</p>";
-                        actionUrl = buildActionUrl(uid, action);
-                    } else {
-                        api.setLoginCredentials(config.userId, config.password);
-                        message = "<p class=\"info\">Device login was updated to user ${userId} with password ${password}.</p>";
-                        refreshTimer = 5;
-                    }
-                    break;
-                case ACTION_SETCOIOT_PEER:
-                case ACTION_SETCOIOT_MCAST:
-                    if ((profile.settings.coiot == null) || (profile.settings.coiot.peer == null)) {
-                        // feature not available
-                        message = "<p class=\"warning\">The installed firmware doesn't support this feature</p>";
-                        break;
-                    }
-                    String peer = getString(profile.settings.coiot.peer);
-                    boolean mcast = peer.isEmpty() || peer.equalsIgnoreCase(SHELLY_COIOT_MCAST);
-                    String newPeer = mcast ? localIp + ":" + ShellyCoapJSonDTO.COIOT_PORT : "";
-                    String displayPeer = mcast ? newPeer : "Multicast";
-                    if (!update.equalsIgnoreCase("yes")) {
-                        message = "<p class=\"message\">CoIoT Peer: Destination address is currently set to "
-                                + (peer.isEmpty() ? "Multicast" : peer) + "</p>";
-                        message += "<p class=\"info\">CoIoT mode/address will be set to " + displayPeer + ".</p>";
-                        if (mcast) {
-                            message += "<p class=\"message\">The device will no longer send IP Multicast CoIoT updates to the network, just to the openHAB host ("
-                                    + localIp + ").</p>";
-                        } else {
-                            message += "<p class=\"message\">The device starts sending CoIoT updates using IP Multicast."
-                                    + "<br/>Please make sure that your network setup supports Multicast routing when devices are on different IP subnets.</p>";
-                        }
-                        actionUrl = buildActionUrl(uid, action);
-                    } else {
-                        api.setCoIoTPeer(newPeer);
-                        th.requestUpdates(1, true);
-                        refreshTimer = 5;
-                    }
-                    break;
-                case ACTION_RES_STATS:
-                    th.resetStats();
-                    message = "<p class=\"info\">Device statistics and alarm has been reset.</p>";
-                    refreshTimer = 5;
-                    break;
-                case ACTION_ENCLOUD:
-                case ACTION_DISCLOUD:
-                    boolean enabled = action.equals(ACTION_ENCLOUD);
-                    api.setCloud(enabled);
-                    message = "<p class=\"info\">Cloud function is now " + (enabled ? "enabled" : "disabled") + ".</p>";
-                    refreshTimer = 20;
                     break;
                 case ACTION_NONE:
                     break;
                 default:
-                    logger.warn("{}: Unknown action {} requested", LOG_PREFIX, action);
+                    logger.warn("{}: {}", LOG_PREFIX, getMessage("action.unknown", action));
             }
 
             properties.put(ATTRIBUTE_ACTION, getString(actions.get(action))); // get description for command
@@ -208,13 +206,15 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
         list.put(ACTION_RES_STATS, "Reset Statistics");
         list.put(ACTION_RESTART, "Reboot Device");
         list.put(ACTION_PROTECT, "Protect Device");
-        boolean set = false;
+
         if ((profile.settings.coiot != null) && (profile.settings.coiot.peer != null)) {
-            set = profile.settings.coiot.peer.isEmpty();
-            list.put(set ? ACTION_SETCOIOT_PEER : ACTION_SETCOIOT_MCAST,
-                    set ? "Set CoIoT Peer" : "Set CoIoT Multicast");
+            list.put(ACTION_SETCOIOT_PEER, "Set CoIoT Peer");
+            if (!profile.isMotion) {
+                list.put(ACTION_SETCOIOT_MCAST, "Set CoIoT Multicast");
+            }
         }
-        set = (profile.settings.cloud != null) && profile.settings.cloud.enabled;
+
+        boolean set = (profile.settings.cloud != null) && profile.settings.cloud.enabled;
         list.put(set ? ACTION_DISCLOUD : ACTION_ENCLOUD, set ? "Disable Cloud" : "Enable Cloud");
         list.put(ACTION_RESET, "-Factory Reset");
         return list;

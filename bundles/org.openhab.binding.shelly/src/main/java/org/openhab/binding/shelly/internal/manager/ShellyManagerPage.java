@@ -72,7 +72,7 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class ShellyManagerPage {
     private final Logger logger = LoggerFactory.getLogger(ShellyManagerPage.class);
-    protected final ShellyTranslationProvider messages;
+    protected final ShellyTranslationProvider resources;
 
     private final ShellyHandlerFactory handlerFactory;
     protected final HttpClient httpClient;
@@ -143,7 +143,7 @@ public class ShellyManagerPage {
     public ShellyManagerPage(ConfigurationAdmin configurationAdmin, ShellyTranslationProvider translationProvider,
             HttpClient httpClient, String localIp, int localPort, ShellyHandlerFactory handlerFactory) {
         this.configurationAdmin = configurationAdmin;
-        this.messages = translationProvider;
+        this.resources = translationProvider;
         this.handlerFactory = handlerFactory;
         this.httpClient = httpClient;
         this.localIp = localIp;
@@ -152,15 +152,6 @@ public class ShellyManagerPage {
 
     public ShellyMgrResponse generateContent(String path, Map<String, String[]> parameters) throws ShellyApiException {
         return new ShellyMgrResponse("Invalid Request", HttpStatus.BAD_REQUEST_400);
-    }
-
-    protected String getUrlParm(Map<String, String[]> parameters, String param) {
-        String[] p = parameters.get(param);
-        String value = "";
-        if (p != null) {
-            value = getString(p[0]);
-        }
-        return value;
     }
 
     protected String loadHTML(String template) throws ShellyApiException {
@@ -501,6 +492,27 @@ public class ShellyManagerPage {
         } catch (ExecutionException | TimeoutException | InterruptedException | IllegalArgumentException e) {
             throw new ShellyApiException("HTTP GET failed", e);
         }
+    }
+
+    protected String getUrlParm(Map<String, String[]> parameters, String param) {
+        String[] p = parameters.get(param);
+        String value = "";
+        if (p != null) {
+            value = getString(p[0]);
+        }
+        return value;
+    }
+
+    protected String getMessage(String key, Object... arguments) {
+        return resources.get("manager." + key, arguments);
+    }
+
+    protected String getMessageP(String key, String msgClass, Object... arguments) {
+        return "<p class=\"" + msgClass + "\">" + getMessage(key, arguments) + "</p>\n";
+    }
+
+    protected String getMessageS(String key, String msgClass, Object... arguments) {
+        return "<span class=\"" + msgClass + "\">" + getMessage(key, arguments) + "</span>\n";
     }
 
     protected static String getDeviceType(Map<String, String> properties) {
