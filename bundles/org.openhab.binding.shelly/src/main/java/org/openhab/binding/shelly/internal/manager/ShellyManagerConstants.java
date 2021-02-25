@@ -35,6 +35,8 @@ public class ShellyManagerConstants {
 
     public static final String ACTION_RESTART = "restart";
     public static final String ACTION_PROTECT = "protect";
+    public static final String ACTION_SETCOIOT_PEER = "setcoiotpeer";
+    public static final String ACTION_SETCOIOT_MCAST = "setcoiotmcast";
     public static final String ACTION_SETTZ = "settz";
     public static final String ACTION_SETNTP = "setntp";
     public static final String ACTION_ENCLOUD = "encloud";
@@ -78,6 +80,7 @@ public class ShellyManagerConstants {
     public static final String ATTRIBUTE_ACTION_URL = "actionUrl";
     public static final String ATTRIBUTE_SNTP_SERVER = "sntpServer";
     public static final String ATTRIBUTE_COIOT_STATUS = "coiotStatus";
+    public static final String ATTRIBUTE_COIOT_PEER = "coiotDestination";
     public static final String ATTRIBUTE_CLOUD_STATUS = "cloudStatus";
     public static final String ATTRIBUTE_MQTT_STATUS = "mqttStatus";
     public static final String ATTRIBUTE_ACTIONS_SKIPPED = "actionsSkipped";

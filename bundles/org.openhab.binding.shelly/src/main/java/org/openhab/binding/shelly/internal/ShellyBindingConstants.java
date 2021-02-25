@@ -302,6 +302,7 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_DEVST_CHARGER = "charger";
     public static final String CHANNEL_DEVST_UPDATE = "updateAvailable";
     public static final String CHANNEL_DEVST_SELFTTEST = "selfTest";
+    public static final String CHANNEL_DEVST_SENSOR_SLEEPTIME = "sensorSleepTime";
 
     public static final String CHANNEL_LED_STATUS_DISABLE = "statusLed";
     public static final String CHANNEL_LED_POWER_DISABLE = "powerLed";

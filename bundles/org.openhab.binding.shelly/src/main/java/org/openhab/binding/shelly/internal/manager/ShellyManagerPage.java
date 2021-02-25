@@ -56,6 +56,7 @@ import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyDeviceStats;
 import org.openhab.binding.shelly.internal.handler.ShellyManagerInterface;
+import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
@@ -71,6 +72,8 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class ShellyManagerPage {
     private final Logger logger = LoggerFactory.getLogger(ShellyManagerPage.class);
+    protected final ShellyTranslationProvider messages;
+
     private final ShellyHandlerFactory handlerFactory;
     protected final HttpClient httpClient;
     protected final ConfigurationAdmin configurationAdmin;
@@ -137,9 +140,10 @@ public class ShellyManagerPage {
         public @Nullable String beta_ver;
     }
 
-    public ShellyManagerPage(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp,
-            int localPort, ShellyHandlerFactory handlerFactory) {
+    public ShellyManagerPage(ConfigurationAdmin configurationAdmin, ShellyTranslationProvider translationProvider,
+            HttpClient httpClient, String localIp, int localPort, ShellyHandlerFactory handlerFactory) {
         this.configurationAdmin = configurationAdmin;
+        this.messages = translationProvider;
         this.handlerFactory = handlerFactory;
         this.httpClient = httpClient;
         this.localIp = localIp;
@@ -276,6 +280,10 @@ public class ShellyManagerPage {
         }
 
         properties.put(ATTRIBUTE_COIOT_STATUS, config.eventsCoIoT ? "enabled" : "disabled");
+        properties.put(ATTRIBUTE_COIOT_PEER,
+                (profile.settings.coiot != null) && !getString(profile.settings.coiot.peer).isEmpty()
+                        ? profile.settings.coiot.peer
+                        : "Multicast");
         if (profile.status.cloud != null) {
             properties.put(ATTRIBUTE_CLOUD_STATUS,
                     getBool(profile.settings.cloud.enabled)
@@ -395,7 +403,9 @@ public class ShellyManagerPage {
              * },
              */
             fw = fromJson(gson, entry, FwRepoEntry.class);
-            if (!mode.isEmpty()) {
+
+            // Special case: RGW2 has a split firmware - xxx-white.zip vs. xxx-color.zip
+            if (!mode.isEmpty() && deviceType.equalsIgnoreCase(SHELLYDT_RGBW2)) {
                 // check for spilt firmware
                 String url = substringBefore(fw.url, ".zip") + "-" + mode + ".zip";
                 if (testUrl(url)) {
@@ -452,7 +462,10 @@ public class ShellyManagerPage {
 
     protected boolean testUrl(String url) {
         try {
-            String result = httpHeadl(url);
+            if (url.isEmpty()) {
+                return false;
+            }
+            httpHeadl(url); // causes exception on 404
             return true;
         } catch (ShellyApiException e) {
         }
@@ -485,7 +498,7 @@ public class ShellyManagerPage {
                 throw new ShellyApiException(apiResult);
             }
             return response;
-        } catch (ExecutionException | TimeoutException | InterruptedException e) {
+        } catch (ExecutionException | TimeoutException | InterruptedException | IllegalArgumentException e) {
             throw new ShellyApiException("HTTP GET failed", e);
         }
     }

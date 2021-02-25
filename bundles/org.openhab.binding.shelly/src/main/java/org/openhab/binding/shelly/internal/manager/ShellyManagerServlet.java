@@ -33,6 +33,7 @@ import org.eclipse.smarthome.io.net.http.HttpClientFactory;
 import org.openhab.binding.shelly.internal.ShellyHandlerFactory;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.manager.ShellyManagerPage.ShellyMgrResponse;
+import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -66,13 +67,14 @@ public class ShellyManagerServlet extends HttpServlet {
     public ShellyManagerServlet(@Reference ConfigurationAdmin configurationAdmin,
             @Reference NetworkAddressService networkAddressService, @Reference HttpService httpService,
             @Reference HttpClientFactory httpClientFactory, @Reference ShellyHandlerFactory handlerFactory,
-            ComponentContext componentContext, Map<String, Object> config) {
+            @Reference ShellyTranslationProvider translationProvider, ComponentContext componentContext,
+            Map<String, Object> config) {
         className = substringAfterLast(getClass().toString(), ".");
         this.httpService = httpService;
         String localIp = getString(networkAddressService.getPrimaryIpv4HostAddress());
         int localPort = HttpServiceUtil.getHttpServicePort(componentContext.getBundleContext());
-        this.manager = new ShellyManager(configurationAdmin, httpClientFactory.getCommonHttpClient(), localIp,
-                localPort, handlerFactory);
+        this.manager = new ShellyManager(configurationAdmin, translationProvider,
+                httpClientFactory.getCommonHttpClient(), localIp, localPort, handlerFactory);
 
         try {
             httpService.registerServlet(SERVLET_URI, this, null, httpService.createDefaultHttpContext());

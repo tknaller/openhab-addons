@@ -23,6 +23,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.openhab.binding.shelly.internal.ShellyHandlerFactory;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.manager.ShellyManagerPage.ShellyMgrResponse;
+import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.osgi.service.cm.ConfigurationAdmin;
 
 /**
@@ -35,21 +36,21 @@ public class ShellyManager {
     private final Map<String, ShellyManagerPage> pages = new LinkedHashMap<>();
     private final ShellyHandlerFactory handlerFactory;
 
-    public ShellyManager(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp, int localPort,
-            ShellyHandlerFactory handlerFactory) {
+    public ShellyManager(ConfigurationAdmin configurationAdmin, ShellyTranslationProvider translationProvider,
+            HttpClient httpClient, String localIp, int localPort, ShellyHandlerFactory handlerFactory) {
         this.handlerFactory = handlerFactory;
-        pages.put(SHELLY_MGR_OVERVIEW_URI,
-                new ShellyManagerOverviewPage(configurationAdmin, httpClient, localIp, localPort, handlerFactory));
-        pages.put(SHELLY_MGR_ACTION_URI,
-                new ShellyManagerActionPage(configurationAdmin, httpClient, localIp, localPort, handlerFactory));
-        pages.put(SHELLY_MGR_FWUPDATE_URI,
-                new ShellyManagerFwUpdatePage(configurationAdmin, httpClient, localIp, localPort, handlerFactory));
-        pages.put(SHELLY_MGR_OTA_URI,
-                new ShellyManagerFwUpdatePage(configurationAdmin, httpClient, localIp, localPort, handlerFactory));
-        pages.put(SHELLY_MGR_IMAGES_URI,
-                new ShellyManagerImageLoader(configurationAdmin, httpClient, localIp, localPort, handlerFactory));
-        pages.put(SHELLY_MANAGER_URI,
-                new ShellyManagerOverviewPage(configurationAdmin, httpClient, localIp, localPort, handlerFactory));
+        pages.put(SHELLY_MGR_OVERVIEW_URI, new ShellyManagerOverviewPage(configurationAdmin, translationProvider,
+                httpClient, localIp, localPort, handlerFactory));
+        pages.put(SHELLY_MGR_ACTION_URI, new ShellyManagerActionPage(configurationAdmin, translationProvider,
+                httpClient, localIp, localPort, handlerFactory));
+        pages.put(SHELLY_MGR_FWUPDATE_URI, new ShellyManagerFwUpdatePage(configurationAdmin, translationProvider,
+                httpClient, localIp, localPort, handlerFactory));
+        pages.put(SHELLY_MGR_OTA_URI, new ShellyManagerFwUpdatePage(configurationAdmin, translationProvider, httpClient,
+                localIp, localPort, handlerFactory));
+        pages.put(SHELLY_MGR_IMAGES_URI, new ShellyManagerImageLoader(configurationAdmin, translationProvider,
+                httpClient, localIp, localPort, handlerFactory));
+        pages.put(SHELLY_MANAGER_URI, new ShellyManagerOverviewPage(configurationAdmin, translationProvider, httpClient,
+                localIp, localPort, handlerFactory));
     }
 
     public ShellyMgrResponse generateContent(String path, Map<String, String[]> parameters) throws ShellyApiException {

@@ -134,11 +134,11 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
 
             case CHANNEL_TIMER_AUTOON:
                 logger.debug("{}: Set Auto-ON timer to {}", thingName, command);
-                api.setTimer(rIndex, SHELLY_TIMER_AUTOON, getNumber(command));
+                api.setTimer(rIndex, SHELLY_TIMER_AUTOON, getNumber(command).intValue());
                 break;
             case CHANNEL_TIMER_AUTOOFF:
                 logger.debug("{}: Set Auto-OFF timer to {}", thingName, command);
-                api.setTimer(rIndex, SHELLY_TIMER_AUTOOFF, getNumber(command));
+                api.setTimer(rIndex, SHELLY_TIMER_AUTOOFF, getNumber(command).intValue());
                 break;
         }
         return true;

@@ -37,6 +37,7 @@ import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyDeviceStats;
 import org.openhab.binding.shelly.internal.handler.ShellyManagerInterface;
+import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.openhab.binding.shelly.internal.util.ShellyVersionDTO;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
@@ -51,9 +52,10 @@ import org.slf4j.LoggerFactory;
 public class ShellyManagerOverviewPage extends ShellyManagerPage {
     private final Logger logger = LoggerFactory.getLogger(ShellyManagerOverviewPage.class);
 
-    public ShellyManagerOverviewPage(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp,
-            int localPort, ShellyHandlerFactory handlerFactory) {
-        super(configurationAdmin, httpClient, localIp, localPort, handlerFactory);
+    public ShellyManagerOverviewPage(ConfigurationAdmin configurationAdmin,
+            ShellyTranslationProvider translationProvider, HttpClient httpClient, String localIp, int localPort,
+            ShellyHandlerFactory handlerFactory) {
+        super(configurationAdmin, translationProvider, httpClient, localIp, localPort, handlerFactory);
     }
 
     @Override
@@ -161,8 +163,6 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                 FwArchList list = getFirmwareArchiveList(deviceType);
                 ArrayList<FwArchEntry> versions = list.versions;
                 if (versions != null) {
-                    html += "\t\t\t\t\t<option class=\"select-hr\" value=\"" + SHELLY_MGR_FWUPDATE_URI + "?uid=" + uid
-                            + "&connection=custom\">Custom URL</option>\n";
                     html += "\t\t\t\t\t<option value=\"\" disabled>-- Archive:</option>\n";
                     for (int i = versions.size() - 1; i >= 0; i--) {
                         FwArchEntry e = versions.get(i);
@@ -174,13 +174,17 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                                     + "\">" + version + "</option>\n";
                         }
                     }
-                    html += "\t\t\t\t</select>\n\t\t\t";
                 }
-
             }
         } catch (ShellyApiException e) {
             logger.debug("{}: Unable to retrieve firmware list: {}", LOG_PREFIX, e.toString());
         }
+
+        html += "\t\t\t\t\t<option class=\"select-hr\" value=\"" + SHELLY_MGR_FWUPDATE_URI + "?uid=" + uid
+                + "&connection=custom\">Custom URL</option>\n";
+
+        html += "\t\t\t\t</select>\n\t\t\t";
+
         return html;
     }
 
@@ -190,7 +194,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                 + "='+this.options[this.selectedIndex].value;\">\n";
         html += "\t\t\t\t\t<option value=\"\" selected disabled>select</option>\n";
 
-        Map<String, String> actionList = ShellyManagerActionPage.getActions();
+        Map<String, String> actionList = ShellyManagerActionPage.getActions(handler.getProfile());
         for (Map.Entry<String, String> a : actionList.entrySet()) {
             String value = a.getValue();
             String seperator = "";
@@ -236,23 +240,24 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         ShellyThingConfiguration config = thing.getConfiguration().as(ShellyThingConfiguration.class);
         TreeMap<String, String> result = new TreeMap<>();
 
-        if (status != ThingStatus.ONLINE) {
+        if ((status != ThingStatus.ONLINE) && (status != ThingStatus.UNKNOWN)) {
             result.put("Thing Status", status.toString());
         }
         State wifiSignal = handler.getChannelValue(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_RSSI);
         if ((profile.alwaysOn || (profile.hasBattery && (status == ThingStatus.ONLINE)))
                 && ((wifiSignal != UnDefType.NULL) && (((DecimalType) wifiSignal).intValue() < 2))) {
-            result.put("Weak Signal", wifiSignal.toString());
-        }
-        if (stats.lastAlarm.equalsIgnoreCase(ALARM_TYPE_RESTARTED)) {
-            result.put("Device Alarm", ALARM_TYPE_RESTARTED + " (" + convertTimestamp(stats.lastAlarmTs) + ")");
+            result.put("Weak WiFi Signal", wifiSignal.toString());
         }
         if (profile.hasBattery) {
             State lowBattery = handler.getChannelValue(CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LOW);
             if ((lowBattery == OnOffType.ON)) {
                 lowBattery = handler.getChannelValue(CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LEVEL);
-                result.put("Battery Level", lowBattery.toString());
+                result.put("Battery Low", lowBattery.toString());
             }
+        }
+
+        if (stats.lastAlarm.equalsIgnoreCase(ALARM_TYPE_RESTARTED)) {
+            result.put("Device Alarm", ALARM_TYPE_RESTARTED + " (" + convertTimestamp(stats.lastAlarmTs) + ")");
         }
         if (getBool(profile.status.overtemperature)) {
             result.put("Device Alarm", ALARM_TYPE_OVERTEMP);
@@ -263,7 +268,6 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         if (getBool(profile.status.loaderror)) {
             result.put("Device Alarm", ALARM_TYPE_LOADERR);
         }
-
         if (profile.isSensor) {
             State sensorError = handler.getChannelValue(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ERROR);
             if (sensorError != UnDefType.NULL) {
@@ -275,9 +279,9 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         if (profile.alwaysOn && (status == ThingStatus.ONLINE)) {
             if (config.eventsCoIoT) {
                 if (stats.coiotMessages == 0) {
-                    result.put("CoIoT", "NO_DISCOVERY");
+                    result.put("CoIoT Discovery", "NO_COIOT_DISCOVERY");
                 } else if (stats.coiotMessages < 2) {
-                    result.put("CoIoT", "NO_MULTICAST");
+                    result.put("CoIoT Multicast", "NO_COIOT_MULTICAST");
                 }
             }
         }

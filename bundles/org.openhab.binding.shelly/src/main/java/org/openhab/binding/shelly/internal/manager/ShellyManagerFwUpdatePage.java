@@ -39,6 +39,7 @@ import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api.ShellyHttpApi;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyManagerInterface;
+import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,9 +53,10 @@ import org.slf4j.LoggerFactory;
 public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
     protected final Logger logger = LoggerFactory.getLogger(ShellyManagerFwUpdatePage.class);
 
-    public ShellyManagerFwUpdatePage(ConfigurationAdmin configurationAdmin, HttpClient httpClient, String localIp,
-            int localPort, ShellyHandlerFactory handlerFactory) {
-        super(configurationAdmin, httpClient, localIp, localPort, handlerFactory);
+    public ShellyManagerFwUpdatePage(ConfigurationAdmin configurationAdmin,
+            ShellyTranslationProvider translationProvider, HttpClient httpClient, String localIp, int localPort,
+            ShellyHandlerFactory handlerFactory) {
+        super(configurationAdmin, translationProvider, httpClient, localIp, localPort, handlerFactory);
     }
 
     @Override
