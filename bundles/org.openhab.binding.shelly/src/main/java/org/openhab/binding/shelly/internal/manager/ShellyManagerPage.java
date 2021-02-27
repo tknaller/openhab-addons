@@ -270,7 +270,12 @@ public class ShellyManagerPage {
                     getString(profile.settings.sntp.server) + ", enabled: " + getBool((profile.settings.sntp.enabled)));
         }
 
-        properties.put(ATTRIBUTE_COIOT_STATUS, config.eventsCoIoT ? "enabled" : "disabled");
+        boolean coiotEnabled = true;
+        if ((profile.settings.coiot != null) && (profile.settings.coiot.enabled != null)) {
+            coiotEnabled = profile.settings.coiot.enabled;
+        }
+        properties.put(ATTRIBUTE_COIOT_STATUS,
+                !coiotEnabled ? "Disbaled in settings" : "Events are " + (config.eventsCoIoT ? "enabled" : "disabled"));
         properties.put(ATTRIBUTE_COIOT_PEER,
                 (profile.settings.coiot != null) && !getString(profile.settings.coiot.peer).isEmpty()
                         ? profile.settings.coiot.peer
