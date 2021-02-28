@@ -16,6 +16,7 @@
 		<description>Switch the display mode</description>
 		<state>
 			<options>
+				<option value="sleep">Sleep</option>
 				<option value="video">Video</option>
 				<option value="music">Music</option>
 				<option value="ambient">Ambient</option>

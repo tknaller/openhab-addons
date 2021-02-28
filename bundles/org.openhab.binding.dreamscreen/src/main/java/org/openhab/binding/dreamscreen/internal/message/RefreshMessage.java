@@ -32,7 +32,6 @@ public class RefreshMessage extends DreamScreenMessage {
     static final byte COMMAND_LOWER = 0x0A;
 
     // Set integers so we know which bytes to pull based on device
-
     static int OFF_GROUP = 32;
     static int OFF_MODE = 33;
     static int OFF_BRIGHTNESS = 34;
@@ -71,7 +70,11 @@ public class RefreshMessage extends DreamScreenMessage {
     }
 
     public byte getScene() {
-        return this.payload.get(OFF_AMBIENT_SCENE);
+        if (this.payloadLen >= 60) {
+            return this.payload.get(OFF_AMBIENT_SCENE);
+        } else {
+            return 0;
+        }
     }
 
     public byte getRed() {
