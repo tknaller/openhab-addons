@@ -27,6 +27,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.io.console.Console;
 import org.eclipse.smarthome.io.console.extensions.AbstractConsoleCommandExtension;
 import org.eclipse.smarthome.io.console.extensions.ConsoleCommandExtension;
+import org.eclipse.smarthome.io.net.http.HttpClientFactory;
 import org.openhab.binding.magentatv.internal.network.MagentaTVOAuth;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -47,14 +48,15 @@ public class MagentaTVConsoleHandler extends AbstractConsoleCommandExtension {
     private static final String CMD_LOGIN = "login";
 
     private final Logger logger = LoggerFactory.getLogger(MagentaTVConsoleHandler.class);
-    private final MagentaTVOAuth oauth = new MagentaTVOAuth();
+    private final MagentaTVOAuth oauth;
 
     @Reference(cardinality = ReferenceCardinality.OPTIONAL)
     private @Nullable ClientBuilder injectedClientBuilder;
 
     @Activate
-    public MagentaTVConsoleHandler() {
+    public MagentaTVConsoleHandler(@Reference HttpClientFactory httpClientFactory) {
         super(BINDING_ID, "Interact with the " + BINDING_ID + " integration.");
+        oauth = new MagentaTVOAuth(httpClientFactory.getCommonHttpClient());
     }
 
     @Override
