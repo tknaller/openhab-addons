@@ -45,17 +45,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@link ShellyManagerFwUpdatePage} implements the Shelly Manager's download proxy for images (load them from bundle)
+ * {@link ShellyManagerOtaPage} implements the Shelly Manager's download proxy for images (load them from bundle)
  *
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
-    protected final Logger logger = LoggerFactory.getLogger(ShellyManagerFwUpdatePage.class);
+public class ShellyManagerOtaPage extends ShellyManagerPage {
+    protected final Logger logger = LoggerFactory.getLogger(ShellyManagerOtaPage.class);
 
-    public ShellyManagerFwUpdatePage(ConfigurationAdmin configurationAdmin,
-            ShellyTranslationProvider translationProvider, HttpClient httpClient, String localIp, int localPort,
-            ShellyHandlerFactory handlerFactory) {
+    public ShellyManagerOtaPage(ConfigurationAdmin configurationAdmin, ShellyTranslationProvider translationProvider,
+            HttpClient httpClient, String localIp, int localPort, ShellyHandlerFactory handlerFactory) {
         super(configurationAdmin, translationProvider, httpClient, localIp, localPort, handlerFactory);
     }
 
@@ -201,7 +200,7 @@ public class ShellyManagerFwUpdatePage extends ShellyManagerPage {
                     // convert prod/beta to full url
                     FwRepoEntry fw = getFirmwareRepoEntry(deviceType, mode);
                     String url = getString(prod ? fw.url : fw.beta_url);
-                    logger.debug("ShellyManager: Map {} release to url {}, version {}", url,
+                    logger.debug("ShellyManager: Map {} release to url {}, version {}", url,
                             prod ? fw.url : fw.beta_url, prod ? fw.version : fw.beta_ver);
                     return url;
                 }

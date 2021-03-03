@@ -43,9 +43,9 @@ public class ShellyManager {
                 httpClient, localIp, localPort, handlerFactory));
         pages.put(SHELLY_MGR_ACTION_URI, new ShellyManagerActionPage(configurationAdmin, translationProvider,
                 httpClient, localIp, localPort, handlerFactory));
-        pages.put(SHELLY_MGR_FWUPDATE_URI, new ShellyManagerFwUpdatePage(configurationAdmin, translationProvider,
-                httpClient, localIp, localPort, handlerFactory));
-        pages.put(SHELLY_MGR_OTA_URI, new ShellyManagerFwUpdatePage(configurationAdmin, translationProvider, httpClient,
+        pages.put(SHELLY_MGR_FWUPDATE_URI, new ShellyManagerOtaPage(configurationAdmin, translationProvider, httpClient,
+                localIp, localPort, handlerFactory));
+        pages.put(SHELLY_MGR_OTA_URI, new ShellyManagerOtaPage(configurationAdmin, translationProvider, httpClient,
                 localIp, localPort, handlerFactory));
         pages.put(SHELLY_MGR_IMAGES_URI, new ShellyManagerImageLoader(configurationAdmin, translationProvider,
                 httpClient, localIp, localPort, handlerFactory));

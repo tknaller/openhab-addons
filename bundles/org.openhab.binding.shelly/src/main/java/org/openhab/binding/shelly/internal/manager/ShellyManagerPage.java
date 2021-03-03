@@ -65,7 +65,7 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 
 /**
- * {@link ShellyManagerFwUpdatePage} implements the Shelly Manager's page template
+ * {@link ShellyManagerOtaPage} implements the Shelly Manager's page template
  *
  * @author Markus Michels - Initial contribution
  */

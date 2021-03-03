@@ -44,7 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@link ShellyManagerFwUpdatePage} implements the Shelly Manager's device overview page
+ * {@link ShellyManagerOtaPage} implements the Shelly Manager's device overview page
  *
  * @author Markus Michels - Initial contribution
  */
