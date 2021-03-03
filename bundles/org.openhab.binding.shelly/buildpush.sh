@@ -1,9 +1,3 @@
-echo Updating documentation
-cp ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.shelly/README.md ~/Dev/openhab-3/git/openhab-addons/bundles/org.openhab.binding.shelly/
-cp -R ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.shelly/doc/ ~/Dev/openhab-3/git/openhab-addons/bundles/org.openhab.binding.shelly/doc/
-cp ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.shelly/README.md ~/Dev/myfiles/shelly/
-cp -R ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.shelly/doc/ ~/Dev/myfiles/shelly/doc/
-
 echo Update formatting
 mvn spotless:apply
 if [ $? -ne 0 ]
