@@ -57,7 +57,7 @@ public class CarNetUtils {
         String className = CarNetUtils.substringAfter(classOfT.getName(), "$");
 
         if (json == null) {
-            throw new IllegalArgumentException(PRE + className + ": json is null!");
+            throw new CarNetException(PRE + className + ": json is null!");
         }
 
         if (classOfT.isInstance(json)) {

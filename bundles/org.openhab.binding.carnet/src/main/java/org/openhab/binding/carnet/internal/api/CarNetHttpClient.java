@@ -171,20 +171,27 @@ public class CarNetHttpClient {
             logger.trace("HTTP Response: {}", response);
             logger.trace("  Headers: {}", responseHeaders);
             String loc = getRedirect();
-            if (!loc.isEmpty()) {
-                logger.debug("HTTP {} -> {}", code, loc);
-            }
-            if (code == HttpStatus.FORBIDDEN_403) {
-                throw new CarNetSecurityException("Forbidden", apiResult);
+            switch (code) {
+                case HttpStatus.FORBIDDEN_403:
+                    throw new CarNetSecurityException("Forbidden", apiResult);
+                case HttpStatus.OK_200:
+                case HttpStatus.ACCEPTED_202:
+                case HttpStatus.NO_CONTENT_204:
+                case HttpStatus.SEE_OTHER_303:
+                    return response; // valid
+                case HttpStatus.MOVED_PERMANENTLY_301:
+                case HttpStatus.TEMPORARY_REDIRECT_307:
+                case HttpStatus.FOUND_302:
+                    if (!loc.isEmpty()) {
+                        logger.debug("HTTP {} -> {}", code, loc);
+                        apiResult.location = loc;
+                    }
+                    break;
             }
             if (response.contains("\"error\":")) {
                 throw new CarNetException("API returned error", apiResult);
             }
-            if ((code != HttpStatus.OK_200) && (code != HttpStatus.ACCEPTED_202) && (code != HttpStatus.NO_CONTENT_204)
-                    && (code != HttpStatus.FOUND_302) && (code != HttpStatus.SEE_OTHER_303)) {
-                throw new CarNetException("API Call failed (HTTP" + code + ")", apiResult);
-            }
-            if (response.isEmpty() && (code != HttpStatus.FOUND_302) && (code != HttpStatus.SEE_OTHER_303)) {
+            if (response.isEmpty() && loc.isEmpty()) {
                 throw new CarNetException("Invalid result received from API, maybe URL problem", apiResult);
             }
             return response;

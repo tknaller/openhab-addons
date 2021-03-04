@@ -116,4 +116,13 @@ public class CarNetChannelTypeProvider implements ChannelTypeProvider, ChannelGr
         }
         channelTypes.removeAll(removes);
     }
+
+    public boolean channelTypeExists(ChannelTypeUID channelTypeUID, @Nullable Locale locale) {
+        for (ChannelType c : channelTypes) {
+            if (c.getUID().getAsString().startsWith(channelTypeUID.getAsString())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

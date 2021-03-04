@@ -342,7 +342,16 @@ public class CarNetApi {
     }
 
     public CarNetOperationList getOperationList() throws CarNetException {
-        return callApi(CNAPI_VWURL_OPERATIONS, "getOperationList", CNOperationList.class).operationList;
+        try {
+            return callApi(CNAPI_VWURL_OPERATIONS, "getOperationList", CNOperationList.class).operationList;
+        } catch (CarNetException e) {
+            CarNetApiResult result = e.getApiResult();
+            if (e.getApiResult().isRedirect()) {
+                // Handle redirect
+                return callApi(result.getLocation(), "getOperationList", CNOperationList.class).operationList;
+            }
+            throw e;
+        }
     }
 
     public @Nullable String getVehicleUsers() throws CarNetException {

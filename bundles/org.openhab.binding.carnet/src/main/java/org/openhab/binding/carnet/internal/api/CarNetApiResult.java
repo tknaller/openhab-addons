@@ -36,6 +36,7 @@ public class CarNetApiResult {
     public String response = "";
     public int httpCode = 0;
     public String httpReason = "";
+    public String location = "";
     CarNetApiErrorDTO apiError = new CarNetApiErrorDTO();
 
     public CarNetApiResult() {
@@ -85,6 +86,15 @@ public class CarNetApiResult {
 
     public boolean isHttpServerError() {
         return (httpCode >= INTERNAL_SERVER_ERROR_500) && (httpCode <= INTERNAL_SERVER_ERROR_500 + 99);
+    }
+
+    public boolean isRedirect() {
+        return httpCode == HttpStatus.MOVED_PERMANENTLY_301 || httpCode == HttpStatus.TEMPORARY_REDIRECT_307
+                || httpCode == HttpStatus.FOUND_302;
+    }
+
+    public String getLocation() {
+        return location;
     }
 
     private void fillFromResponse(@Nullable ContentResponse contentResponse) {
