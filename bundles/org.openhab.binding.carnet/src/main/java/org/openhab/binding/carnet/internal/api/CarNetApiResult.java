@@ -89,8 +89,8 @@ public class CarNetApiResult {
     }
 
     public boolean isRedirect() {
-        return httpCode == HttpStatus.MOVED_PERMANENTLY_301 || httpCode == HttpStatus.TEMPORARY_REDIRECT_307
-                || httpCode == HttpStatus.FOUND_302;
+        return (httpCode == HttpStatus.MOVED_PERMANENTLY_301) || (httpCode == HttpStatus.FOUND_302)
+                || (httpCode == HttpStatus.TEMPORARY_REDIRECT_307);
     }
 
     public String getLocation() {

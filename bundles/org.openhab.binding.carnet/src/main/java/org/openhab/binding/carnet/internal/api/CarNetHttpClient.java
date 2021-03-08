@@ -56,7 +56,6 @@ public class CarNetHttpClient {
     private final HttpClient httpClient;
     private CarNetCombinedConfig config = new CarNetCombinedConfig();
     private HttpFields responseHeaders = new HttpFields();
-    private boolean nextRedirect = false;
 
     public CarNetHttpClient() {
         this.httpClient = new HttpClient();
@@ -99,6 +98,10 @@ public class CarNetHttpClient {
         return request(HttpMethod.GET, uri, "", headers, "", "", token);
     }
 
+    public String get(String uri, Map<String, String> headers, boolean followRedirect) throws CarNetException {
+        return request(HttpMethod.GET, uri, "", headers, "", "", "", followRedirect);
+    }
+
     public String get(String uri, Map<String, String> headers) throws CarNetException {
         return request(HttpMethod.GET, uri, "", headers, "", "", "");
     }
@@ -114,20 +117,25 @@ public class CarNetHttpClient {
      * @return response
      */
     public String post(String uri, String parms, Map<String, String> headers, String data) throws CarNetException {
-        return request(HttpMethod.POST, uri, parms, headers, data, "", "");
+        return request(HttpMethod.POST, uri, parms, headers, data, "", "", false);
     }
 
     public String post(String uri, Map<String, String> headers, String data) throws CarNetException {
-        return request(HttpMethod.POST, uri, "", headers, data, "", "");
+        return request(HttpMethod.POST, uri, "", headers, data, "", "", false);
     }
 
     public String post(String uri, Map<String, String> headers, String data, String token) throws CarNetException {
-        return request(HttpMethod.POST, uri, "", headers, data, "", token);
+        return request(HttpMethod.POST, uri, "", headers, data, "", token, false);
     }
 
     public String post(String uri, Map<String, String> headers, Map<String, String> data, boolean json)
             throws CarNetException {
-        return request(HttpMethod.POST, uri, "", headers, buildPostData(data, json), "", "");
+        return request(HttpMethod.POST, uri, "", headers, buildPostData(data, json), "", "", false);
+    }
+
+    public String post(String uri, Map<String, String> headers, Map<String, String> data, boolean json,
+            boolean followRedirect) throws CarNetException {
+        return request(HttpMethod.POST, uri, "", headers, buildPostData(data, json), "", "", followRedirect);
     }
 
     /**
@@ -145,7 +153,7 @@ public class CarNetHttpClient {
      * @throws CarNetException
      */
     private String request(HttpMethod method, String uri, String parms, Map<String, String> headers, String data,
-            String pvin, String token) throws CarNetException {
+            String pvin, String token, boolean followRedirect) throws CarNetException {
         Request request = null;
         String url = "";
         try {
@@ -158,18 +166,17 @@ public class CarNetHttpClient {
 
             // Do request and get response
             logger.debug("HTTP {} {}, data={}", request.getMethod(), request.getURI(), data);
-            logger.trace("  Headers: {}", request.getHeaders());
-            request.followRedirects(nextRedirect);
-            nextRedirect = false;
+            logger.trace("  Headers: \n{}", request.getHeaders().toString());
+            request.followRedirects(followRedirect);
             ContentResponse contentResponse = request.send();
             apiResult = new CarNetApiResult(contentResponse);
             int code = contentResponse.getStatus();
-            String response = contentResponse.getContentAsString().replaceAll("\t", "").replaceAll("\r\n", "").trim();
+            String response = contentResponse.getContentAsString().replaceAll("[\r\n\t]", "").trim();
             responseHeaders = contentResponse.getHeaders();
 
             // validate response, API errors are reported as Json
-            logger.trace("HTTP Response: {}", response);
-            logger.trace("  Headers: {}", responseHeaders);
+            logger.trace("HTTP Response: {}", response.replaceAll("[\r\n\t]", ""));
+            logger.trace("  Headers: \n{}", responseHeaders);
             String loc = getRedirect();
             switch (code) {
                 case HttpStatus.FORBIDDEN_403:
@@ -198,6 +205,11 @@ public class CarNetHttpClient {
         } catch (ExecutionException | InterruptedException | TimeoutException | MalformedURLException e) {
             throw new CarNetException("API call failed!", new CarNetApiResult(request, e), e);
         }
+    }
+
+    private String request(HttpMethod method, String uri, String parms, Map<String, String> headers, String data,
+            String pvin, String token) throws CarNetException {
+        return request(method, uri, parms, headers, data, pvin, token, true);
     }
 
     /**

@@ -342,16 +342,7 @@ public class CarNetApi {
     }
 
     public CarNetOperationList getOperationList() throws CarNetException {
-        try {
-            return callApi(CNAPI_VWURL_OPERATIONS, "getOperationList", CNOperationList.class).operationList;
-        } catch (CarNetException e) {
-            CarNetApiResult result = e.getApiResult();
-            if (e.getApiResult().isRedirect()) {
-                // Handle redirect
-                return callApi(result.getLocation(), "getOperationList", CNOperationList.class).operationList;
-            }
-            throw e;
-        }
+        return callApi(CNAPI_VWURL_OPERATIONS, "getOperationList", CNOperationList.class).operationList;
     }
 
     public @Nullable String getVehicleUsers() throws CarNetException {
@@ -497,11 +488,18 @@ public class CarNetApi {
             json = http.get(uri, vin, fillAppHeaders());
         } catch (CarNetException e) {
             CarNetApiResult res = e.getApiResult();
-            logger.debug("{}: API call {} failed: {}", config.vehicle.vin, function, e.toString());
+            logger.debug("{}:Checking for Redirect (HTTP {})", config.vehicle.vin, res.httpCode);
             if (e.isSecurityException() || res.isHttpUnauthorized()) {
                 json = loadJson(function);
+            } else if (e.getApiResult().isRedirect()) {
+                // Handle redirect
+                String newLocation = res.getLocation();
+                logger.debug("{}: Handle HTTP Redirect -> {}", config.vehicle.vin, newLocation);
+                json = http.get(newLocation, vin, fillAppHeaders());
             }
+
             if ((json == null) || json.isEmpty()) {
+                logger.debug("{}: API call {} failed: {}", config.vehicle.vin, function, e.toString());
                 throw e;
             }
         } catch (RuntimeException e) {

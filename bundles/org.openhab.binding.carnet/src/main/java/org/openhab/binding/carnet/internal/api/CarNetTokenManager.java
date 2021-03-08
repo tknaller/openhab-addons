@@ -115,7 +115,7 @@ public class CarNetTokenManager {
                     + urlEncode(config.clientId) + "&redirect_uri=" + urlEncode(config.redirect_uri) + "&scope="
                     + urlEncode(config.authScope) + "&state=" + state + "&nonce=" + nonce
                     + "&prompt=login&ui_locales=de-DE%20de";
-            http.get(url, headers);
+            http.get(url, headers, false);
             url = http.getRedirect(); // Signin URL
             if (url.isEmpty()) {
                 throw new CarNetException("Unable to get signin URL");
@@ -126,7 +126,7 @@ public class CarNetTokenManager {
                 throw new CarNetSecurityException(
                         "Login failed, Consent missing. Login to the Web App and give consent: " + message);
             }
-            html = http.get(url, headers);
+            html = http.get(url, headers, false);
             url = http.getRedirect();
             csrf = substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
             String relayState = substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
@@ -144,7 +144,7 @@ public class CarNetTokenManager {
             // Authenticate: Password
             logger.trace("{}: OAuth input: Password", config.vehicle.vin);
             url = CNAPI_OAUTH_BASE_URL + http.getRedirect(); // Signin URL
-            html = http.get(url, headers);
+            html = http.get(url, headers, false);
             csrf = substringBetween(html, "name=\"_csrf\" value=\"", "\"/>");
             relayState = substringBetween(html, "name=\"relayState\" value=\"", "\"/>");
             hmac = substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
@@ -157,7 +157,7 @@ public class CarNetTokenManager {
             data.put("_csrf", csrf);
             data.put("relayState", relayState);
             data.put("hmac", hmac);
-            html = http.post(url, headers, data, false);
+            html = http.post(url, headers, data, false, false);
             url = http.getRedirect(); // Continue URL
             if (url.contains("error=login.error.throttled")) {
                 throw new CarNetSecurityException("Login failed due to invalid password or API throtteling!");
@@ -167,7 +167,7 @@ public class CarNetTokenManager {
             // String userId = "";
             int count = 10;
             while (count-- > 0) {
-                html = http.get(url, headers);
+                html = http.get(url, headers, false);
                 url = http.getRedirect(); // Continue URL
                 // if (url.contains("&user_id=")) {
                 // userId = getUrlParm(url, "user_id");

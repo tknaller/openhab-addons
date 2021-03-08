@@ -58,7 +58,6 @@ import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO.CNErrorMessage2Details;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNOperationList.CarNetOperationList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNPairingInfo.CarNetPairingInfo;
-import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNVehicleData.CarNetVehicleData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceAvailability;
 import org.openhab.binding.carnet.internal.api.CarNetApiResult;
 import org.openhab.binding.carnet.internal.api.CarNetTokenManager;
@@ -185,35 +184,30 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             api.setConfig(config);
 
             serviceAvailability = new CarNetServiceAvailability(); // init all to true
-            CarNetOperationList ol = api.getOperationList();
-            config.user.id = ol.userId;
-            config.user.role = ol.role;
-            config.user.status = ol.status;
-            config.user.securityLevel = ol.securityLevel;
-
             try {
-                CarNetVehicleData vmi = api.getVehicleManagementInfo();
-                if (!vmi.isConnect) {
-                    logger.warn("{}: Car Connect might not be enabled!", thingId);
-                }
-            } catch (CarNetException e) {
-                // ignore, this is not a must have, I saw log where the call fails
-            }
+                CarNetOperationList ol = api.getOperationList();
+                config.user.id = ol.userId;
+                config.user.role = ol.role;
+                config.user.status = ol.status;
+                config.user.securityLevel = ol.securityLevel;
 
-            serviceAvailability = api.getServiceAvailability(ol);
-            CarNetServiceAvailability sa = serviceAvailability;
-            logger.debug(
-                    "{}: Service availability: statusData: {}, tripData: {}, destinations: {}, carFinder: {}, climater: {}, charger: {}, remoteLock: {}",
-                    thingId, sa.statusData, sa.tripData, sa.destinations, sa.carFinder, sa.clima, sa.charger, sa.rlu);
+                serviceAvailability = api.getServiceAvailability(ol);
+                CarNetServiceAvailability sa = serviceAvailability;
+                logger.debug(
+                        "{}: Service availability: statusData: {}, tripData: {}, destinations: {}, carFinder: {}, climater: {}, charger: {}, remoteLock: {}",
+                        thingId, sa.statusData, sa.tripData, sa.destinations, sa.carFinder, sa.clima, sa.charger,
+                        sa.rlu);
+                logger.debug("{}: Active userId = {}, role = {} (securityLevel {}), status = {}, Pairing Code {}",
+                        thingId, config.user.id, ol.role, ol.securityLevel, ol.status, config.user.pairingCode);
+            } catch (CarNetException e) {
+                logger.debug("{}: Available services coould not be determined, continue with default profile", thingId);
+            }
 
             CarNetPairingInfo pi = api.getPairingStatus();
             config.user.pairingCode = pi.pairingCode;
             if (!pi.isPairingCompleted()) {
-                logger.warn("{}: Pairing for {} is not completed, use MMI to pair with code {}", thingId, ol.role,
-                        pi.pairingCode);
+                logger.warn("{}: Pairing is not completed, use MMI to pair with code {}", thingId, pi.pairingCode);
             }
-            logger.debug("{}: Active userId = {}, role = {} (securityLevel {}), status = {}, Pairing Code {}", thingId,
-                    config.user.id, ol.role, ol.securityLevel, ol.status, config.user.pairingCode);
             api.setConfig(config);
 
             if (logger.isDebugEnabled() && testData) {
@@ -499,7 +493,6 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
 
         pollingJob = scheduler.scheduleWithFixedDelay(() -> {
             ++updateCounter;
-
             if ((updateCounter % API_REQUEST_CHECK_INT) == 0) {
                 // Check results for pending requests, remove expires ones from the list
                 checkPendingRequests();
@@ -511,14 +504,17 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     try {
                         forceUpdate = false;
                         ThingStatus s = getThing().getStatus();
+                        boolean initialized = true;
                         if ((s == ThingStatus.UNKNOWN) || (s == ThingStatus.OFFLINE)) {
-                            initializeThing();
+                            initialized = initializeThing();
                         }
-                        updateVehicleStatus();
 
-                        if (getThing().getStatus() != ThingStatus.ONLINE) {
-                            logger.debug("{}: Thing is now online", thingId);
-                            updateStatus(ThingStatus.ONLINE); // on success thing must be online
+                        if (initialized) {
+                            updateVehicleStatus(); // on success thing must be online
+                            if (getThing().getStatus() != ThingStatus.ONLINE) {
+                                logger.debug("{}: Thing is now online", thingId);
+                                updateStatus(ThingStatus.ONLINE);
+                            }
                         }
                     } catch (CarNetException e) {
                         error = getError(e);
