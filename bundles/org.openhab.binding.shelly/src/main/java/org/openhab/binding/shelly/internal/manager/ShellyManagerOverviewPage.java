@@ -75,8 +75,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
         TreeMap<String, ShellyManagerInterface> sortedMap = new TreeMap<>();
         for (Map.Entry<String, ShellyManagerInterface> th : getThingHandlers().entrySet()) { // sort by Device Name
             ShellyManagerInterface handler = th.getValue();
-            String deviceName = getDisplayName(handler.getThing().getProperties());
-            sortedMap.put(deviceName, handler);
+            sortedMap.put(getDisplayName(handler.getThing().getProperties()), handler);
         }
 
         html = loadHTML(HEADER_HTML, properties);
@@ -103,7 +102,7 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
                     fillProperties(properties, uid, handler.getValue());
                     String deviceType = getDeviceType(properties);
 
-                    properties.put(ATTRIBUTE_DISPLAY_NAME, handler.getKey());
+                    properties.put(ATTRIBUTE_DISPLAY_NAME, getDisplayName(properties));
                     properties.put(ATTRIBUTE_DEV_STATUS, fillDeviceStatus(warnings));
                     if (!warnings.isEmpty() && (status != ThingStatus.UNKNOWN)) {
                         properties.put(ATTRIBUTE_STATUS_ICON, ICON_ATTENTION);

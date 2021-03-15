@@ -194,7 +194,6 @@ public class ShellyBindingConstants {
     public static final String PROPERTY_STATS_TIMEOUTS = "statsTimeoutErrors";
     public static final String PROPERTY_STATS_TRECOVERED = "statsTimeoutsRecovered";
     public static final String PROPERTY_COIOTAUTO = "coiotAutoEnable";
-    public static final String PROPERTY_COIOTREFRESH = "coiotAutoRefresh";
 
     // Relay
     public static final String CHANNEL_GROUP_RELAY_CONTROL = "relay";

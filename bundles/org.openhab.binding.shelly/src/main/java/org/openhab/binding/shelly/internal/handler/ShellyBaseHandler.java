@@ -273,7 +273,7 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
                 } catch (ShellyApiException e) {
                     logger.debug("{}: Unable to set CoIoT peer: {}", thingName, e.toString());
                 }
-            } else if (!devpeer.equals(ourpeer)) {
+            } else if (!devpeer.isEmpty() && !devpeer.equals(ourpeer)) {
                 logger.warn("{}: CoIoT peer in device settings does not point this to this host, disabling CoIoT",
                         thingName);
                 config.eventsCoIoT = autoCoIoT = false;
@@ -799,8 +799,8 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
         try {
             ShellyVersionDTO version = new ShellyVersionDTO();
             if (version.checkBeta(getString(prf.fwVersion))) {
-                logger.info("{}: {}", prf.hostname, messages.get("versioncheck.beta", prf.fwVersion, prf.fwDate,
-                        prf.fwId, SHELLY_API_MIN_FWVERSION));
+                logger.info("{}: {}", prf.hostname,
+                        messages.get("versioncheck.beta", prf.fwVersion, prf.fwDate, prf.fwId));
             } else {
                 if ((version.compare(prf.fwVersion, SHELLY_API_MIN_FWVERSION) < 0) && !profile.isMotion) {
                     logger.warn("{}: {}", prf.hostname, messages.get("versioncheck.tooold", prf.fwVersion, prf.fwDate,
@@ -1081,7 +1081,6 @@ public class ShellyBaseHandler extends BaseThingHandler implements ShellyDeviceL
             properties.put(PROPERTY_UPDATE_NEW_VERS, getString(status.update.newVersion));
         }
         properties.put(PROPERTY_COIOTAUTO, String.valueOf(autoCoIoT));
-        properties.put(PROPERTY_COIOTREFRESH, String.valueOf(autoCoIoT));
 
         Map<String, String> thingProperties = new TreeMap<>();
         for (Map.Entry<String, Object> property : properties.entrySet()) {
