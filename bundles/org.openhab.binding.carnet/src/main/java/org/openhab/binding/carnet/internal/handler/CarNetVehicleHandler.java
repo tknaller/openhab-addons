@@ -181,6 +181,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             config.vehicle.vin = vin.toUpperCase();
             api.setConfig(config); // required to pass VIN to CarNetApi
             config.vehicle.homeRegionUrl = api.getHomeReguionUrl();
+            config.vehicle.apiUrlPrefix = api.getApiUrl();
             api.setConfig(config);
 
             serviceAvailability = new CarNetServiceAvailability(); // init all to true

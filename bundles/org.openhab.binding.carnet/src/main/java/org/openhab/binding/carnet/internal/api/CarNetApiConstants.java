@@ -77,13 +77,11 @@ public class CarNetApiConstants {
     public static final String CNAPI_VWURL_TRIP_DATA = VWPRE + CNAPI_URI_GETTRIP;
     public static final String CNAPI_VWURL_CHARGER = VWPRE + CNAPI_URI_CHARGER_STATUS;
 
-    public static final String CNAPI_VWG_CONNECT = "https://mal-1a.prd.ece.vwg-connect.com/api/";
+    public static final String CNAPI_VWG_1A_CONNECT = "https://mal-1a.prd.ece.vwg-connect.com/api";
+    public static final String CNAPI_VWG_3A_CONNECT = "https://mal-3a.prd.eu.dp.vwg-connect.com/api";
     public static final String CNAPI_URL_GET_SEC_TOKEN = "https://mbboauth-1d.prd.ece.vwg-connect.com/mbbcoauth/mobile/oauth2/v1/token";
-    public static final String CNAPI_URL_GET_CHALLENGE = CNAPI_VWG_CONNECT + "rolesrights/authorization/v2/vehicles/";
-    public static final String CNAPI_URL_ACK_CHALLENGE = CNAPI_VWG_CONNECT
-            + "rolesrights/authorization/v2/security-pin-auth-completed";
-    public static final String CNAPI_VWURL_OPERATIONS = CNAPI_VWG_CONNECT + "rolesrights/operationlist/v3/vehicles/{2}";
-    public static final String CNAPI_VWURL_HOMEREGION = CNAPI_VWG_CONNECT + "cs/vds/v1/vehicles/{2}/homeRegion";
+    public static final String CNAPI_VWURL_OPERATIONS = "rolesrights/operationlist/v3/vehicles/{2}";
+    public static final String CNAPI_VWURL_HOMEREGION = CNAPI_VWG_1A_CONNECT + "/cs/vds/v1/vehicles/{2}/homeRegion";
 
     public static final String CNAPI_OAUTH_BASE_URL = "https://identity.vwgroup.io";
     public static final String CNAPI_OAUTH_AUTHORIZE_URL = CNAPI_OAUTH_BASE_URL + "/oidc/v1/authorize";

@@ -5,7 +5,7 @@
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
 	<bridge-type id="myaudi">
-		<label>CarNet Account</label>
+		<label>myAudi Account (CarNet)</label>
 		<description>This thing represents a myAudi CarNet Account.</description>
 
 		<config-description-ref uri="bridge-type:carnet:account"/>
