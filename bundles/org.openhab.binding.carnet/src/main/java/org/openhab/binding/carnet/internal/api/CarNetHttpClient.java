@@ -167,15 +167,16 @@ public class CarNetHttpClient {
             // Do request and get response
             logger.debug("HTTP {} {}, data={}", request.getMethod(), request.getURI(), data);
             logger.trace("  Headers: \n{}", request.getHeaders().toString());
-            request.followRedirects(followRedirect);
+            // request.followRedirects(followRedirect);
+            request.followRedirects(false);
             ContentResponse contentResponse = request.send();
             apiResult = new CarNetApiResult(contentResponse);
             int code = contentResponse.getStatus();
-            String response = contentResponse.getContentAsString().replaceAll("[\r\n\t]", "").trim();
+            String response = contentResponse.getContentAsString().replaceAll("[\r\n\t]", "");
             responseHeaders = contentResponse.getHeaders();
 
             // validate response, API errors are reported as Json
-            logger.trace("HTTP Response: {}", response.replaceAll("[\r\n\t]", ""));
+            logger.trace("HTTP Response: {}", response);
             logger.trace("  Headers: \n{}", responseHeaders);
             String loc = getRedirect();
             switch (code) {
@@ -370,6 +371,9 @@ public class CarNetHttpClient {
      * @throws MalformedURLException
      */
     private String getBaseUrl() throws MalformedURLException {
+        if (!config.vehicle.apiUrlPrefix.isEmpty()) {
+            return config.vehicle.apiUrlPrefix;
+        }
         if (config.account.brand.equalsIgnoreCase(CNAPI_BRAND_AUDI)) {
             return CNAPI_BASE_URL_AUDI;
         }

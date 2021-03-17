@@ -216,16 +216,29 @@ public class CarNetApi {
     }
 
     public String getHomeReguionUrl() {
-        try {
-            if (!config.vehicle.homeRegionUrl.isEmpty()) {
-                return config.vehicle.homeRegionUrl;
-            }
-            CarNetHomeRegion region = callApi(CNAPI_VWURL_HOMEREGION, "getHomeRegion", CarNetHomeRegion.class);
-            config.vehicle.homeRegionUrl = getString(region.homeRegion.baseUri.content);
+        if (!config.vehicle.homeRegionUrl.isEmpty()) {
             return config.vehicle.homeRegionUrl;
-        } catch (CarNetException e) {
         }
-        return "";
+        String url = "";
+        try {
+            CarNetHomeRegion region = callApi(CNAPI_VWURL_HOMEREGION, "getHomeRegion", CarNetHomeRegion.class);
+            url = getString(region.homeRegion.baseUri.content);
+        } catch (CarNetException e) {
+            url = CNAPI_VWG_1A_CONNECT;
+        }
+        return url;
+    }
+
+    public String getApiUrl() {
+        if (!config.vehicle.apiUrlPrefix.isEmpty()) {
+            return config.vehicle.apiUrlPrefix;
+        }
+        String hrUrl = getHomeReguionUrl();
+        if (hrUrl.toLowerCase().startsWith(CNAPI_VWG_3A_CONNECT)) {
+            // Change base url depending on country selector
+            hrUrl = hrUrl.replace("https://mal-", "https://fal-").replace("/api", "/fs-car");
+        }
+        return hrUrl;
     }
 
     public CarNetVehicleList getVehicles() throws CarNetException {
@@ -342,7 +355,8 @@ public class CarNetApi {
     }
 
     public CarNetOperationList getOperationList() throws CarNetException {
-        return callApi(CNAPI_VWURL_OPERATIONS, "getOperationList", CNOperationList.class).operationList;
+        return callApi(getHomeReguionUrl() + "/" + CNAPI_VWURL_OPERATIONS, "getOperationList",
+                CNOperationList.class).operationList;
     }
 
     public @Nullable String getVehicleUsers() throws CarNetException {
@@ -488,7 +502,6 @@ public class CarNetApi {
             json = http.get(uri, vin, fillAppHeaders());
         } catch (CarNetException e) {
             CarNetApiResult res = e.getApiResult();
-            logger.debug("{}:Checking for Redirect (HTTP {})", config.vehicle.vin, res.httpCode);
             if (e.isSecurityException() || res.isHttpUnauthorized()) {
                 json = loadJson(function);
             } else if (e.getApiResult().isRedirect()) {

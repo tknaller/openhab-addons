@@ -42,7 +42,7 @@
 			<label>Advanced Options</label>
 		</parameter-group>
 
-		<parameter name="pin" type="text" required="false" groupName="authentication">
+		<parameter name="pin" type="text" required="false">
 			<label>PIN</label>
 			<context>password</context>
 			<description>Security PIN to access control functions.</description>

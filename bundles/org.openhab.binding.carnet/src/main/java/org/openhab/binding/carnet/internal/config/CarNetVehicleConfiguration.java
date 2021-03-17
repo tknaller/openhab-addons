@@ -23,6 +23,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 public class CarNetVehicleConfiguration {
     public String vin = "";
     public String pin = "";
+    public String apiUrlPrefix = "";
     public String homeRegionUrl = "";
 
     public static class CarNetUserInfo {
