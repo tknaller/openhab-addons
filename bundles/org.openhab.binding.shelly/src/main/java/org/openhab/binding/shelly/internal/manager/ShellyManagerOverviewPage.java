@@ -91,8 +91,11 @@ public class ShellyManagerOverviewPage extends ShellyManagerPage {
 
                 if (action.equals(ACTION_REFRESH) && (uidParm.isEmpty() || uidParm.equals(uid))) {
                     // Refresh thing status, this is asynchronosly and takes 0-3sec
-                    // so we force a page reload after 5sec
                     th.requestUpdates(1, true);
+                } else if (action.equals(ACTION_RES_STATS) && (uidParm.isEmpty() || uidParm.equals(uid))) {
+                    th.resetStats();
+                } else if (action.equals(ACTION_OTACHECK) && (uidParm.isEmpty() || uidParm.equals(uid))) {
+                    th.resetStats();
                 }
 
                 Map<String, String> warnings = getStatusWarnings(th);
