@@ -12,7 +12,9 @@ then
 	echo Build version 2 failed
 	exit
 fi
+#mvn clean install -pl :org.openhab.binding.shelly karaf:kar
 cp target/org.openhab.binding.shelly-2.5.*-SNAPSHOT.jar ~/Dev/myfiles/shelly/
+#cp target/org.openhab.binding.shelly-2.5.*-SNAPSHOT.kar ~/Dev/myfiles/shelly/
 
 echo Copy code to V3, update Shelly from v2 to v3
 ./copy3.sh
@@ -23,7 +25,9 @@ then
 	echo Build version 3 failed
 	exit
 fi
+#mvn clean install -pl :org.openhab.binding.shelly karaf:kar
 cp ~/Dev/openhab-3/git/openhab-addons/bundles/org.openhab.binding.shelly/target/org.openhab.binding.shelly-3.*-SNAPSHOT.jar ~/Dev/myfiles/shelly/
+#cp ~/Dev/openhab-3/git/openhab-addons/bundles/org.openhab.binding.shelly/target/org.openhab.binding.shelly-3.*-SNAPSHOT.kar ~/Dev/myfiles/shelly/
 
 echo Pushing updates
 cd ~/Dev/myfiles
