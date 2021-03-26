@@ -41,7 +41,6 @@ import org.eclipse.smarthome.core.types.UnDefType;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import com.google.gson.internal.Primitives;
 
 /**
  * Helperfunctions
@@ -61,7 +60,7 @@ public class CarNetUtils {
         }
 
         if (classOfT.isInstance(json)) {
-            return Primitives.wrap(classOfT).cast(json);
+            return wrap(classOfT).cast(json);
         } else if (json.isEmpty()) { // update GSON might return null
             throw new CarNetException(PRE + className + "from empty JSON");
         } else {
@@ -254,5 +253,28 @@ public class CarNetUtils {
 
     public static String mkChannelId(String group, String channel) {
         return group + "#" + channel;
+    }
+
+    public static <T> Class<T> wrap(Class<T> type) {
+        if (type == int.class) {
+            return (Class<T>) Integer.class;
+        } else if (type == float.class) {
+            return (Class<T>) Float.class;
+        } else if (type == byte.class) {
+            return (Class<T>) Byte.class;
+        } else if (type == double.class) {
+            return (Class<T>) Double.class;
+        } else if (type == long.class) {
+            return (Class<T>) Long.class;
+        } else if (type == char.class) {
+            return (Class<T>) Character.class;
+        } else if (type == boolean.class) {
+            return (Class<T>) Boolean.class;
+        } else if (type == short.class) {
+            return (Class<T>) Short.class;
+        } else if (type == void.class) {
+            return (Class<T>) Void.class;
+        }
+        return type;
     }
 }
