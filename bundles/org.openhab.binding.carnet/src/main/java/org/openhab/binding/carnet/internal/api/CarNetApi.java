@@ -68,7 +68,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.google.gson.internal.Primitives;
 
 /**
  * The {@link CarNetApi} implements the http based API access to CarNet
@@ -522,7 +521,7 @@ public class CarNetApi {
 
         if (classOfT.isInstance(json)) {
             // special case on target class == String (return raw info)
-            return Primitives.wrap(classOfT).cast(json);
+            return wrap(classOfT).cast(json);
         }
         return fromJson(gson, json, classOfT);
     }
