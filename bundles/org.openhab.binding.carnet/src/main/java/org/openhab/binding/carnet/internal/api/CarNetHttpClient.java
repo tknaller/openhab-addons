@@ -370,7 +370,7 @@ public class CarNetHttpClient {
      * @return URL prefix/base url
      * @throws MalformedURLException
      */
-    private String getBaseUrl() throws MalformedURLException {
+    public String getBaseUrl() throws MalformedURLException {
         if (!config.vehicle.apiUrlPrefix.isEmpty()) {
             return config.vehicle.apiUrlPrefix;
         }

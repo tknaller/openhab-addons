@@ -105,6 +105,14 @@ public class CarNetException extends Exception {
         return apiResult.isHttpServerError();
     }
 
+    public boolean isHttpNotModified() {
+        return apiResult.isHttpNotModified();
+    }
+
+    public boolean isTooManyRequests() {
+        return apiResult.isHttpTooManyRequests() || apiResult.getApiError().isApiThrottle();
+    }
+
     public boolean isUnknownHost() {
         return getCauseClass() == MalformedURLException.class;
     }

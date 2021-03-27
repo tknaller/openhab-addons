@@ -12,8 +12,6 @@
  */
 package org.openhab.binding.carnet.internal.api;
 
-import java.nio.charset.StandardCharsets;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
 /**
@@ -191,6 +189,4 @@ public class CarNetApiConstants {
     public static final String CNAPI_REQUEST_FAIL = "request_fail";
     public static final String CNAPI_REQUEST_QUEUED = "queued"; // rclima
     public static final String CNAPI_REQUEST_ERROR = "api_error";
-
-    public static final String UTF_8 = StandardCharsets.UTF_8.name();
 }

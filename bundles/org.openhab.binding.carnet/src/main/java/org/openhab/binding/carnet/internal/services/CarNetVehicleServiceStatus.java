@@ -178,10 +178,11 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
 
     private boolean checkLocked(CNStatusField field, ChannelIdMapEntry definition) {
         if (definition.symbolicName.contains("LOCK")) {
-            boolean result = (definition.symbolicName.contains("LOCK2") && field.value.equals(String.valueOf(2)))
-                    || (definition.symbolicName.contains("LOCK3") && field.value.equals(String.valueOf(3)));
+            boolean result = (definition.symbolicName.contains("LOCK2") && field.value.equals("2"))
+                    || (definition.symbolicName.contains("LOCK3") && field.value.equals("3"));
             if (!result) {
-                logger.debug("{}: Vehicle is not completetly locked: {}", thingId, definition.channelName);
+                logger.debug("{}: Vehicle is not completetly locked: {}={}", thingId, definition.channelName,
+                        field.value);
                 return false;
             }
         }
