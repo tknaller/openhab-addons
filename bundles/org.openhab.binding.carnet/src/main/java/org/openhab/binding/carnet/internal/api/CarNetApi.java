@@ -18,6 +18,7 @@ import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -33,7 +34,6 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.util.UrlEncoded;
 import org.openhab.binding.carnet.internal.CarNetException;
-import org.openhab.binding.carnet.internal.CarNetUtils;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNChargerInfo.CarNetChargerStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater;
@@ -93,6 +93,7 @@ public class CarNetApi {
         public String requestId = "";
         public String status = "";
         public Date creationTime = new Date();
+        public long timeout = API_REQUEST_TIMEOUT_SEC;
 
         public CarNetPendingRequest(String service, String action, CNActionResponse rsp) {
             // normalize the resonse type
@@ -100,6 +101,12 @@ public class CarNetApi {
             this.action = action;
 
             switch (service) {
+                case CNAPI_SERVICE_VEHICLE_STATUS_REPORT:
+                    this.requestId = rsp.currentVehicleDataResponse.requestId;
+                    this.vin = rsp.currentVehicleDataResponse.vin;
+                    checkUrl = "bs/vsr/v1/{0}/{1}/vehicles/{2}/requests/" + requestId + "/jobstatus";
+                    timeout = 5 * API_REQUEST_TIMEOUT_SEC;
+                    break;
                 case CNAPI_SERVICE_REMOTE_LOCK_UNLOCK:
                     if (rsp.rluActionResponse != null) {
                         this.vin = rsp.rluActionResponse.vin;
@@ -123,10 +130,14 @@ public class CarNetApi {
             }
         }
 
+        public boolean isInProgress() {
+            return status.equalsIgnoreCase(CNAPI_REQUEST_IN_PROGRESS) || status.equalsIgnoreCase(CNAPI_REQUEST_QUEUED);
+        }
+
         public boolean isExpired() {
             Date currentTime = new Date();
             long diff = currentTime.getTime() - creationTime.getTime();
-            return (diff / 1000) > API_REQUEST_TIMEOUT_SEC;
+            return (diff / 1000) > timeout;
         }
     }
 
@@ -174,7 +185,7 @@ public class CarNetApi {
         headers.put(HttpHeader.CONTENT_TYPE.toString(), CNAPI_CONTENTT_FORM_URLENC);
         String json = http.get(url, headers);
         config.oidcDate = http.getResponseDate();
-        return CarNetUtils.fromJson(gson, json, CarNetOidcConfig.class);
+        return fromJson(gson, json, CarNetOidcConfig.class);
     }
 
     public CarNetServiceAvailability getServiceAvailability(CarNetOperationList operation) {
@@ -228,16 +239,16 @@ public class CarNetApi {
         return url;
     }
 
-    public String getApiUrl() {
+    public String getApiUrl() throws MalformedURLException {
         if (!config.vehicle.apiUrlPrefix.isEmpty()) {
             return config.vehicle.apiUrlPrefix;
         }
         String hrUrl = getHomeReguionUrl();
         if (hrUrl.toLowerCase().startsWith(CNAPI_VWG_3A_CONNECT)) {
             // Change base url depending on country selector
-            hrUrl = hrUrl.replace("https://mal-", "https://fal-").replace("/api", "/fs-car");
+            return hrUrl.replace("https://mal-", "https://fal-").replace("/api", "/fs-car");
         }
-        return hrUrl;
+        return http.getBaseUrl();
     }
 
     public CarNetVehicleList getVehicles() throws CarNetException {
@@ -250,6 +261,11 @@ public class CarNetApi {
 
     public CarNetVehicleStatus getVehicleStatus() throws CarNetException {
         return callApi(CNAPI_URI_VEHICLE_STATUS, "getVehicleStatus", CarNetVehicleStatus.class);
+    }
+
+    public String refreshVehicleStatus() throws CarNetException {
+        String json = http.post(CNAPI_URI_VEHICLE_DATA, fillAppHeaders(), "", "");
+        return queuePendingAction(json, CNAPI_SERVICE_VEHICLE_STATUS_REPORT, "status");
     }
 
     public String getVehicleRequets() throws CarNetException {

@@ -315,12 +315,20 @@ public class CarNetApiGSonDTO {
                 CNRclimaSettings settings;
             }
 
+            public class CarNetCurrentVehicleData {
+                public String requestId;
+                public String vin;
+            }
+
+            @SerializedName("CurrentVehicleDataResponse")
+            CarNetCurrentVehicleData currentVehicleDataResponse;
+
             CNRluActionResponse rluActionResponse;
             CNRclimaActionResponse action;
         }
 
-        String requestId;
-        String vin;
+        public String requestId;
+        public String vin;
     }
 
     public static class CNEluActionHistory {

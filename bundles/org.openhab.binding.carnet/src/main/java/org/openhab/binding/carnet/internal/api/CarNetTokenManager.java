@@ -19,6 +19,7 @@ import static org.openhab.binding.carnet.internal.api.CarNetHttpClient.*;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -49,6 +50,7 @@ import com.google.gson.Gson;
 @NonNullByDefault
 @Component(service = CarNetTokenManager.class)
 public class CarNetTokenManager {
+    private static final String UTF_8 = StandardCharsets.UTF_8.name();
     private final Logger logger = LoggerFactory.getLogger(CarNetTokenManager.class);
     private final Gson gson = new Gson();
     private Map<String, TokenSet> accountTokens = new HashMap<>();

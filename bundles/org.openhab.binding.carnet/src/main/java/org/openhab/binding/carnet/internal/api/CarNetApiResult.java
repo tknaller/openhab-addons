@@ -88,6 +88,14 @@ public class CarNetApiResult {
         return (httpCode >= INTERNAL_SERVER_ERROR_500) && (httpCode <= INTERNAL_SERVER_ERROR_500 + 99);
     }
 
+    public boolean isHttpNotModified() {
+        return httpCode == HttpStatus.NOT_MODIFIED_304;
+    }
+
+    public boolean isHttpTooManyRequests() {
+        return httpCode == HttpStatus.TOO_MANY_REQUESTS_429;
+    }
+
     public boolean isRedirect() {
         return (httpCode == HttpStatus.MOVED_PERMANENTLY_301) || (httpCode == HttpStatus.FOUND_302)
                 || (httpCode == HttpStatus.TEMPORARY_REDIRECT_307);
