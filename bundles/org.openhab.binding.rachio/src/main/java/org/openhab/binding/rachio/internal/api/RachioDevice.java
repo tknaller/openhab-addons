@@ -17,7 +17,6 @@ import static org.openhab.binding.rachio.internal.RachioBindingConstants.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.OnOffType;
@@ -56,7 +55,8 @@ public class RachioDevice extends RachioCloudDevice {
     private HashMap<String, RachioZone> zoneList = new HashMap<String, RachioZone>();
     @Nullable
     private RachioDeviceHandler thingHandler = null;
-    public RachioCloudNetworkSettings network = new RachioCloudNetworkSettings();
+    @Nullable
+    public RachioCloudNetworkSettings network;
     public String scheduleName = "";
 
     @SuppressWarnings("unused")
@@ -68,9 +68,7 @@ public class RachioDevice extends RachioCloudDevice {
             if (!device.deleted) {
                 zoneList = new HashMap<String, RachioZone>(); // discard current list
                 for (int i = 0; i < device.zones.size(); i++) {
-                    @Nullable
                     RachioCloudZone zone = device.zones.get(i);
-                    Validate.notNull(zone);
                     if (true /* zone.enabled */) {
                         zoneList.put(zone.id, new RachioZone(zone, getThingID()));
                     } else {
@@ -89,7 +87,6 @@ public class RachioDevice extends RachioCloudDevice {
      * @param deviceHandler
      */
     public void setThingHandler(RachioDeviceHandler deviceHandler) {
-        Validate.notNull(deviceHandler, "RachioDevice: Invalud thing handler!");
         thingHandler = deviceHandler;
     }
 
@@ -98,7 +95,6 @@ public class RachioDevice extends RachioCloudDevice {
      */
     @Nullable
     public RachioDeviceHandler getThingHandler() {
-        Validate.notNull(thingHandler, "RachioDevice: thingHandler is null!");
         return thingHandler;
     }
 
@@ -165,13 +161,14 @@ public class RachioDevice extends RachioCloudDevice {
         properties.put(PROPERTY_DEV_ID, id);
         properties.put(PROPERTY_DEV_LAT, new Double(latitude).toString());
         properties.put(PROPERTY_DEV_LONG, new Double(longitude).toString());
-        properties.put(PROPERTY_IP_ADDRESS, network.ip);
-        properties.put(PROPERTY_IP_MASK, network.ip);
-        properties.put(PROPERTY_IP_GW, network.gw);
-        properties.put(PROPERTY_IP_DNS1, network.dns1);
-        properties.put(PROPERTY_IP_DNS2, network.dns2);
-        properties.put(PROPERTY_WIFI_RSSI, network.rssi);
-
+        if (network != null) {
+            properties.put(PROPERTY_IP_ADDRESS, network.ip);
+            properties.put(PROPERTY_IP_MASK, network.ip);
+            properties.put(PROPERTY_IP_GW, network.gw);
+            properties.put(PROPERTY_IP_DNS1, network.dns1);
+            properties.put(PROPERTY_IP_DNS2, network.dns2);
+            properties.put(PROPERTY_WIFI_RSSI, network.rssi);
+        }
         return properties;
     }
 
@@ -293,7 +290,6 @@ public class RachioDevice extends RachioCloudDevice {
         runTime = time;
     }
 
-    @SuppressWarnings("null")
     public void setEvent(RachioEventGsonDTO event) {
         String s = new RachioEventString(event).toJson();
         if (!s.isEmpty()) {
@@ -306,7 +302,6 @@ public class RachioDevice extends RachioCloudDevice {
     }
 
     public void setNetwork(@Nullable RachioCloudNetworkSettings network) {
-        Validate.notNull(network);
         this.network = network;
     }
 
@@ -318,7 +313,6 @@ public class RachioDevice extends RachioCloudDevice {
         for (HashMap.Entry<String, RachioZone> ze : zoneList.entrySet()) {
             @Nullable
             RachioZone zone = ze.getValue();
-            Validate.notNull(zone);
             if (flAll || (list.contains(zone.zoneNumber + ",") && (zone.getEnabled() == OnOffType.ON))) {
                 int runtime = zone.getStartRunTime() > 0 ? zone.getStartRunTime() : defaultRuntime;
                 if (json.contains("\"id\"")) {
@@ -340,7 +334,6 @@ public class RachioDevice extends RachioCloudDevice {
         return zoneList;
     }
 
-    @SuppressWarnings("null")
     @Nullable
     public RachioZone getZoneByNumber(int zoneNumber) {
         for (HashMap.Entry<String, RachioZone> ze : zoneList.entrySet()) {
@@ -352,7 +345,6 @@ public class RachioDevice extends RachioCloudDevice {
         return null;
     }
 
-    @SuppressWarnings("null")
     @Nullable
     public RachioZone getZoneById(String zoneId) {
         for (HashMap.Entry<String, RachioZone> ze : zoneList.entrySet()) {

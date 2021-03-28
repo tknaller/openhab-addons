@@ -17,7 +17,6 @@ import static org.openhab.binding.rachio.internal.RachioBindingConstants.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.slf4j.Logger;
@@ -39,12 +38,9 @@ public class RachioConfiguration {
     public String callbackUrl = "";
     public Boolean clearAllCallbacks = false;
 
-    @SuppressWarnings("null")
     public void updateConfig(@Nullable Map<String, @Nullable Object> config) {
-        Validate.notNull(config);
         for (HashMap.@Nullable Entry<String, @Nullable Object> ce : config.entrySet()) {
             String key = ce.getKey();
-            Validate.notNull(key);
             if (key.equalsIgnoreCase("component.name") || key.equalsIgnoreCase("component.id")) {
                 continue;
             }

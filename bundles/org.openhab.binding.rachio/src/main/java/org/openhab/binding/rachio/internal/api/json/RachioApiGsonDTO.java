@@ -46,7 +46,6 @@ public class RachioApiGsonDTO {
 
     public static class RachioApiWebHookList {
         public ArrayList<RachioApiWebHookEntry> webhooks = new ArrayList<>();
-
     }
 
     public static class RachioEventProperty {
@@ -82,5 +81,4 @@ public class RachioApiGsonDTO {
         public String deviceId = ""; // "deviceId" : "d3beb3ab-b85a-49fe-a45d-37c4d95ea9a8",
         public String timestamp = ""; // "timestamp" : "2018-04-09T23:17:14.365Z"
     }
-
 }

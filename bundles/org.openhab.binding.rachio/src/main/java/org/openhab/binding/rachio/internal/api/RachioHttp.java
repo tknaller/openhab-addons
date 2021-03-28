@@ -40,8 +40,10 @@ public class RachioHttp {
     private final Logger logger = LoggerFactory.getLogger(RachioHttp.class);
 
     private int apiCalls = 0;
-    @Nullable
     private String apikey = "";
+
+    public RachioHttp() {
+    }
 
     /**
      * Constructor for the Rachio API class to create a connection to the Rachio cloud service.
@@ -49,7 +51,7 @@ public class RachioHttp {
      * @param key Rachio API Access token (see Web UI)
      * @throws Exception
      */
-    public RachioHttp(final String key) throws RachioApiException {
+    public RachioHttp(final String key) {
         apikey = key;
     }
 
@@ -127,7 +129,7 @@ public class RachioHttp {
             result.apiCalls = apiCalls;
 
             HttpURLConnection request = (HttpURLConnection) location.openConnection();
-            if (apikey != null) {
+            if (!apikey.isEmpty()) {
                 request.setRequestProperty("Authorization", "Bearer " + apikey);
                 result.apikey = apikey;
             }

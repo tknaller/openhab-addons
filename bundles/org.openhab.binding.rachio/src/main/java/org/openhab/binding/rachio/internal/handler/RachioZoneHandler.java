@@ -65,7 +65,6 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
         super(thing);
     }
 
-    @SuppressWarnings("null")
     @Override
     public void initialize() {
         logger.debug("Initializing zone '{}'", this.getThing().getUID().toString());
@@ -80,23 +79,25 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
                     zone = cloudHandler.getZoneByUID(this.getThing().getUID());
                     if (zone != null) {
                         zone.setThingHandler(this);
-                        dev = cloudHandler.getDevByUID(zone.getDevUID());
+                        dev = ((RachioBridgeHandler) handler).getDevByUID(zone.getDevUID());
                     }
                 }
             }
             if ((bridge == null) || (cloudHandler == null) || (dev == null) || (zone == null)) {
                 logger.debug("Thing initialisation failed!");
+                return;
+            }
+
+            // listen to bridge events
+            cloudHandler.registerStatusListener(this);
+            if (bridge.getStatus() != ThingStatus.ONLINE) {
+                logger.debug("Bridge is offline!");
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE);
             } else {
-                // listen to bridge events
-                cloudHandler.registerStatusListener(this);
-                if (bridge.getStatus() != ThingStatus.ONLINE) {
-                    logger.debug("Bridge is offline!");
-                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE);
-                } else {
-                    updateProperties();
-                    updateStatus(dev.getStatus());
-                    return;
-                }
+                updateProperties();
+                postChannelData();
+                updateStatus(dev.getStatus());
+                return;
             }
         } catch (RuntimeException e) {
             logger.debug("Initialisation failed: {}", e.getMessage());
@@ -105,7 +106,6 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
         updateStatus(ThingStatus.OFFLINE);
     }
 
-    @SuppressWarnings("null")
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         /*
@@ -171,9 +171,9 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
         }
     }
 
-    @SuppressWarnings("null")
     @Override
     public boolean onThingStateChangedl(@Nullable RachioDevice updatedDev, @Nullable RachioZone updatedZone) {
+        RachioZone z = zone;
         if ((updatedZone != null) && (zone != null) && zone.id.equals(updatedZone.id)) {
             logger.debug("RachioZone: Update for zone '{}' received.", zone.id);
             zone.update(updatedZone);
@@ -184,7 +184,6 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
         return false;
     }
 
-    @SuppressWarnings("null")
     public boolean webhookEvent(RachioEventGsonDTO event) {
         boolean update = false;
         try {
@@ -227,7 +226,6 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
         return update;
     }
 
-    @SuppressWarnings("null")
     public void postChannelData() {
         if (zone != null) {
             updateChannel(CHANNEL_ZONE_NAME, new StringType(zone.name));
@@ -257,7 +255,6 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
         }
     }
 
-    @SuppressWarnings({ "null", "unused" })
     private boolean updateChannel(String channelName, State newValue) {
         State currentValue = channelData.get(channelName);
         if ((currentValue != null) && currentValue.equals(newValue)) {
@@ -277,7 +274,6 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
         return true;
     }
 
-    @SuppressWarnings("null")
     @Override
     public void bridgeStatusChanged(ThingStatusInfo bridgeStatusInfo) {
         super.bridgeStatusChanged(bridgeStatusInfo);
@@ -296,7 +292,6 @@ public class RachioZoneHandler extends BaseThingHandler implements RachioStatusL
         updateStatus(ThingStatus.OFFLINE);
     }
 
-    @SuppressWarnings({ "null", "unused" })
     private void updateProperties() {
         if ((cloudHandler != null) && (zone != null)) {
             logger.trace("Updating Rachio zone properties");

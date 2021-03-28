@@ -17,7 +17,6 @@ import static org.openhab.binding.rachio.internal.RachioBindingConstants.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.OnOffType;
@@ -52,7 +51,6 @@ public class RachioZone extends RachioCloudZone {
      * @param toObj the object to copy to
      */
     public RachioZone(RachioCloudZone zone, String uniqueId) {
-        Validate.notNull(zone);
         try {
             RachioApi.copyMatchingFields(zone, this);
             if (zone.imageUrl.substring(0, SERVLET_IMAGE_URL_BASE.length()).equalsIgnoreCase(SERVLET_IMAGE_URL_BASE)) {
@@ -76,13 +74,11 @@ public class RachioZone extends RachioCloudZone {
     }
 
     public void setThingHandler(RachioZoneHandler zoneHandler) {
-        Validate.notNull(zoneHandler);
         thingHandler = zoneHandler;
     }
 
     @Nullable
     public RachioZoneHandler getThingHandler() {
-        Validate.notNull(thingHandler);
         return thingHandler;
     }
 
@@ -96,9 +92,7 @@ public class RachioZone extends RachioCloudZone {
         return true;
     }
 
-    @SuppressWarnings("null")
     public void update(@Nullable RachioZone updatedZone) {
-        Validate.notNull(updatedZone);
         if ((updatedZone == null) || !id.equalsIgnoreCase(updatedZone.id)) {
             return;
         }
@@ -112,8 +106,6 @@ public class RachioZone extends RachioCloudZone {
     }
 
     public void setUID(@Nullable ThingUID deviceUID, @Nullable ThingUID zoneUID) {
-        Validate.notNull(deviceUID);
-        Validate.notNull(zoneUID);
         this.devUID = deviceUID;
         this.zoneUID = zoneUID;
     }

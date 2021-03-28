@@ -12,7 +12,6 @@
  */
 package org.openhab.binding.rachio.internal.api;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.rachio.internal.api.json.RachioEventGsonDTO;
@@ -24,7 +23,6 @@ import com.google.gson.Gson;
  *
  * @author Markus Michels - Initial contribution
  */
-@SuppressWarnings("unused")
 @NonNullByDefault
 public class RachioEventString {
     @Nullable
@@ -63,7 +61,6 @@ public class RachioEventString {
         private final String endTime;
         private final int duration;
 
-        @SuppressWarnings("null")
         public ZoneEvent(RachioEventGsonDTO event) {
             timestamp = event.timestamp;
             summary = event.summary;
@@ -81,7 +78,6 @@ public class RachioEventString {
     }
 
     public RachioEventString(RachioEventGsonDTO event) {
-        Validate.notNull(event);
         if (event.type.equals("ZONE_STATUS")) {
             zEvent = new ZoneEvent(event);
         } else {
@@ -91,7 +87,6 @@ public class RachioEventString {
 
     @Nullable
     public String toJson() {
-        Validate.isTrue(zEvent != null || gEvent != null);
         return zEvent != null ? gson.toJson(zEvent) : gson.toJson(gEvent);
     }
 }

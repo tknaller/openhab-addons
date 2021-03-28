@@ -27,17 +27,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.HttpMethod;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.rachio.internal.RachioHandlerFactory;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.http.HttpService;
 import org.osgi.service.http.NamespaceException;
 import org.slf4j.Logger;
@@ -56,11 +52,7 @@ public class RachioImageServlet extends HttpServlet {
     private static final long serialVersionUID = 8706067059503685993L;
     private final Logger logger = LoggerFactory.getLogger(RachioImageServlet.class);
 
-    @Nullable
-    private HttpService httpService;
-    @SuppressWarnings("unused")
-    @Nullable
-    private RachioHandlerFactory rachioHandlerFactory;
+    private final HttpService httpService;
 
     /**
      * OSGi activation callback.
@@ -68,10 +60,9 @@ public class RachioImageServlet extends HttpServlet {
      * @param config Service config.
      */
     @Activate
-    @SuppressWarnings("null")
-    protected void activate(Map<String, Object> config) {
+    public RachioImageServlet(@Reference HttpService httpService, Map<String, Object> config) {
+        this.httpService = httpService;
         try {
-            Validate.notNull(httpService);
             httpService.registerServlet(SERVLET_IMAGE_PATH, this, null, httpService.createDefaultHttpContext());
             logger.debug("Started RachioImage servlet at {}", SERVLET_IMAGE_PATH);
         } catch (ServletException | NamespaceException e) {
@@ -83,17 +74,18 @@ public class RachioImageServlet extends HttpServlet {
      * OSGi deactivation callback.
      */
     @Deactivate
-    @SuppressWarnings("null")
     protected void deactivate() {
-        Validate.notNull(httpService);
         httpService.unregister(SERVLET_IMAGE_PATH);
         logger.debug("RachioImage: Servlet stopped");
     }
 
-    @SuppressWarnings("null")
     @Override
     protected void service(@Nullable HttpServletRequest request, @Nullable HttpServletResponse resp)
             throws ServletException, IOException {
+        if ((request == null) || (resp == null)) {
+            return;
+        }
+
         InputStream reader = null;
         OutputStream writer = null;
         try {
@@ -142,33 +134,8 @@ public class RachioImageServlet extends HttpServlet {
         }
     }
 
-    private void setHeaders(@Nullable HttpServletResponse response) {
-        Validate.notNull(response);
+    private void setHeaders(HttpServletResponse response) {
         response.setContentType(SERVLET_IMAGE_MIME_TYPE);
         response.setHeader("Access-Control-Allow-Origin", "*");
     }
-
-    @SuppressWarnings({ "null" })
-    @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-    public void setRachioHandlerFactory(@Nullable RachioHandlerFactory rachioHandlerFactory) {
-        Validate.notNull(rachioHandlerFactory);
-        if (rachioHandlerFactory != null) {
-            this.rachioHandlerFactory = rachioHandlerFactory;
-            logger.debug("RachioImage: HandlerFactory bound");
-        }
-    }
-
-    public void unsetRachioHandlerFactory(@Nullable RachioHandlerFactory rachioHandlerFactory) {
-        this.rachioHandlerFactory = null;
-    }
-
-    @Reference
-    public void setHttpService(HttpService httpService) {
-        this.httpService = httpService;
-    }
-
-    public void unsetHttpService(HttpService httpService) {
-        this.httpService = null;
-    }
-
 }

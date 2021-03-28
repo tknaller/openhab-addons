@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.rachio.internal.RachioHandlerFactory;
@@ -33,8 +32,6 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.http.HttpService;
 import org.osgi.service.http.NamespaceException;
 import org.slf4j.Logger;
@@ -54,10 +51,8 @@ public class RachioWebHookServlet extends HttpServlet {
     private final Logger logger = LoggerFactory.getLogger(RachioWebHookServlet.class);
     private final Gson gson = new Gson();
 
-    @Nullable
-    private HttpService httpService;
-    @Nullable
-    private RachioHandlerFactory rachioHandlerFactory;
+    private final HttpService httpService;
+    private final RachioHandlerFactory rachioHandlerFactory;
 
     /**
      * OSGi activation callback.
@@ -65,10 +60,11 @@ public class RachioWebHookServlet extends HttpServlet {
      * @param config Service config.
      */
     @Activate
-    @SuppressWarnings("null")
-    protected void activate(Map<String, Object> config) {
+    public RachioWebHookServlet(@Reference HttpService httpService,
+            @Reference RachioHandlerFactory rachioHandlerFactory, Map<String, Object> config) {
+        this.httpService = httpService;
+        this.rachioHandlerFactory = rachioHandlerFactory;
         try {
-            Validate.notNull(httpService);
             httpService.registerServlet(SERVLET_WEBHOOK_PATH, this, null, httpService.createDefaultHttpContext());
             logger.debug("Started Rachio Webhook servlet at {}", SERVLET_WEBHOOK_PATH);
         } catch (ServletException | NamespaceException e) {
@@ -80,19 +76,18 @@ public class RachioWebHookServlet extends HttpServlet {
      * OSGi deactivation callback.
      */
     @Deactivate
-    @SuppressWarnings("null")
     protected void deactivate() {
-        Validate.notNull(httpService);
         httpService.unregister(SERVLET_WEBHOOK_PATH);
         logger.debug("RachioWebHook: Servlet stopped");
     }
 
-    @SuppressWarnings("null")
     @Override
     protected void service(@Nullable HttpServletRequest request, @Nullable HttpServletResponse resp)
             throws ServletException, IOException {
-        Validate.notNull(request);
-        Validate.notNull(resp);
+        if (request == null) {
+            return;
+        }
+
         String data = inputStreamToString(request);
         try {
             String ipAddress = request.getHeader("HTTP_X_FORWARDED_FOR");
@@ -108,40 +103,39 @@ public class RachioWebHookServlet extends HttpServlet {
                 return;
             }
 
-            if (data != null) {
-                // Fix malformed API v3 Event JSON
-                data = data.replace("\"{", "{");
-                data = data.replace("}\"", "}");
-                data = data.replace("\\", "");
-                data = data.replace("\"?\"", "'?'"); // fix json for"summary" : "<Device> has turned off and back on.
-                                                     // This
-                                                     // is usually not a problem. If power cycles continue, tap "?"
-                                                     // above to
-                                                     // contact Rachio Support.",
+            // Fix malformed API v3 Event JSON
+            data = data.replace("\"{", "{");
+            data = data.replace("}\"", "}");
+            data = data.replace("\\", "");
+            data = data.replace("\"?\"", "'?'"); // fix json for"summary" : "<Device> has turned off and back on.
+                                                 // This
+                                                 // is usually not a problem. If power cycles continue, tap "?"
+                                                 // above to
+                                                 // contact Rachio Support.",
 
-                logger.trace("RachioWebHook: Data='{}'", data);
-                RachioEventGsonDTO event = gson.fromJson(data, RachioEventGsonDTO.class);
-                if ((event != null) && (rachioHandlerFactory != null)) {
-                    logger.trace("RachioEvent {}.{} for device '{}': {}", event.category, event.type, event.deviceId,
-                            event.summary);
+            logger.trace("RachioWebHook: Data='{}'", data);
+            RachioEventGsonDTO event = gson.fromJson(data, RachioEventGsonDTO.class);
+            if (event != null) {
+                logger.trace("RachioEvent {}.{} for device '{}': {}", event.category, event.type, event.deviceId,
+                        event.summary);
 
-                    event.apiResult.setRateLimit(request.getHeader(RACHIO_JSON_RATE_LIMIT),
-                            request.getHeader(RACHIO_JSON_RATE_REMAINING), request.getHeader(RACHIO_JSON_RATE_RESET));
+                event.apiResult.setRateLimit(request.getHeader(RACHIO_JSON_RATE_LIMIT),
+                        request.getHeader(RACHIO_JSON_RATE_REMAINING), request.getHeader(RACHIO_JSON_RATE_RESET));
 
-                    if (!rachioHandlerFactory.webHookEvent(ipAddress, event)) {
-                        logger.debug("RachioWebHook: Event-JSON='{}'", data);
-                    }
-
-                    return;
+                if (!rachioHandlerFactory.webHookEvent(ipAddress, event)) {
+                    logger.debug("RachioWebHook: Event-JSON='{}'", data);
                 }
-                logger.debug("RachioWebHook: Unable to process inbound request, data='{}'", data);
+                return;
             }
+            logger.debug("RachioWebHook: Unable to process inbound request, data='{}'", data);
         } catch (RuntimeException e) {
             logger.debug("RachioWebHook: Exception processing callback: {}, data='{}'", e.getMessage(),
                     data != null ? data : "n/a");
         } finally {
-            setHeaders(resp);
-            resp.getWriter().write("");
+            if (resp != null) {
+                setHeaders(resp);
+                resp.getWriter().write("");
+            }
         }
     }
 
@@ -158,25 +152,5 @@ public class RachioWebHookServlet extends HttpServlet {
         response.setHeader("Access-Control-Allow-Methods", "POST");
         response.setHeader("Access-Control-Max-Age", "3600");
         response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    }
-
-    @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-    public void setRachioHandlerFactory(RachioHandlerFactory rachioHandlerFactory) {
-        Validate.notNull(rachioHandlerFactory);
-        this.rachioHandlerFactory = rachioHandlerFactory;
-        logger.debug("RachioWebHook: HandlerFactory bound");
-    }
-
-    public void unsetRachioHandlerFactory(RachioHandlerFactory rachioHandlerFactory) {
-        this.rachioHandlerFactory = null;
-    }
-
-    @Reference
-    public void setHttpService(HttpService httpService) {
-        this.httpService = httpService;
-    }
-
-    public void unsetHttpService(HttpService httpService) {
-        this.httpService = null;
     }
 }

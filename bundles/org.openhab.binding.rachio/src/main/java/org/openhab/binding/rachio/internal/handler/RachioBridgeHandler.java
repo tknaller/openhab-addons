@@ -25,7 +25,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.config.core.Configuration;
@@ -58,14 +57,10 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     private final Logger logger = LoggerFactory.getLogger(RachioBridgeHandler.class);
-    @Nullable
-    private RachioConfiguration bindingConfig;
-    @Nullable
-    private RachioConfiguration thingConfig = new RachioConfiguration();
-
     private final List<RachioStatusListener> rachioStatusListeners = new CopyOnWriteArrayList<>();
-    @Nullable
     private final RachioApi rachioApi;
+    private RachioConfiguration bindingConfig = new RachioConfiguration();
+    private RachioConfiguration thingConfig = new RachioConfiguration();
     private String personId = "";
 
     @Nullable
@@ -102,14 +97,12 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * initialized the Thing mapping.
      */
     @Override
-    @SuppressWarnings("null")
     public void initialize() {
         String errorMessage = "";
 
         try {
             // Set defaults from Binding Config
             thingConfig = bindingConfig;
-            Validate.notNull(thingConfig);
             thingConfig.updateConfig(getConfig().getProperties());
 
             logger.debug("Connecting to Rachio cloud");
@@ -119,18 +112,14 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
             // Pass BridgeUID to device, RachioDeviceHandler will fill DeviceUID
             Bridge bridgeThing = this.getThing();
             HashMap<String, RachioDevice> deviceList = getDevices();
-            Validate.notNull(deviceList);
             for (HashMap.Entry<String, RachioDevice> de : deviceList.entrySet()) {
-                Validate.notNull(de);
                 RachioDevice dev = de.getValue();
-                Validate.notNull(dev);
                 ThingUID devThingUID = new ThingUID(THING_TYPE_DEVICE, bridgeThing.getUID(), dev.getThingID());
                 dev.setUID(this.getThing().getUID(), devThingUID);
                 // Set DeviceUID for all zones
                 HashMap<String, RachioZone> zoneList = dev.getZones();
                 for (HashMap.Entry<String, RachioZone> ze : zoneList.entrySet()) {
                     RachioZone zone = ze.getValue();
-                    Validate.notNull(zone);
                     ThingUID zoneThingUID = new ThingUID(THING_TYPE_ZONE, bridgeThing.getUID(), zone.getThingID());
                     zone.setUID(dev.getUID(), zoneThingUID);
                 }
@@ -153,7 +142,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     }
 
     /**
-     * Get the services registered for this bridge. Provides the discovery service. 
+     * Get the services registered for this bridge. Provides the discovery service.
      */
     @Override
     public Collection<Class<? extends ThingHandlerService>> getServices() {
@@ -173,7 +162,6 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * Update device status (poll Rachio Cloud)
      * in addition webhooks are used to get events (if callbackUrl is configured)
      */
-    @SuppressWarnings({ "unused", "null" })
     public void refreshDeviceStatus() {
         String errorMessage = "";
         logger.debug("RachioBridgeHandler: refreshDeviceStatus");
@@ -222,7 +210,6 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
             HashMap<String, RachioDevice> checkDevList = checkApi.getDevices();
             for (HashMap.Entry<String, RachioDevice> de : checkDevList.entrySet()) {
                 RachioDevice checkDev = de.getValue();
-                @Nullable
                 RachioDevice dev = deviceList.get(checkDev.id);
                 if (dev == null) {
                     logger.info("New device detected: '{}' - '{}'", checkDev.id, checkDev.name);
@@ -282,10 +269,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      *
      * @throws RachioApiException if there is an error while authenticating to the service
      */
-    @SuppressWarnings("null")
-    private void createCloudConnection(@Nullable RachioApi api) throws RachioApiException, UnknownHostException {
-        Validate.notNull(api);
-        Validate.notNull(thingConfig);
+    private void createCloudConnection(RachioApi api) throws RachioApiException, UnknownHostException {
         if (thingConfig.apikey.isEmpty()) {
             throw new RachioApiException(
                     "RachioBridgeHandler: Unable to connect to Rachio Cloud: apikey not set, check services/rachio.cfg!");
@@ -302,9 +286,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param deviceId: Device (ID retrieved from initialization)
      * @return true: successful, failed (check http error code)
      */
-    @SuppressWarnings("null")
     public void disableDevice(String deviceId) throws RachioApiException {
-        Validate.notNull(rachioApi);
         rachioApi.disableDevice(deviceId);
     }
 
@@ -314,9 +296,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param deviceId: Device (ID retrieved from initialization)
      * @return true: successful, failed (check http error code)
      */
-    @SuppressWarnings("null")
     public void enableDevice(String deviceId) throws RachioApiException {
-        Validate.notNull(rachioApi);
         rachioApi.enableDevice(deviceId);
     }
 
@@ -327,9 +307,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @return true: successful, failed (check http error code)
      * @return
      */
-    @SuppressWarnings("null")
     public void stopWatering(String deviceId) throws RachioApiException {
-        Validate.notNull(rachioApi);
         rachioApi.stopWatering(deviceId);
     }
 
@@ -340,9 +318,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param delayTime: Number of seconds for rain delay sycle
      * @return true: successful, failed (check http error code)
      */
-    @SuppressWarnings("null")
     public void startRainDelay(String deviceId, int delayTime) throws RachioApiException {
-        Validate.notNull(rachioApi);
         rachioApi.rainDelay(deviceId, delayTime);
     }
 
@@ -352,9 +328,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param zoneListJson: Contains a list of { "id": n} with the zone ids to start
      * @return true: successful, failed (check http error code)
      */
-    @SuppressWarnings("null")
     public void runMultipleZones(String zoneListJson) throws RachioApiException {
-        Validate.notNull(rachioApi);
         rachioApi.runMultilpeZones(zoneListJson);
     }
 
@@ -365,9 +339,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param runTime: Number of seconds to run
      * @return true: successful, failed (check http error code)
      */
-    @SuppressWarnings("null")
     public void startZone(String zoneId, int runTime) throws RachioApiException {
-        Validate.notNull(rachioApi);
         rachioApi.runZone(zoneId, runTime);
     }
 
@@ -435,10 +407,8 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @return HashMap of RachioDevice
      */
     @Nullable
-    @SuppressWarnings("null")
     public HashMap<String, RachioDevice> getDevices() {
         try {
-            Validate.notNull(rachioApi);
             return rachioApi.getDevices();
         } catch (RuntimeException e) {
             logger.debug("Unable to retrieve device list: {}", e.getMessage());
@@ -453,9 +423,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @return RachioDevice for that device Thing UID
      */
     @Nullable
-    @SuppressWarnings("null")
     public RachioDevice getDevByUID(@Nullable ThingUID thingUID) {
-        Validate.notNull(rachioApi);
         return rachioApi.getDevByUID(getThing().getUID(), thingUID);
     }
 
@@ -466,9 +434,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @return
      */
     @Nullable
-    @SuppressWarnings("null")
     public RachioZone getZoneByUID(@Nullable ThingUID thingUID) {
-        Validate.notNull(rachioApi);
         return rachioApi.getZoneByUID(getThing().getUID(), thingUID);
     }
 
@@ -479,12 +445,10 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param deviceId: Matching device ID (as retrieved from device initialization)
      * @return trtue: successful, false: failed (check http error code)
      */
-    @SuppressWarnings("null")
     public void registerWebHook(String deviceId) throws RachioApiException {
         if (getCallbackUrl().isEmpty()) {
             logger.debug("No callbackUrl configured.");
         } else {
-            Validate.notNull(rachioApi);
             rachioApi.registerWebHook(deviceId, getCallbackUrl(), getExternalId(), getClearAllCallbacks());
         }
     }
@@ -498,15 +462,16 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     public boolean webHookEvent(RachioEventGsonDTO event) {
         try {
             HashMap<String, RachioDevice> deviceList = getDevices();
-            Validate.notNull(deviceList);
+            if (deviceList == null) {
+                return false;
+            }
             for (HashMap.Entry<String, RachioDevice> de : deviceList.entrySet()) {
-                @Nullable
                 RachioDevice dev = de.getValue();
-                Validate.notNull(dev);
                 if (dev.id.equalsIgnoreCase(event.deviceId) && (dev.getThingHandler() != null)) {
                     RachioDeviceHandler th = dev.getThingHandler();
-                    Validate.notNull(th);
-                    return th.webhookEvent(event);
+                    if (th != null) {
+                        return th.webhookEvent(event);
+                    }
                 }
             }
             logger.debug("Event {}.{} for unknown device '{}': {}", event.category, event.type, event.deviceId,
@@ -519,9 +484,7 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
     }
 
     @Nullable
-    @SuppressWarnings("null")
     public String getExternalId() {
-        Validate.notNull(rachioApi);
         return rachioApi.getExternalId();
     }
 
@@ -529,14 +492,13 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * Start or stop a background polling job to look for bed status updates based on whether or not there are any
      * listeners to notify.
      */
-    @SuppressWarnings("null")
     private synchronized void updateListenerManagement() {
-        if (!rachioStatusListeners.isEmpty() && (pollingJob == null || pollingJob.isCancelled())) {
+        ScheduledFuture<?> job = pollingJob;
+        if (!rachioStatusListeners.isEmpty() && (job == null || job.isCancelled())) {
             pollingJob = scheduler.scheduleWithFixedDelay(pollingRunnable, getPollingInterval(), getPollingInterval(),
                     TimeUnit.SECONDS);
-        } else if (rachioStatusListeners.isEmpty() && pollingJob != null && !pollingJob.isCancelled()) {
-            Validate.notNull(pollingJob);
-            pollingJob.cancel(true);
+        } else if (rachioStatusListeners.isEmpty() && job != null && !job.isCancelled()) {
+            job.cancel(true);
             pollingJob = null;
         }
     }
@@ -547,7 +509,6 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param listener the listener to register
      */
     public void registerStatusListener(final RachioStatusListener listener) {
-        Validate.notNull(listener);
         rachioStatusListeners.add(listener);
         updateListenerManagement();
     }
@@ -591,11 +552,8 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
      * @param properties the properties to update (this may be <code>null</code>)
      * @return the given map (or a new map if no map was given) with updated/set properties from the supplied bed
      */
-    @SuppressWarnings("null")
     private void updateProperties() {
-        if (rachioApi != null) {
-            updateProperties(rachioApi.fillProperties());
-        }
+        updateProperties(rachioApi.fillProperties());
     }
 
     private Runnable pollingRunnable = new Runnable() {
@@ -605,15 +563,14 @@ public class RachioBridgeHandler extends ConfigStatusBridgeHandler {
         }
     };
 
-    @SuppressWarnings("null")
     @Override
     public synchronized void dispose() {
         logger.debug("Disposing Rachio cloud handler");
 
-        if (pollingJob != null && !pollingJob.isCancelled()) {
-            pollingJob.cancel(true);
+        ScheduledFuture<?> job = pollingJob;
+        if (job != null && !job.isCancelled()) {
+            job.cancel(true);
             pollingJob = null;
         }
     }
-
 }

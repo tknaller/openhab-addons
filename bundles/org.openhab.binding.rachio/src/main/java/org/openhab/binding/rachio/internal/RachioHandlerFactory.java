@@ -17,7 +17,6 @@ import static org.openhab.binding.rachio.internal.RachioBindingConstants.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.thing.Bridge;
@@ -121,7 +120,6 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
      *
      * @param event
      */
-    @SuppressWarnings("null")
     public boolean webHookEvent(String ipAddress, RachioEventGsonDTO event) {
         try {
             logger.debug("Rachio Cloud Event for device '{}' received", event.deviceId);
@@ -129,12 +127,12 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
             // process event parameters
             for (HashMap.Entry<String, RachioBridge> be : bridgeList.entrySet()) {
                 RachioBridge bridge = be.getValue();
-                Validate.notNull(bridge);
-                Validate.notNull(bridge.cloudHandler);
-                logger.trace("Check for externalId: '{}' / '{}'", event.externalId,
-                        bridge.cloudHandler.getExternalId());
-                if (bridge.cloudHandler.getExternalId().equals(event.externalId)) {
-                    return bridge.cloudHandler.webHookEvent(event);
+                if (bridge.cloudHandler != null) {
+                    RachioBridgeHandler cloudHandler = bridge.cloudHandler;
+                    logger.trace("Check for externalId: '{}' / '{}'", event.externalId, cloudHandler.getExternalId());
+                    if (cloudHandler.getExternalId().equals(event.externalId)) {
+                        return cloudHandler.webHookEvent(event);
+                    }
                 }
             }
 
@@ -150,7 +148,6 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
     }
 
     @Nullable
-    @SuppressWarnings("null")
     private RachioBridgeHandler createBridge(Bridge bridgeThing) {
         try {
             RachioBridge bridge = new RachioBridge();
@@ -158,8 +155,6 @@ public class RachioHandlerFactory extends BaseThingHandlerFactory {
             bridge.cloudHandler = new RachioBridgeHandler(bridgeThing);
             bridge.cloudHandler.setConfiguration(bindingConfig);
             bridgeList.put(bridge.uid.toString(), bridge);
-
-            Validate.notNull(bridge.cloudHandler);
             return bridge.cloudHandler;
         } catch (RuntimeException e) {
             logger.warn("RachioFactory: Unable to create bridge thing: {}: ", e.getMessage());

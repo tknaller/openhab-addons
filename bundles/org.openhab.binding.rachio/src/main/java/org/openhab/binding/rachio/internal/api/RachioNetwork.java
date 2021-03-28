@@ -16,10 +16,7 @@ import static org.openhab.binding.rachio.internal.RachioBindingConstants.*;
 
 import java.util.ArrayList;
 
-import org.apache.commons.lang.Validate;
-import org.apache.commons.net.util.SubnetUtils;
 import org.eclipse.jdt.annotation.NonNullByDefault;
-// import com.offbynull.portmapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,16 +57,15 @@ public class RachioNetwork {
             RachioHttp http = new RachioHttp("");
             String jsonList = http.httpGet(AWS_IPADDR_DOWNLOAD_URL, "").resultString;
             Gson gson = new Gson();
-            Validate.notNull(gson);
             AwsIpList list = gson.fromJson(jsonList, AwsIpList.class);
-            Validate.notNull(list);
-            for (int i = 0; i < list.prefixes.size(); i++) {
-                AwsIpAddressRange entry = list.prefixes.get(i);
-                Validate.notNull(entry);
-                if (entry.region.startsWith(AWS_IPADDR_REGION_FILTER)) {
-                    logger.trace("RachioNetwork: Adding range '{}' (region '{}' to AWS IP address list", entry.ipPrefix,
-                            entry.region);
-                    awsIpRanges.add(entry);
+            if (list != null) {
+                for (int i = 0; i < list.prefixes.size(); i++) {
+                    AwsIpAddressRange entry = list.prefixes.get(i);
+                    if (entry.region.startsWith(AWS_IPADDR_REGION_FILTER)) {
+                        logger.trace("RachioNetwork: Adding range '{}' (region '{}' to AWS IP address list",
+                                entry.ipPrefix, entry.region);
+                        awsIpRanges.add(entry);
+                    }
                 }
             }
             logger.debug(
@@ -90,9 +86,8 @@ public class RachioNetwork {
      * @param ipList like "127.0.0.1;192.168.0.0/24;10.0.0.0/8"
      * @return true if client ip from the list os ips and networks
      */
-    @SuppressWarnings("null")
     public static boolean isIpInSubnet(String clientIp, String ipList) {
-        if ((ipList == null) || ipList.isEmpty()) {
+        if (ipList.isEmpty()) {
             // No ip address provided
             return true;
         }
@@ -103,7 +98,7 @@ public class RachioNetwork {
                 return true;
             }
             if (subnetMask.contains("/")) {
-                if (new SubnetUtils(subnetMask).getInfo().isInRange(clientIp)) {
+                if (new IpAddressMatcher(subnetMask).matches(clientIp)) {
                     return true;
                 }
             }
@@ -111,7 +106,6 @@ public class RachioNetwork {
         return false;
     }
 
-    @SuppressWarnings("null")
     public boolean isIpInAwsList(String clientIp) {
         if (awsIpRanges.size() == 0) {
             // filtering not enabled

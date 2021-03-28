@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.Validate;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -61,14 +60,10 @@ public class RachioApi {
     protected static final Integer EXTERNAL_ID_SALT = (int) (Math.random() * 50 + 1);
 
     private HashMap<String, RachioDevice> deviceList = new HashMap<String, RachioDevice>();
-    @Nullable
-    private RachioHttp httpApi = null;
+    private RachioHttp httpApi = new RachioHttp("");
 
-    @SuppressWarnings("null")
     public RachioApi(String personId) {
-        if (personId != null) {
-            this.personId = personId;
-        }
+        this.personId = personId;
     }
 
     public RachioApiRateLimit getLastApiResult() {
@@ -83,7 +78,6 @@ public class RachioApi {
         return personId;
     }
 
-    @Nullable
     public String getExternalId() {
         // return a salted ash of the apikey
         String hash = "OH_" + getMD5Hash(apikey) + "_" + EXTERNAL_ID_SALT.toString();
@@ -94,7 +88,6 @@ public class RachioApi {
         this.apikey = apikey;
         httpApi = new RachioHttp(this.apikey);
         if (!initializePersonId() || !initializeDevices(bridgeUID) || !initializeZones()) {
-            httpApi = null;
             throw new RachioApiException("API initialization failed!");
         }
 
@@ -105,14 +98,11 @@ public class RachioApi {
         return deviceList;
     }
 
-    @SuppressWarnings({ "null" })
     @Nullable
     public RachioDevice getDevByUID(@Nullable ThingUID bridgeUID, @Nullable ThingUID thingUID) {
         for (HashMap.Entry<String, RachioDevice> entry : deviceList.entrySet()) {
             RachioDevice dev = entry.getValue();
             logger.trace("getDevByUID: bridge {} / {}, device {} / {}", bridgeUID, dev.bridgeUID, thingUID, dev.devUID);
-            Validate.notNull(dev);
-            Validate.notNull(dev.bridgeUID);
             if (dev.bridgeUID.equals(bridgeUID) && dev.getUID().equals(thingUID)) {
                 logger.trace("Device '{}' found.", dev.name);
                 return dev;
@@ -122,11 +112,8 @@ public class RachioApi {
         return null;
     }
 
-    @SuppressWarnings({ "null", "unused" })
     @Nullable
     public RachioZone getZoneByUID(@Nullable ThingUID bridgeUID, @Nullable ThingUID zoneUID) {
-        Validate.notNull(bridgeUID);
-        Validate.notNull(zoneUID);
         HashMap<String, RachioDevice> deviceList = getDevices();
         if (deviceList == null) {
             return null;
@@ -145,19 +132,15 @@ public class RachioApi {
         return null;
     }
 
-    @SuppressWarnings("null")
     private Boolean initializePersonId() throws RachioApiException, RachioApiException {
         if (!personId.isEmpty()) {
             logger.trace("Using cached personId ('{}').", personId);
             return true;
         }
 
-        Validate.notNull(httpApi);
         lastApiResult = httpApi.httpGet(APIURL_BASE + APIURL_GET_PERSON, null);
         Gson gson = new Gson();
-        Validate.notNull(gson);
         RachioCloudPersonId pid = gson.fromJson(lastApiResult.resultString, RachioCloudPersonId.class);
-        Validate.notNull(pid);
         personId = pid.id;
         logger.debug("Using personId '{}'", personId);
         if (lastApiResult.isRateLimitCritical()) {
@@ -169,62 +152,46 @@ public class RachioApi {
         return true;
     }
 
-    @SuppressWarnings("null")
     public String getUserInfo() {
-        return userName != null ? fullName + "(" + userName + ", " + email + ")" : "";
+        return !userName.isEmpty() ? fullName + "(" + userName + ", " + email + ")" : "";
     }
 
-    @SuppressWarnings("null")
     public void stopWatering(String deviceId) throws RachioApiException {
         logger.debug("Stop watering for device '{}'", deviceId);
-        Validate.notNull(httpApi);
         httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_STOP, "{ \"id\" : \"" + deviceId + "\" }");
     }
 
-    @SuppressWarnings("null")
     public void enableDevice(String deviceId) throws RachioApiException {
         logger.debug("Enable device '{}'.", deviceId);
-        Validate.notNull(httpApi);
         httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_ON, "{ \"id\" : \"" + deviceId + "\" }");
     }
 
-    @SuppressWarnings("null")
     public void disableDevice(String deviceId) throws RachioApiException {
         logger.debug("Disable device '{}'.", deviceId);
-        Validate.notNull(httpApi);
         httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_OFF, "{ \"id\" : \"" + deviceId + "\" }");
     }
 
-    @SuppressWarnings("null")
     public void rainDelay(String deviceId, Integer delay) throws RachioApiException {
         logger.debug("Start dain relay for device '{}'.", deviceId);
-        Validate.notNull(httpApi);
         httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_RAIN_DELAY,
                 "{ \"id\" : \"" + deviceId + "\", \"durartion\" : " + delay + " }");
     }
 
-    @SuppressWarnings("null")
     public void runMultilpeZones(String zoneListJson) throws RachioApiException {
         logger.debug("Start multiple zones '{}'.", zoneListJson);
-        Validate.notNull(httpApi);
         httpApi.httpPut(APIURL_BASE + APIURL_ZONE_PUT_MULTIPLE_START, zoneListJson);
     }
 
-    @SuppressWarnings("null")
     public void runZone(String zoneId, int duration) throws RachioApiException {
         logger.debug("Start zone '{}' for {} sec.", zoneId, duration);
-        Validate.notNull(httpApi);
         httpApi.httpPut(APIURL_BASE + APIURL_ZONE_PUT_START,
                 "{ \"id\" : \"" + zoneId + "\", \"duration\" : " + duration + " }");
     }
 
-    @SuppressWarnings("null")
     public void getDeviceInfo(String deviceId) throws RachioApiException {
-        Validate.notNull(httpApi);
         httpApi.httpGet(APIURL_BASE + APIURL_GET_DEVICE + "/" + deviceId, null);
     }
 
-    @SuppressWarnings("null")
     public void registerWebHook(String deviceId, String callbackUrl, @Nullable String externalId,
             Boolean clearAllCallbacks) throws RachioApiException {
         // first check/delete existing webhooks
@@ -232,9 +199,7 @@ public class RachioApi {
                 clearAllCallbacks.toString());
 
         String json = "";
-        Validate.notNull(httpApi);
         try {
-            Validate.notNull(httpApi);
             json = httpApi.httpGet(APIURL_BASE + APIURL_DEV_QUERY_WEBHOOK + "/" + deviceId + "/webhook",
                     null).resultString; // throws
             logger.debug("Registered webhooks for device '{}': {}", deviceId, json);
@@ -270,34 +235,27 @@ public class RachioApi {
                 + WHE_ZONE_DELTA + "\"}, " + "{\"id\" : \"" + WHE_SCHEDULE_STATUS + "\"}, " + "{\"id\" : \""
                 + WHE_ZONE_STATUS + "\"}, " + "{\"id\" : \"" + WHE_RAIN_SENSOR_DETECTION + "\"}, " + "{\"id\" : \""
                 + WHE_DELTA + "\"} " + "]" + "}";
-        Validate.notNull(httpApi);
         httpApi.httpPost(APIURL_BASE + APIURL_DEV_POST_WEBHOOK, jsonData);
     }
 
-    @SuppressWarnings("null")
     private Boolean initializeDevices(ThingUID BridgeUID) throws RachioApiException {
         String json = "";
         if (httpApi == null) {
             logger.debug("RachioApi.initializeDevices: httpAPI not initialized");
             return false;
         }
-        Validate.notNull(httpApi);
         json = httpApi.httpGet(APIURL_BASE + APIURL_GET_PERSONID + "/" + personId, null).resultString;
         logger.trace("Initialize from JSON='{}'", json);
 
         Gson gson = new Gson();
-        Validate.notNull(gson);
         RachioCloudStatus cloudStatus = gson.fromJson(json, RachioCloudStatus.class);
-        Validate.notNull(cloudStatus);
         userName = cloudStatus.username;
         fullName = cloudStatus.fullName;
         email = cloudStatus.email;
 
         deviceList = new HashMap<String, RachioDevice>(); // discard current list
-        Validate.notNull(deviceList);
         for (int i = 0; i < cloudStatus.devices.size(); i++) {
             RachioCloudDevice device = cloudStatus.devices.get(i);
-            Validate.notNull(device);
             if (!device.deleted) {
                 deviceList.put(device.id, new RachioDevice(device));
                 logger.trace("Device '{}' initialized, {} zones.", device.name, device.zones.size());
@@ -327,7 +285,6 @@ public class RachioApi {
      * @param unhashed The string contents to be hashed.
      * @return MD5 Hashed value of the String. Null if there is a problem hashing the String.
      */
-    @Nullable
     protected static String getMD5Hash(String unhashed) {
         try {
             byte[] bytesOfMessage = unhashed.getBytes(UTF8_CHAR_SET);
@@ -347,15 +304,12 @@ public class RachioApi {
             return digest;
         } catch (RuntimeException | UnsupportedEncodingException | NoSuchAlgorithmException e) {
             // logger.warn("Unexpected exception while generating MD5: {} ({})", e.getMessage(), e.getClass());
-            return null;
+            return "";
         }
     }
 
     @SuppressWarnings("rawtypes")
     public static void copyMatchingFields(Object fromObj, Object toObj) {
-        Validate.notNull(fromObj, "Source and destination objects must not be null");
-        Validate.notNull(toObj, "Source and destination objects must not be null");
-
         Class fromClass = fromObj.getClass();
         Class toClass = toObj.getClass();
 
