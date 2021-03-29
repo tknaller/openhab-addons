@@ -350,6 +350,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
         ThingStatus s = getThing().getStatus();
         if ((s == ThingStatus.INITIALIZING) || (s == ThingStatus.UNKNOWN)) {
             logger.info("{}: Thing not yet fully initialized, command ignored", thingId);
+            forceUpdate = true;
             return;
         }
 
