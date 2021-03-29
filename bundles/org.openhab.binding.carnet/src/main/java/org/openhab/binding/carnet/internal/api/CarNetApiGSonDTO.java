@@ -853,6 +853,15 @@ public class CarNetApiGSonDTO {
             public Integer error;
         }
 
+        // {"action":{"type":"startClimatisation","actionId":26713297,"actionState":"queued"}}
+        public class CarNetActionStatus {
+            public String type;
+            public String actionId;
+            public String actionState;
+            public Integer errorCode;
+        }
+
         public CarNetRequestStatus requestStatusResponse;
+        public CarNetActionStatus action;
     }
 }

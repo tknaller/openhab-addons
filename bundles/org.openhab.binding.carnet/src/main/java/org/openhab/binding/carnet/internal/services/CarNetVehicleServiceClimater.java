@@ -57,6 +57,7 @@ public class CarNetVehicleServiceClimater extends CarNetVehicleBaseService {
                 addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CLIMATER, ITEMT_SWITCH, null, false, false);
                 addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_WINHEAT, ITEMT_SWITCH, null, false, false);
                 addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_PREHEAT, ITEMT_SWITCH, null, false, false);
+                addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_VENT, ITEMT_SWITCH, null, false, false);
                 addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_TARGET_TEMP, ITEMT_TEMP, SIUnits.CELSIUS, false,
                         false);
                 addChannel(ch, CHANNEL_GROUP_CLIMATER, CHANNEL_CLIMATER_HEAT_SOURCE, ITEMT_STRING, null, true, true);
@@ -101,6 +102,8 @@ public class CarNetVehicleServiceClimater extends CarNetVehicleBaseService {
                     if (sd.climatisationState != null) {
                         updated |= updateChannel(group, CHANNEL_CLIMATER_GEN_STATE,
                                 getStringType(sd.climatisationState.content));
+                        updated |= updateChannel(group, CHANNEL_CONTROL_CLIMATER,
+                                getOnOff(sd.climatisationState.content));
                     }
                     if (sd.climatisationElementStates != null) {
                         updateZoneStates(sd.climatisationElementStates.zoneStates);
