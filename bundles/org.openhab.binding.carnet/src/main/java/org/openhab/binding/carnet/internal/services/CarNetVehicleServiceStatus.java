@@ -190,16 +190,16 @@ public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
     }
 
     private boolean checkWindows(CNStatusField field, ChannelIdMapEntry definition) {
-        if (definition.symbolicName.contains("WINDOWS") && definition.symbolicName.contains("STATE")
-                && !field.value.equals(String.valueOf(3))) {
-            logger.debug("{}: Window {} is not closed", thingId, definition.channelName);
+        if ((definition.symbolicName.contains("WINDOWS") || definition.symbolicName.contains("SUN_ROOF_MOTOR_COVER"))
+                && definition.symbolicName.contains("STATE3") && !field.value.equals("3")) {
+            logger.debug("{}: Window {} is not closed ({})", thingId, definition.channelName, field.value);
         }
         return true;
     }
 
     private boolean checkTires(CNStatusField field, ChannelIdMapEntry definition) {
         if (definition.symbolicName.contains("TIREPRESS") && definition.symbolicName.contains("CURRENT")
-                && !field.value.equals(String.valueOf(1))) {
+                && !field.value.equals("1")) {
             logger.debug("{}: Tire pressure for {} is not ok", thingId, definition.channelName);
         }
         return true;

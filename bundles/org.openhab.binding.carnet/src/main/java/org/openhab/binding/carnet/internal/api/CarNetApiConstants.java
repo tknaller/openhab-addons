@@ -69,12 +69,6 @@ public class CarNetApiConstants {
     public static final String CNAPI_URI_CMD_HONK = "bs/rhf/v1/{0}/{1}/vehicles/{2}/honkAndFlash";
     public static final String CNAPI_URI_GETTRIP = "bs/tripstatistics/v1/{0}/{1}/vehicles/{2}/tripdata/{3}?type={4}";
 
-    public static final String CNAPI_VWURL_CHARGER_STATUS = VWPRE + CNAPI_URI_CHARGER_STATUS;
-    public static final String CNAPI_VWURL_STORED_POS = VWPRE + CNAPI_URI_STORED_POS;
-    public static final String CNAPI_VWURL_TIMER = VWPRE + CNAPI_URI_CLIMATER_TIMER;
-    public static final String CNAPI_VWURL_TRIP_DATA = VWPRE + CNAPI_URI_GETTRIP;
-    public static final String CNAPI_VWURL_CHARGER = VWPRE + CNAPI_URI_CHARGER_STATUS;
-
     public static final String CNAPI_VWG_1A_CONNECT = "https://mal-1a.prd.ece.vwg-connect.com/api";
     public static final String CNAPI_VWG_3A_CONNECT = "https://mal-3a.prd.eu.dp.vwg-connect.com/api";
     public static final String CNAPI_URL_GET_SEC_TOKEN = "https://mbboauth-1d.prd.ece.vwg-connect.com/mbbcoauth/mobile/oauth2/v1/token";
@@ -188,5 +182,7 @@ public class CarNetApiConstants {
     public static final String CNAPI_REQUEST_NOT_FOUND = "request_not_found";
     public static final String CNAPI_REQUEST_FAIL = "request_fail";
     public static final String CNAPI_REQUEST_QUEUED = "queued"; // rclima
+    public static final String CNAPI_REQUEST_FETCHED = "fetched"; // rclima
+    public static final String CNAPI_REQUEST_FAILED = "failed";
     public static final String CNAPI_REQUEST_ERROR = "api_error";
 }

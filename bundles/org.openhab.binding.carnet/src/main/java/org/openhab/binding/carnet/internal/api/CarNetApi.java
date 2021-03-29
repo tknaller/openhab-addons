@@ -282,7 +282,8 @@ public class CarNetApi {
     }
 
     public CarNetVehiclePosition getStoredPosition() throws CarNetException {
-        return callApi(CNAPI_VWURL_STORED_POS, "getStoredPosition", CarNetVehiclePosition.class);
+        // return callApi(CNAPI_VWURL_STORED_POS, "getStoredPosition", CarNetVehiclePosition.class);
+        return callApi(CNAPI_URI_STORED_POS, "getStoredPosition", CarNetVehiclePosition.class);
     }
 
     public CarNetDestinationList getDestinations() throws CarNetException {
@@ -320,7 +321,8 @@ public class CarNetApi {
         String json = "";
         try {
             String action = "list";
-            String url = CNAPI_VWURL_TRIP_DATA.replace("{3}", type).replace("{4}", action);
+            // String url = CNAPI_VWURL_TRIP_DATA.replace("{3}", type).replace("{4}", action);
+            String url = CNAPI_URI_GETTRIP.replace("{3}", type).replace("{4}", action);
             json = http.get(url, fillAppHeaders());
         } catch (CarNetException e) {
             logger.debug("{}: API call getTripData failed: {}", config.vehicle.vin, e.toString());
@@ -609,9 +611,14 @@ public class CarNetApi {
                         logger.debug("{}: Check request {} status for action {}.{}; checkUrl={}", config.vehicle.vin,
                                 request.requestId, request.service, request.action, request.checkUrl);
                         CNRequestStatus rs = callApi(request.checkUrl, "getRequestStatus", CNRequestStatus.class);
-                        status = rs.requestStatusResponse.status;
-                        if (rs.requestStatusResponse.error != null) {
-                            error = rs.requestStatusResponse.error;
+                        if (rs.requestStatusResponse != null) {
+                            status = rs.requestStatusResponse.status;
+                            if (rs.requestStatusResponse.error != null) {
+                                error = rs.requestStatusResponse.error;
+                            }
+                        } else if (rs.action != null) {
+                            status = getString(rs.action.actionState);
+                            error = getInteger(rs.action.errorCode);
                         }
                     }
                 }
@@ -624,9 +631,11 @@ public class CarNetApi {
                         break;
                     case CNAPI_REQUEST_IN_PROGRESS:
                     case CNAPI_REQUEST_QUEUED:
+                    case CNAPI_REQUEST_FETCHED:
                         break;
                     case CNAPI_REQUEST_NOT_FOUND:
                     case CNAPI_REQUEST_FAIL:
+                    case CNAPI_REQUEST_FAILED:
                         logger.warn("{}: Action {}.{} failed with status {}, error={} (requestId={})",
                                 config.vehicle.vin, request.service, request.action, status, error, request.requestId);
                         remove = true;

@@ -45,6 +45,8 @@ public class CarNetVehicleServiceCharger extends CarNetVehicleBaseService {
     public boolean createChannels(Map<String, ChannelIdMapEntry> ch) {
         try {
             api.getChargerStatus();
+            addChannel(ch, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CHARGER, ITEMT_SWITCH, null, false, false);
+
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_STATUS, ITEMT_STRING, null, false, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_PWR_STATE, ITEMT_STRING, null, false, true);
             addChannel(ch, CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_CHG_STATE, ITEMT_STRING, null, false, true);
@@ -76,6 +78,7 @@ public class CarNetVehicleServiceCharger extends CarNetVehicleBaseService {
                 if (sd.chargingState != null) {
                     updateChannel(group, CHANNEL_CHARGER_CHG_STATE, getStringType(sd.chargingState.content));
                     updateChannel(group, CHANNEL_CHARGER_STATUS, getStringType(sd.chargingState.content));
+                    updateChannel(group, CHANNEL_CONTROL_CHARGER, getOnOff(sd.chargingState.content));
                 }
                 if (sd.chargingStateErrorCode != null) {
                     updateChannel(group, CHANNEL_CHARGER_ERROR, getDecimal(sd.chargingStateErrorCode.content));
