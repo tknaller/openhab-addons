@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="dreamscreen"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<channel-type id="power">
+		<item-type>Switch</item-type>
+		<label>Power</label>
+		<description>Turns the power to the DreamScreen on/off</description>
+	</channel-type>
+
+	<channel-type id="mode">
+		<item-type>String</item-type>
+		<label>Mode</label>
+		<description>Switch the display mode</description>
+		<state>
+			<options>
+				<option value="video">Video</option>
+				<option value="music">Music</option>
+				<option value="ambient">Ambient</option>
+			</options>
+		</state>
+	</channel-type>
+
+	<channel-type id="scene">
+		<item-type>String</item-type>
+		<label>Scene</label>
+		<description>Switch the ambient display scene</description>
+		<state>
+			<options>
+				<option value="color">Color</option>
+				<option value="random">Random Color</option>
+				<option value="fireside">Fireside</option>
+				<option value="twinkle">Twinkle</option>
+				<option value="ocean">Ocean</option>
+				<option value="rainbow">Rainbow</option>
+				<option value="july_4th">July 4th</option>
+				<option value="holiday">Holiday</option>
+				<option value="pop">Pop</option>
+				<option value="forrest">Enchanted Forest</option>
+			</options>
+		</state>
+	</channel-type>
+
+	<channel-type id="input">
+		<item-type>String</item-type>
+		<label>Input Source</label>
+		<description>Select the HDMI input source</description>
+		<state>
+			<options>
+				<option value="hdmi1">Channel 1</option>
+				<option value="hdmi2">Channel 2</option>
+				<option value="hdmi3">Channel 3</option>
+			</options>
+		</state>
+	</channel-type>
+
+	<channel-type id="color">
+		<item-type>Color</item-type>
+		<label>Color</label>
+		<description>Select the active color to use with the Color scene</description>
+	</channel-type>
+
+	<channel-type id="saturation">
+		<item-type>Color</item-type>
+		<label>Saturation</label>
+		<description>Control the saturation of your DS device</description>
+	</channel-type>
+
+	<channel-type id="brightness">
+		<item-type>Brightness</item-type>
+		<label>Brightness</label>
+		<description>Select the device brightness</description>
+		<state min="0" max="100" step="1.0" readOnly="false"/>
+	</channel-type>
+
+</thing:thing-descriptions>
