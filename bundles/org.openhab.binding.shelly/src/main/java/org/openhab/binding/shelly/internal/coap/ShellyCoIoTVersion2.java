@@ -103,7 +103,10 @@ public class ShellyCoIoTVersion2 extends ShellyCoIoTProtocol implements ShellyCo
                 // skip, could check against thing mode...
                 break;
 
-            case "1101": // S, output, 0/1
+            case "1101": // relay_0: output, 0/1
+            case "1201": // relay_1: output, 0/1
+            case "1301": // relay_2: output, 0/1
+            case "1401": // relay_3: output, 0/1
                 updatePower(profile, updates, rIndex, sen, s, sensorUpdates);
                 break;
             case "1102": // roler_0: S, roller, open/close/stop -> roller state
