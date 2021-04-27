@@ -245,7 +245,7 @@ public class ShellyManagerPage {
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ALARM);
         addAttribute(properties, th, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_CHARGER);
 
-        properties.put(ATTRIBUTE_DEBUG_MODE, getOption(profile.settings.debug_enable));
+        properties.put(ATTRIBUTE_DEBUG_MODE, getOption(profile.settings.debugEnable));
         properties.put(ATTRIBUTE_DISCOVERABLE, String.valueOf(getBool(profile.settings.discoverable)));
         properties.put(ATTRIBUTE_WIFI_RECOVERY, String.valueOf(getBool(profile.settings.wifiRecoveryReboot)));
         properties.put(ATTRIBUTE_APR_MODE,
