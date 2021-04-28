@@ -144,50 +144,58 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
             if (handler == null) {
                 return;
             }
-            if (channel.equals(RachioBindingConstants.CHANNEL_DEVICE_ACTIVE)) {
-                if (command instanceof OnOffType) {
-                    if (command == OnOffType.OFF) {
-                        logger.debug("{}: Pause device {} (disable watering, schedules etc.)", thingId, d.name);
-                        handler.disableDevice(d.id);
-                    } else {
-                        logger.debug("{}: Resume device {} (enable watering, schedules etc.)", thingId, d.name);
-                        handler.enableDevice(d.id);
+
+            switch (channel) {
+                case CHANNEL_DEVICE_ACTIVE:
+                    if (command instanceof OnOffType) {
+                        if (command == OnOffType.OFF) {
+                            logger.debug("{}: Pause device {} (disable watering, schedules etc.)", thingId, d.name);
+                            handler.disableDevice(d.id);
+                        } else {
+                            logger.debug("{}: Resume device {} (enable watering, schedules etc.)", thingId, d.name);
+                            handler.enableDevice(d.id);
+                        }
                     }
-                }
-            } else if (channel.equals(RachioBindingConstants.CHANNEL_DEVICE_RUN_TIME)) {
-                if (command instanceof DecimalType) {
-                    int runtime = ((DecimalType) command).intValue();
-                    logger.debug("Default Runtime for zones set to {} sec", runtime);
-                    dev.setRunTime(runtime);
-                } else {
-                    logger.debug("Command value is no DecimalType: {}", command);
-                }
-            } else if (channel.equals(RachioBindingConstants.CHANNEL_DEVICE_RUN_ZONES)) {
-                if (command instanceof StringType) {
-                    logger.debug("Run multiple zones: '{}' ('' = ALL)", command.toString());
-                    dev.setRunZones(command.toString());
-                } else {
-                    logger.debug("Command value is no StringType: {}", command);
-                }
-            } else if (channel.equals(RachioBindingConstants.CHANNEL_DEVICE_RUN)) {
-                if (command == OnOffType.ON) {
-                    logger.debug("START watering zones '{}' ('' = ALL)", dev.getRunZones());
-                    handler.runMultipleZones(dev.getAllRunZonesJson(handler.getDefaultRuntime()));
-                }
-            } else if (channel.equals(RachioBindingConstants.CHANNEL_DEVICE_STOP)) {
-                if (command == OnOffType.ON) {
-                    logger.info("STOP watering for device '{}'", dev.name);
-                    handler.stopWatering(dev.id);
-                    updateState(RachioBindingConstants.CHANNEL_DEVICE_STOP, OnOffType.OFF);
-                }
-            } else if (channel.equals(RachioBindingConstants.CHANNEL_DEVICE_RAIN_DELAY)) {
-                if (command instanceof DecimalType) {
-                    logger.info("Start rain delay cycle for {} sec", command.toString());
-                    dev.setRainDelayTime(((DecimalType) command).intValue());
-                    handler.startRainDelay(dev.id, ((DecimalType) command).intValue());
-                } else {
-                    logger.debug("Command value is no DecimalType: {}", command);
-                }
+                    break;
+                case CHANNEL_DEVICE_RUN_TIME:
+                    if (command instanceof DecimalType) {
+                        int runtime = ((DecimalType) command).intValue();
+                        logger.debug("Default Runtime for zones set to {} sec", runtime);
+                        dev.setRunTime(runtime);
+                    } else {
+                        logger.debug("Command value is no DecimalType: {}", command);
+                    }
+                    break;
+                case CHANNEL_DEVICE_RUN_ZONES:
+                    if (command instanceof StringType) {
+                        logger.debug("Run multiple zones: '{}' ('' = ALL)", command.toString());
+                        dev.setRunZones(command.toString());
+                    } else {
+                        logger.debug("Command value is no StringType: {}", command);
+                    }
+                    break;
+                case CHANNEL_DEVICE_RUN:
+                    if (command == OnOffType.ON) {
+                        logger.debug("START watering zones '{}' ('' = ALL)", dev.getRunZones());
+                        handler.runMultipleZones(dev.getAllRunZonesJson(handler.getDefaultRuntime()));
+                    }
+                    break;
+                case CHANNEL_DEVICE_STOP:
+                    if (command == OnOffType.ON) {
+                        logger.info("STOP watering for device '{}'", dev.name);
+                        handler.stopWatering(dev.id);
+                        updateState(RachioBindingConstants.CHANNEL_DEVICE_STOP, OnOffType.OFF);
+                    }
+                    break;
+                case CHANNEL_DEVICE_RAIN_DELAY:
+                    if (command instanceof DecimalType) {
+                        logger.info("Start rain delay cycle for {} sec", command.toString());
+                        dev.setRainDelayTime(((DecimalType) command).intValue());
+                        handler.startRainDelay(dev.id, ((DecimalType) command).intValue());
+                    } else {
+                        logger.debug("Command value is no DecimalType: {}", command);
+                    }
+                    break;
             }
         } catch (RachioApiException e) {
             errorMessage = e.toString();
@@ -297,12 +305,12 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
         try {
             String etype = event.type;
             RachioZone zone = null;
-            if (etype.equals("ZONE_STATUS")) {
+            if (etype.equals(etype)) {
                 RachioZoneStatus runStatus = event.zoneRunStatus;
                 if (runStatus != null) {
                     zone = d.getZoneByNumber(runStatus.zoneNumber);
                 }
-            } else if (event.subType.equals("ZONE_DELTA")) {
+            } else if ("ZONE_DELTA".equals(event.subType)) {
                 zone = d.getZoneById(event.zoneId);
             }
             if (zone != null) {
@@ -314,46 +322,57 @@ public class RachioDeviceHandler extends BaseThingHandler implements RachioStatu
 
             String evt = event.subType.isEmpty() ? event.type : event.subType;
             dev.setEvent(evt, getTimestamp()); // and funnel all zone events to the device
-            if (etype.equals("DEVICE_STATUS")) {
+            if ("DEVICE_STATUS".equals(etype)) {
                 // sub types:
                 // COLD_REBOOT, ONLINE, OFFLINE, OFFLINE_NOTIFICATION, SLEEP_MODE_ON, SLEEP_MODE_OFF, BROWNOUT_VALVE
                 // RAIN_SENSOR_DETECTION_ON, RAIN_SENSOR_DETECTION_OFF, RAIN_DELAY_ON, RAIN_DELAY_OFF
                 logger.debug("Device {} ('{}') changed to status '{}'.", d.name, d.id, event.subType);
-                if (event.subType.equals("COLD_REBOOT")) {
-                    logger.info("{}: Device {}  was restarted, ip={}/{}, gw={}, dns={}/{}, wifi rssi={}.", thingId,
-                            d.name, d.network.ip, d.network.nm, d.network.gw, d.network.dns1, d.network.dns2,
-                            d.network.rssi);
-                    if (event.network != null) {
-                        dev.setNetwork(event.network);
-                    }
-                } else if (event.subType.equals("ONLINE")) {
-                    logger.info("{}: Device is ONLINE.", thingId);
-                    dev.setStatus(event.subType);
-                } else if (event.subType.equals("OFFLINE") || event.subType.equals("OFFLINE_NOTIFICATION")) {
-                    logger.info("{}: Device is OFFLINE (subType = '{}').", thingId, event.subType);
-                    dev.setStatus(event.subType);
-                } else if (event.subType.equals("SLEEP_MODE_ON")) {
-                    logger.info("{}: Device switch to sleep mode.", thingId);
-                    dev.setSleepMode(event.subType);
-                } else if (event.subType.equals("SLEEP_MODE_OFF")) {
-                    logger.info("{}: Device was resumed (exit from sleep mode).", thingId);
-                    dev.setSleepMode(event.subType);
-                } else if (event.subType.equals("RAIN_DELAY_ON")) {
-                    logger.info("{}: Device reporterd Rain Delay ON.", thingId);
-                    update = false; // details missing
-                } else if (event.subType.equals("RAIN_DELAY_OFF")) {
-                    logger.info("{}: Device reporterd Rain Delay OFF.", thingId);
-                    update = false; // details missing
-                } else if (event.subType.equals("RAIN_SENSOR_DETECTION_ON")) {
-                    logger.info("{}: Device reporterd a Rain Sensor ON.", thingId);
-                    update = false; // details missing
-                } else if (event.subType.equals("RAIN_SENSOR_DETECTION_ON")) {
-                    logger.info("{}: Device reporterd Rain Sensor OFF.", thingId);
-                    update = false; // details missing
-                } else {
-                    update = false; // details missing
+                switch (event.subType) {
+                    case "COLD_REBOOT":
+                        logger.info("{}: Device {}  was restarted, ip={}/{}, gw={}, dns={}/{}, wifi rssi={}.", thingId,
+                                d.name, d.network.ip, d.network.nm, d.network.gw, d.network.dns1, d.network.dns2,
+                                d.network.rssi);
+                        if (event.network != null) {
+                            dev.setNetwork(event.network);
+                        }
+                        break;
+                    case "ONLINE":
+                        logger.info("{}: Device is ONLINE.", thingId);
+                        dev.setStatus(event.subType);
+                        break;
+                    case "OFFLINE":
+                    case "OFFLINE_NOTIFICATION":
+                        logger.warn("{}: Device is OFFLINE (subType = '{}').", thingId, event.subType);
+                        dev.setStatus(event.subType);
+                        break;
+                    case "SLEEP_MODE_ON":
+                        logger.info("{}: Device switch to sleep mode.", thingId);
+                        dev.setSleepMode(event.subType);
+                        break;
+                    case "SLEEP_MODE_OFF":
+                        logger.info("{}: Device was resumed (exit from sleep mode).", thingId);
+                        dev.setSleepMode(event.subType);
+                        break;
+                    case "RAIN_DELAY_ON":
+                        logger.info("{}: Device reporterd Rain Delay ON.", thingId);
+                        update = false; // details missing
+                        break;
+                    case "RAIN_DELAY_OFF":
+                        logger.info("{}: Device reporterd Rain Delay OFF.", thingId);
+                        update = false; // details missing
+                        break;
+                    case "RAIN_SENSOR_DETECTION_ON":
+                        logger.info("{}: Device reporterd a Rain Sensor ON.", thingId);
+                        update = false; // details missing
+                        break;
+                    case "RAIN_SENSOR_DETECTION_OFF":
+                        logger.info("{}: Device reporterd Rain Sensor OFF.", thingId);
+                        update = false; // details missing
+                        break;
+                    default:
+                        update = false; // details missing
                 }
-            } else if (event.type.equals("SCHEDULE_STATUS")) {
+            } else if ("SCHEDULE_STATUS".equals(event.type)) {
                 logger.info("{}: Status {} for schedule {}: {} (start={}, end={}, duration={}min)", thingId,
                         event.subType, event.scheduleName, event.summary, event.startTime, event.endTime,
                         event.durationInMinutes);

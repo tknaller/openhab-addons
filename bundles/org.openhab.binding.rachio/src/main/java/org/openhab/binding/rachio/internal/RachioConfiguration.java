@@ -41,7 +41,7 @@ public class RachioConfiguration {
     public void updateConfig(@Nullable Map<String, @Nullable Object> config) {
         for (HashMap.@Nullable Entry<String, @Nullable Object> ce : config.entrySet()) {
             String key = ce.getKey();
-            if (key.equalsIgnoreCase("component.name") || key.equalsIgnoreCase("component.id")) {
+            if ("component.name".equalsIgnoreCase(key) || "component.id".equalsIgnoreCase(key)) {
                 continue;
             }
             if (ce.getValue() == null) {
@@ -50,7 +50,7 @@ public class RachioConfiguration {
             }
             String value = ce.getValue().toString();
 
-            if (key.equalsIgnoreCase("service.pid")) {
+            if ("service.pid".equalsIgnoreCase(key)) {
                 logger.debug("Rachio: Binding configuration:");
             }
             logger.debug("  {}={}", key, value);
