@@ -4,6 +4,19 @@
 	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
+	<thing-type id="shellymonitor">
+		<label>Shelly Monitor</label>
+		<description>This thing aggregates alarms and notifications from all devices</description>
+
+		<channels>
+			<channel id="uid" typeId="uid" />
+			<channel id="type" typeId="type" />
+			<channel id="time" typeId="time" />
+			<channel id="update" typeId="update" />
+		</channels>
+
+	</thing-type>
+
 	<thing-type id="shellydevice">
 		<label>Shelly Device</label>
 		<description>A password protected or unknown device.</description>
@@ -34,4 +47,31 @@
 		<representation-property>deviceName</representation-property>
 	</thing-type>
 
+	<channel-type id="type">
+		<item-type>String</item-type>
+		<label>Type</label>
+		<description>Event type</description>
+	</channel-type>
+	<channel-type id="uid">
+		<item-type>String</item-type>
+		<label>Thing</label>
+		<description>UID of the thing</description>
+	</channel-type>
+	<channel-type id="time">
+		<item-type>DateTime</item-type>
+		<label>Time</label>
+		<description>Timestamp of the event</description>
+	</channel-type>
+	<channel-type id="update">
+		<kind>trigger</kind>
+		<label>Update</label>
+		<description>Triggers UPDATE when new data becomes available.</description>
+		<event>
+			<options>
+				<option value="NONE">None</option>
+			</options>
+		</event>
+	</channel-type>
+
 </thing:thing-descriptions>
+
