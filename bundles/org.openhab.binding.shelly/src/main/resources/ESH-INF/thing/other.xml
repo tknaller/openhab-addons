@@ -9,10 +9,10 @@
 		<description>This thing aggregates alarms and notifications from all devices</description>
 
 		<channels>
-			<channel id="uid" typeId="uid" />
-			<channel id="type" typeId="type" />
-			<channel id="time" typeId="time" />
-			<channel id="update" typeId="update" />
+			<channel id="uid" typeId="uid"/>
+			<channel id="type" typeId="type"/>
+			<channel id="time" typeId="time"/>
+			<channel id="update" typeId="update"/>
 		</channels>
 
 	</thing-type>
@@ -74,4 +74,3 @@
 	</channel-type>
 
 </thing:thing-descriptions>
-
