@@ -27,10 +27,10 @@ import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDet
 public class CarNetVehicleInformation {
     public String vin = "";
     public String model = "";
-    public String color;
-    public String engine;
-    public String mmi;
-    public String transmission;
+    public String color = "";
+    public String engine = "";
+    public String mmi = "";
+    public String transmission = "";
 
     public CarNetVehicleInformation(CarNetVehicleDetails vehicle) {
         this.vin = vehicle.carportData.vin;

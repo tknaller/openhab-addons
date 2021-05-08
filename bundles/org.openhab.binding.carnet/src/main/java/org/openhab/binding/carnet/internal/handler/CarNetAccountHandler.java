@@ -41,6 +41,7 @@ import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetUtils;
 import org.openhab.binding.carnet.internal.api.CarNetApi;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails.CNVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
 import org.openhab.binding.carnet.internal.api.CarNetHttpClient;
 import org.openhab.binding.carnet.internal.api.CarNetTokenManager;
@@ -159,7 +160,19 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         CarNetVehicleList vehices = api.getVehicles();
         vehicleList = new ArrayList<CarNetVehicleInformation>();
         for (String vin : vehices.userVehicles.vehicle) {
-            CarNetVehicleDetails details = api.getVehicleDetails(vin);
+            CarNetVehicleDetails details;
+            try {
+                details = api.getVehicleDetails(vin);
+            } catch (CarNetException e) {
+                logger.warn("Unable to get vehicle details for VIN {}", vin);
+                details = new CarNetVehicleDetails();
+                details.carportData = new CNVehicleDetails();
+                details.carportData.vin = vin;
+                details.carportData.modelName = config.account.brand;
+                details.carportData.modelCode = "";
+                details.carportData.modelYear = "";
+                details.carportData.mmi = "";
+            }
             CarNetVehicleInformation vehicle = new CarNetVehicleInformation(details);
             vehicleList.add(vehicle);
         }

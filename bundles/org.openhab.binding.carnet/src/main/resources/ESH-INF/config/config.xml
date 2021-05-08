@@ -16,7 +16,6 @@
 			<options>
 				<option value="DE">Europe</option>
 				<option value="United States">US</option>
-				<option value="China">CN</option>
 			</options>
 			<default>DE</default>
 		</parameter>
@@ -28,12 +27,6 @@
 			<label>Password</label>
 			<context>password</context>
 			<description>Password to access the CarNet Account.</description>
-		</parameter>
-
-		<parameter name="pollingInterval" type="integer" required="false" min="5">
-			<label>Polling Interval</label>
-			<description>Status update interval in minutes.</description>
-			<default>15</default>
 		</parameter>
 	</config-description>
 
@@ -74,6 +67,12 @@
 			<description>Number of entries to fetch from the destination history (if supported for the vehicle model). Newest one
 				will be first,for each entry a group is created (1..5). 0 means disable fetching this history.</description>
 			<default>1</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="pollingInterval" type="integer" required="false" min="10">
+			<label>Polling Interval</label>
+			<description>Status update interval in minutes.</description>
+			<default>30</default>
 			<advanced>true</advanced>
 		</parameter>
 	</config-description>

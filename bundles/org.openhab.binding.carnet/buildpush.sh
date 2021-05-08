@@ -27,7 +27,7 @@ mkdir src/main/resources/OH-INF
 cp -R ~/Dev/openhab-2-5-x/git/openhab-addons/bundles/org.openhab.binding.carnet/src/main/resources/ESH-INF/ src/main/resources/OH-INF/
 ~/Dev/myfiles/convert_v2_v3.sh 
 echo Build Version 3
-mvn clean install
+mvn clean install -Dohc.version=3.0.2
 if [ $? -ne 0 ]
 then
 	echo Build version 3 failed

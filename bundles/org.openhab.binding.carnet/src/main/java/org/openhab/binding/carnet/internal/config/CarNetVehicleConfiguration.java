@@ -40,5 +40,5 @@ public class CarNetVehicleConfiguration {
     public int numActionHistory = 1; // number of entries from action history
     public int numDestinations = 1; // number of entries from the destination history;
 
-    public int refreshInterval = 10 * 60;
+    public int pollingInterval = -1;
 }

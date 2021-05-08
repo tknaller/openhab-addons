@@ -166,7 +166,12 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
             config.vehicle = getConfigAs(CarNetVehicleConfiguration.class);
             Map<String, String> properties = getThing().getProperties();
-            skipCount = Math.max(config.vehicle.refreshInterval / POLL_INTERVAL_SEC, 2);
+            if (config.vehicle.pollingInterval == -1) {
+                config.vehicle.pollingInterval = 30 * 60; // Default for old thing config
+            }
+            skipCount = Math.max(config.vehicle.pollingInterval * 60 / POLL_INTERVAL_SEC, 2);
+            logger.debug("{}: Polling interval = {}min (skipCount={})", config.vehicle.vin,
+                    config.vehicle.pollingInterval, skipCount);
             channelsCreated = false;
 
             String vin = "";
@@ -516,7 +521,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
      */
     private void setupPollingJob() {
         cancelPollingJob();
-        logger.debug("Setting up polling job with an interval of {} seconds", config.vehicle.refreshInterval);
+        logger.debug("Setting up polling job with an interval of {} seconds", config.vehicle.pollingInterval * 60);
 
         pollingJob = scheduler.scheduleWithFixedDelay(() -> {
             ++updateCounter;
