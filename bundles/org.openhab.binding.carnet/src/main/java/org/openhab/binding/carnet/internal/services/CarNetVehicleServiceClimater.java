@@ -24,7 +24,7 @@ import javax.measure.IncommensurableException;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.carnet.internal.CarNetException;
-import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiBase;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus.CNClimaterStatus.CarNetClimaterStatusData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNClimater.CarNetClimaterStatus.CNClimaterStatus.CarNetClimaterStatusData.CNClimaterElementState.CarNetClimaterZoneStateList;
@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
 public class CarNetVehicleServiceClimater extends CarNetVehicleBaseService {
     private final Logger logger = LoggerFactory.getLogger(CarNetVehicleServiceClimater.class);
 
-    public CarNetVehicleServiceClimater(CarNetVehicleHandler thingHandler, CarNetApi api) {
+    public CarNetVehicleServiceClimater(CarNetVehicleHandler thingHandler, CarNetApiBase api) {
         super(thingHandler, api);
         serviceId = CNAPI_SERVICE_REMOTE_PRETRIP_CLIMATISATION;
     }

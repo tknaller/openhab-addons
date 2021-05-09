@@ -23,10 +23,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 public class CarNetAccountConfiguration {
 
     public String brand = "";
-    public String country = "DE";
 
     public String user = "";
     public String password = "";
-
-    public Integer pollingInterval = 15;
 }

@@ -32,9 +32,14 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
 import org.openhab.binding.carnet.internal.CarNetUtils;
-import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiBase;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails;
+import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleDetails.CNVehicleDetails;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleList;
+import org.openhab.binding.carnet.internal.api.CarNetBrandApiAudi;
+import org.openhab.binding.carnet.internal.api.CarNetBrandApiSkoda;
+import org.openhab.binding.carnet.internal.api.CarNetBrandApiVW;
+import org.openhab.binding.carnet.internal.api.CarNetBrandSeat;
 import org.openhab.binding.carnet.internal.api.CarNetHttpClient;
 import org.openhab.binding.carnet.internal.api.CarNetTokenManager;
 import org.openhab.binding.carnet.internal.config.CarNetAccountConfiguration;
@@ -63,7 +68,7 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
     private final CarNetCombinedConfig config = new CarNetCombinedConfig();
     private final CarNetTextResources messages;
     private final CarNetTokenManager tokenManager;
-    private final CarNetApi api;
+    private final CarNetApiBase api;
     private final CarNetHttpClient http;
 
     private List<CarNetVehicleInformation> vehicleList = new ArrayList<>();
@@ -96,14 +101,34 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         } catch (Exception e) {
             logger.warn("{}", messages.get("init-fialed", "Unable to start HttpClient!"), e);
         }
-
-        this.http = new CarNetHttpClient(httpClient);
-        this.api = new CarNetApi(http, tokenManager);
+        http = new CarNetHttpClient(httpClient);
 
         // Generate a unique Id for all tokens of the new Account thing, but also of all depending Vehicle things. This
         // allows sharing the tokens across all things associated with the account.
+        config.account = getConfigAs(CarNetAccountConfiguration.class);
+        api = createApi(config);
         config.tokenSetId = tokenManager.generateTokenSetId();
         tokenManager.setHttpClient(config.tokenSetId, http);
+    }
+
+    public CarNetApiBase createApi(CarNetCombinedConfig config) {
+        String type = getThing().getUID().getAsString();
+        type = CarNetUtils.substringBetween(type, ":", ":");
+        switch (type) {
+            case THING_MYAUDI:
+            default:
+                config.account.brand = CNAPI_BRAND_AUDI;
+                return new CarNetBrandApiAudi(http, tokenManager);
+            case THING_VOLKSWAGEN:
+                config.account.brand = CNAPI_BRAND_VW;
+                return new CarNetBrandApiVW(http, tokenManager);
+            case THING_SKODA:
+                config.account.brand = CNAPI_BRAND_SKODA;
+                return new CarNetBrandApiSkoda(http, tokenManager);
+            case THING_SEAT:
+                config.account.brand = CNAPI_BRAND_SEAT;
+                return new CarNetBrandSeat(http, tokenManager);
+        }
     }
 
     /**
@@ -112,7 +137,6 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
     @Override
     public void initialize() {
         updateStatus(ThingStatus.UNKNOWN);
-
         scheduler.execute(() -> {
             try {
                 initializeThing();
@@ -137,21 +161,8 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
     public boolean initializeThing() throws CarNetException {
         Map<String, String> properties = new TreeMap<String, String>();
 
-        config.account = getConfigAs(CarNetAccountConfiguration.class);
-        String type = getThing().getUID().getAsString();
-        type = CarNetUtils.substringBetween(type, ":", ":");
-        switch (type) {
-            case THING_MYAUDI:
-            default:
-                config.account.brand = CNAPI_BRAND_AUDI;
-                break;
-            case THING_MYVOLKSWAGEN:
-                config.account.brand = CNAPI_BRAND_VW;
-                break;
-        }
-
-        api.setConfig(config);
         if (!api.isInitialized()) {
+            api.setConfig(config);
             api.initialize();
             refreshProperties(properties);
         }
@@ -159,7 +170,17 @@ public class CarNetAccountHandler extends BaseBridgeHandler {
         CarNetVehicleList vehices = api.getVehicles();
         vehicleList = new ArrayList<CarNetVehicleInformation>();
         for (String vin : vehices.userVehicles.vehicle) {
-            CarNetVehicleDetails details = api.getVehicleDetails(vin);
+            CarNetVehicleDetails details;
+            try {
+                details = api.getVehicleDetails(vin);
+            } catch (CarNetException e) {
+                logger.debug("Unable to get vehicle details for VIN {}", vin);
+                CNVehicleDetails carportData = new CNVehicleDetails();
+                details = new CarNetVehicleDetails();
+                details.carportData = carportData;
+                details.carportData.vin = vin;
+                details.carportData.brand = config.account.brand;
+            }
             CarNetVehicleInformation vehicle = new CarNetVehicleInformation(details);
             vehicleList.add(vehicle);
         }

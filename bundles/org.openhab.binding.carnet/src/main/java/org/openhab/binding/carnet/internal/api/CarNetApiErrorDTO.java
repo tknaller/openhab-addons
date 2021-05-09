@@ -20,7 +20,7 @@ import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO.CNApiError2.CNE
 import com.google.gson.annotations.SerializedName;
 
 /**
- * The {@link CarNetApi} implements the http based API access to CarNet
+ * The {@link CarNetApiBase} implements the http based API access to CarNet
  *
  * @author Markus Michels - Initial contribution
  */

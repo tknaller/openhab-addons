@@ -21,21 +21,14 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
  */
 @NonNullByDefault
 public class CarNetApiConstants {
-
-    public static final String VWPRE = "https://msg.volkswagen.de/fs-car/";
-    public static final String CNAPI_BASE_URL_AUDI = "https://msg.audi.de/fs-car";
-    public static final String CNAPI_BASE_URL_VW = VWPRE;
-
     public static final String CNAPI_BRAND_AUDI = "Audi";
     public static final String CNAPI_BRAND_VW = "VW";
     public static final String CNAPI_BRAND_SKODA = "Skoda";
-    public static final String CNAPI_BRAND_GO = "Go"; // WE Connect Go
+    public static final String CNAPI_BRAND_SEAT = "Seat";
 
     // HTTP header attributes
     public static final String CNAPI_HEADER_TYPE = "Accept: application/json";
     public static final String CNAPI_HEADER_APP = "X-App-Name";
-    public static final String CNAPI_HEADER_APP_EREMOTE = "eRemote";
-    public static final String CNAPI_HEADER_APP_MYAUDI = "myAudi";
     public static final String CNAPI_HEADER_VERS = "X-App-Version";
     public static final String CNAPI_HEADER_VERS_VALUE = "1.0.0";
     public static final String CNAPI_HEADER_USER_AGENT = "okhttp/3.7.0";
@@ -46,7 +39,7 @@ public class CarNetApiConstants {
     public static final String CNAPI_CONTENTT_FORM_URLENC = "application/x-www-form-urlencoded";
     public static final String CNAPI_ACCEPTT_JSON = "application/json";
 
-    public static int CNAPI_TIMEOUT_MS = 30 * 1000;
+    public static int CNAPI_TIMEOUT_MS = 60 * 1000;
 
     public static final String API_STATUS_MSG_PREFIX = "api-status";
     public static final String API_STATUS_CLASS_SECURUTY = "VSR.security";
@@ -77,14 +70,8 @@ public class CarNetApiConstants {
 
     public static final String CNAPI_OAUTH_BASE_URL = "https://identity.vwgroup.io";
     public static final String CNAPI_OAUTH_AUTHORIZE_URL = CNAPI_OAUTH_BASE_URL + "/oidc/v1/authorize";
-    public static final String CNAPI_OIDC_CONFIG_URL = "https://app-api.my.audi.com/myaudiappidk/v1/openid-configuration";
-    public static final String CNAPI_AUDI_TOKEN_URL = "https://app-api.my.audi.com/myaudiappidk/v1/token";
     public static final String CNAPI_VW_TOKEN_URL = "https://mbboauth-1d.prd.ece.vwg-connect.com/mbbcoauth/mobile/oauth2/v1/token";
 
-    public static final String CNAPI_AUDIURL_OPERATIONS = "https://msg.audi.de/myaudi/vehicle-management/v2/vehicles";
-
-    public static final String CNAPI_URL_AUDI_GET_TOKEN = "https://id.audi.com/v1/token";
-    public static final String CNAPI_URL_GO_GET_TOKEN = "https://id.audi.com/v1/token";
     public static final String CNAPI_URL_DEF_GET_TOKEN = "https://tokenrefreshservice.apps.emea.vwapps.io/refreshTokens";
 
     public static final String CNAPI_SERVICE_APP_MEDIA = "appmedia_v1";
@@ -92,7 +79,7 @@ public class CarNetApiConstants {
     public static final String CNAPI_SERVICE_CAR_FINDER = "carfinder_v1";
     public static final String CNAPI_SERVICE_GEOFENCING = "geofence_v1";
     public static final String CNAPI_SERVICE_MOBILE_KEY = "mobilekey_v1";
-    public static final String CNAPI_SERVICE_MY_AUDI_DESTINATIONS = "zieleinspeisung_v1";
+    public static final String CNAPI_SERVICE_DESTINATIONS = "zieleinspeisung_v1";
     public static final String CNAPI_SERVICE_PICTURE_NAV1 = "picturenav_v1";
     public static final String CNAPI_SERVICE_PICTURE_NAV3 = "picturenav_v3";
     public static final String CNAPI_SERVICE_REMOTE_BATTERY_CHARGE = "rbatterycharge_v1";

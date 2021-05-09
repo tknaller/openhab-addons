@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.carnet.internal.handler;
 
+import static org.openhab.binding.carnet.internal.CarNetUtils.getString;
+
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -33,14 +35,18 @@ public class CarNetVehicleInformation {
     public String transmission;
 
     public CarNetVehicleInformation(CarNetVehicleDetails vehicle) {
-        this.vin = vehicle.carportData.vin;
-        this.model = vehicle.carportData.modelYear + " " + vehicle.carportData.brand + " "
-                + vehicle.carportData.modelName + " (" + vehicle.carportData.countryCode + "-"
-                + vehicle.carportData.modelCode + ")";
-        this.color = vehicle.carportData.color;
-        this.engine = vehicle.carportData.engine;
-        this.transmission = vehicle.carportData.transmission;
-        this.mmi = vehicle.carportData.mmi;
+        this.vin = getString(vehicle.carportData.vin);
+        if (vehicle.carportData.modelName != null) {
+            this.model = getString(vehicle.carportData.modelYear) + " " + getString(vehicle.carportData.brand) + " "
+                    + getString(vehicle.carportData.modelName) + " (" + getString(vehicle.carportData.countryCode) + "-"
+                    + getString(vehicle.carportData.modelCode) + ")";
+        } else {
+            this.model = getString(vehicle.carportData.brand);
+        }
+        this.color = getString(vehicle.carportData.color);
+        this.engine = getString(vehicle.carportData.engine);
+        this.transmission = getString(vehicle.carportData.transmission);
+        this.mmi = getString(vehicle.carportData.mmi);
     }
 
     public Map<String, String> getProperties() {

@@ -22,7 +22,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.http.HttpStatus;
 import org.openhab.binding.carnet.internal.CarNetException;
-import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiBase;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehiclePosition;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.ChannelIdMapEntry;
@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 public class CarNetVehicleServiceCarFinder extends CarNetVehicleBaseService {
     private final Logger logger = LoggerFactory.getLogger(CarNetVehicleServiceCarFinder.class);
 
-    public CarNetVehicleServiceCarFinder(CarNetVehicleHandler thingHandler, CarNetApi api) {
+    public CarNetVehicleServiceCarFinder(CarNetVehicleHandler thingHandler, CarNetApiBase api) {
         super(thingHandler, api);
         serviceId = CNAPI_SERVICE_CAR_FINDER;
     }

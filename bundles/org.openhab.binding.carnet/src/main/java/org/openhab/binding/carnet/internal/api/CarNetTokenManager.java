@@ -99,7 +99,7 @@ public class CarNetTokenManager {
          * The token service also provides the option to revoke a token, this is not used. Token stays until unless the
          * refresh fails.
          */
-        String url = "", html = "", authCode = "", csrf = "";
+        String url = "", html = "", csrf = "";
         String idToken = "", accessToken = "", expiresIn = "";
         Map<String, String> headers = new LinkedHashMap<>();
         Map<String, String> data = new LinkedHashMap<>();
@@ -109,13 +109,15 @@ public class CarNetTokenManager {
             headers.put(HttpHeader.ACCEPT.toString(),
                     "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
             headers.put(HttpHeader.CONTENT_TYPE.toString(), "application/x-www-form-urlencoded");
+            headers.put("x-requested-with", config.api.xrequest);
+            headers.put("upgrade-insecure-requests", "1");
 
             logger.debug("{}: OAuth: Get signin form", config.vehicle.vin);
             String state = UUID.randomUUID().toString();
             String nonce = generateNonce();
-            url = CNAPI_OAUTH_AUTHORIZE_URL + "?response_type=" + urlEncode(config.responseType) + "&client_id="
-                    + urlEncode(config.clientId) + "&redirect_uri=" + urlEncode(config.redirect_uri) + "&scope="
-                    + urlEncode(config.authScope) + "&state=" + state + "&nonce=" + nonce
+            url = CNAPI_OAUTH_AUTHORIZE_URL + "?response_type=" + urlEncode(config.api.responseType) + "&client_id="
+                    + urlEncode(config.api.clientId) + "&redirect_uri=" + urlEncode(config.api.redirect_uri) + "&scope="
+                    + urlEncode(config.api.authScope) + "&state=" + state + "&nonce=" + nonce
                     + "&prompt=login&ui_locales=de-DE%20de";
             http.get(url, headers, false);
             url = http.getRedirect(); // Signin URL
@@ -136,7 +138,7 @@ public class CarNetTokenManager {
 
             // Authenticate: Username
             logger.trace("{}: OAuth input: User", config.vehicle.vin);
-            url = CNAPI_OAUTH_BASE_URL + "/signin-service/v1/" + config.clientId + "/login/identifier";
+            url = CNAPI_OAUTH_BASE_URL + "/signin-service/v1/" + config.api.clientId + "/login/identifier";
             data.put("_csrf", csrf);
             data.put("relayState", relayState);
             data.put("hmac", hmac);
@@ -152,7 +154,7 @@ public class CarNetTokenManager {
             hmac = substringBetween(html, "name=\"hmac\" value=\"", "\"/>");
 
             logger.trace("{}: OAuth input: Authenticate", config.vehicle.vin);
-            url = CNAPI_OAUTH_BASE_URL + "/signin-service/v1/" + config.clientId + "/login/authenticate";
+            url = CNAPI_OAUTH_BASE_URL + "/signin-service/v1/" + config.api.clientId + "/login/authenticate";
             data.clear();
             data.put("email", URLEncoder.encode(config.account.user, UTF_8));
             data.put("password", URLEncoder.encode(config.account.password, UTF_8));
@@ -174,10 +176,12 @@ public class CarNetTokenManager {
                 // if (url.contains("&user_id=")) {
                 // userId = getUrlParm(url, "user_id");
                 // }
-                if (url.contains("&code=")) {
-                    authCode = getUrlParm(url, "code");
-                    break; // that's what we are looking for
-                }
+                /*
+                 * if (url.contains("&code=")) {
+                 * authCode = getUrlParm(url, "code");
+                 * break;
+                 * }
+                 */
                 if (url.contains("&id_token=")) {
                     idToken = getUrlParm(url, "id_token");
                 }
@@ -200,43 +204,6 @@ public class CarNetTokenManager {
                 // In this case the id and access token were returned by the login process
                 logger.trace("{}: OAuth successful, idToken and accessToken retrieved", config.vehicle.vin);
                 tokens.idToken = new CarNetToken(idToken, accessToken, "bearer", Integer.parseInt(expiresIn, 10));
-            } else {
-                // Otherwise we just got an auhorization code and need to request the token
-                if (authCode.isEmpty()) {
-                    logger.debug("{}: Unable to obtain authCode, last url={}, last response: {}", config.vehicle.vin,
-                            url, html);
-                    throw new CarNetSecurityException("Unable to complete OAuth, check credentials");
-                }
-
-                logger.trace("{}: OAuth successful, obtain ID token (auth code={})", config.vehicle.vin, authCode);
-                headers.clear();
-                headers.put(HttpHeader.ACCEPT.toString(), "application/json, text/plain, */*");
-                headers.put(HttpHeader.CONTENT_TYPE.toString(), "application/json");
-                headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
-
-                long tsC = parseDate(config.oidcDate);
-                // long n = System.currentTimeMillis();
-                long ts1 = System.currentTimeMillis() - tsC;
-                long ts2 = System.currentTimeMillis();
-                long ts = ts1 + ts2;
-                String s = ((Long) (ts / 100000)).toString();
-                headers.put("X-QMAuth", "v1:934928ef:" + s);
-
-                data.clear();
-                data.put("client_id", config.clientId);
-                data.put("grant_type", "authorization_code");
-                data.put("code", authCode);
-                data.put("redirect_uri", config.redirect_uri);
-                data.put("response_type", "token id_token");
-                json = http.post(CNAPI_AUDI_TOKEN_URL, headers, data, true);
-
-                // process token
-                token = fromJson(gson, json, CNApiToken.class);
-                if ((token.accessToken == null) || token.accessToken.isEmpty()) {
-                    throw new CarNetSecurityException("Authentication failed: Unable to get id token!");
-                }
-
-                tokens.idToken = new CarNetToken(token);
             }
             logger.debug("{}: OAuth successful", config.vehicle.vin);
             tokens.csrf = csrf;
@@ -247,9 +214,9 @@ public class CarNetTokenManager {
             logger.debug("{}: Get VW Token", config.vehicle.vin);
             headers.clear();
             headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
-            headers.put(CNAPI_HEADER_VERS, "3.14.0");
-            headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
-            headers.put(CNAPI_HEADER_CLIENTID, config.xClientId);
+            headers.put(CNAPI_HEADER_APP, config.api.xappName);
+            headers.put(CNAPI_HEADER_VERS, config.api.xappVersion);
+            headers.put(CNAPI_HEADER_CLIENTID, config.api.xClientId);
             headers.put(CNAPI_HEADER_HOST, "mbboauth-1d.prd.ece.vwg-connect.com");
             headers.put(HttpHeader.ACCEPT.toString(), "*/*");
             data.clear();
@@ -307,8 +274,8 @@ public class CarNetTokenManager {
         // "Authorization": "Bearer " + self.vwToken.get("access_token"),
         Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
-        headers.put(CNAPI_HEADER_VERS, "3.14.0");
-        headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
+        headers.put(CNAPI_HEADER_VERS, config.api.xappVersion);
+        headers.put(CNAPI_HEADER_APP, config.api.xappName);
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
         // Build Hash: SHA512(SPIN+Challenge)
         String url = "https://mal-1a.prd.ece.vwg-connect.com/api/rolesrights/authorization/v2/vehicles/"
