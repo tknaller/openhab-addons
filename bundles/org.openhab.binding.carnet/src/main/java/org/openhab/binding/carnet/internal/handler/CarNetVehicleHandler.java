@@ -53,15 +53,15 @@ import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetTextResources;
-import org.openhab.binding.carnet.internal.api.CarNetApi;
-import org.openhab.binding.carnet.internal.api.CarNetApi.CarNetPendingRequest;
+import org.openhab.binding.carnet.internal.api.CarNetApiBase;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO;
 import org.openhab.binding.carnet.internal.api.CarNetApiErrorDTO.CNErrorMessage2Details;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNOperationList.CarNetOperationList;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNPairingInfo.CarNetPairingInfo;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetServiceAvailability;
 import org.openhab.binding.carnet.internal.api.CarNetApiResult;
-import org.openhab.binding.carnet.internal.api.CarNetTokenManager;
+import org.openhab.binding.carnet.internal.api.CarNetBrandApiAudi;
+import org.openhab.binding.carnet.internal.api.CarNetPendingRequest;
 import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
 import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration;
 import org.openhab.binding.carnet.internal.provider.CarNetChannelTypeProvider;
@@ -92,12 +92,11 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private final CarNetTextResources resources;
     private final CarNetIChanneldMapper idMapper;
     private final Map<String, Object> channelData = new HashMap<>();
-    private final CarNetTokenManager tokenManager;
     private final CarNetChannelTypeProvider channelTypeProvider;
     private final ZoneId zoneId;
 
     public String thingId = "";
-    private CarNetApi api = new CarNetApi();
+    private CarNetApiBase api = new CarNetBrandApiAudi();
     private @Nullable CarNetAccountHandler accountHandler;
     private @Nullable ScheduledFuture<?> pollingJob;
     private int updateCounter = 0;
@@ -111,13 +110,12 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     private CarNetCombinedConfig config = new CarNetCombinedConfig();
 
     public CarNetVehicleHandler(Thing thing, CarNetTextResources resources, ZoneId zoneId,
-            CarNetIChanneldMapper idMapper, CarNetTokenManager tokenManager,
-            CarNetChannelTypeProvider channelTypeProvider) {
+            CarNetIChanneldMapper idMapper, CarNetChannelTypeProvider channelTypeProvider) throws CarNetException {
         super(thing);
 
+        this.thingId = getThing().getUID().getId();
         this.resources = resources;
         this.idMapper = idMapper;
-        this.tokenManager = tokenManager;
         this.channelTypeProvider = channelTypeProvider;
         this.zoneId = zoneId;
     }
@@ -126,28 +124,23 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
     public void initialize() {
         logger.debug("Initializing!");
         updateStatus(ThingStatus.UNKNOWN, ThingStatusDetail.NONE, "Initializing");
-
-        // Register listener and wait for account being ONLINE
-        CarNetAccountHandler handler = null;
-        Bridge bridge = getBridge();
-        if (bridge != null) {
-            handler = (CarNetAccountHandler) bridge.getHandler();
-        }
-        if ((handler == null)) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_UNINITIALIZED,
-                    "Account Thing is not initialized!");
-            return;
-        }
-        accountHandler = handler;
-        thingId = getThing().getUID().getId();
-
-        api = new CarNetApi(handler.getHttpClient(), tokenManager);
-
         scheduler.schedule(() -> {
-            if (accountHandler != null) {
-                accountHandler.registerListener(this);
-                setupPollingJob();
+            // Register listener and wait for account being ONLINE
+            CarNetAccountHandler handler = null;
+            Bridge bridge = getBridge();
+            if (bridge != null) {
+                handler = (CarNetAccountHandler) bridge.getHandler();
             }
+            if ((handler == null)) {
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_UNINITIALIZED,
+                        "Account Thing is not initialized!");
+                return;
+            }
+            accountHandler = handler;
+            this.api = handler.createApi(config);
+
+            handler.registerListener(this);
+            setupPollingJob();
         }, 1, TimeUnit.SECONDS);
     }
 
@@ -166,7 +159,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
             }
             config.vehicle = getConfigAs(CarNetVehicleConfiguration.class);
             Map<String, String> properties = getThing().getProperties();
-            skipCount = Math.max(config.vehicle.refreshInterval / POLL_INTERVAL_SEC, 2);
+            skipCount = Math.max(config.vehicle.pollingInterval * 60 / POLL_INTERVAL_SEC, 2);
             channelsCreated = false;
 
             String vin = "";
@@ -261,7 +254,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
                     new CarNetVehicleServiceClimater(this, api));
             addService(serviceAvailability.tripData, CNAPI_SERVICE_REMOTE_TRIP_STATISTICS,
                     new CarNetVehicleServiceTripData(this, api));
-            addService(serviceAvailability.destinations, CNAPI_SERVICE_MY_AUDI_DESTINATIONS,
+            addService(serviceAvailability.destinations, CNAPI_SERVICE_DESTINATIONS,
                     new CarNetVehicleServiceDestinations(this, api));
 
             if (!channelsCreated) {
@@ -516,7 +509,7 @@ public class CarNetVehicleHandler extends BaseThingHandler implements CarNetDevi
      */
     private void setupPollingJob() {
         cancelPollingJob();
-        logger.debug("Setting up polling job with an interval of {} seconds", config.vehicle.refreshInterval);
+        logger.debug("Setting up polling job with an interval of {} seconds", config.vehicle.pollingInterval * 60);
 
         pollingJob = scheduler.scheduleWithFixedDelay(() -> {
             ++updateCounter;

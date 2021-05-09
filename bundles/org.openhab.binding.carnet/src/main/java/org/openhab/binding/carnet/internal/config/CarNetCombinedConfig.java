@@ -14,6 +14,7 @@ package org.openhab.binding.carnet.internal.config;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetOidcConfig;
+import org.openhab.binding.carnet.internal.api.CarNetApiProperties;
 import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration.CarNetUserInfo;
 
 /**
@@ -24,19 +25,10 @@ import org.openhab.binding.carnet.internal.config.CarNetVehicleConfiguration.Car
 @NonNullByDefault
 public class CarNetCombinedConfig {
     public CarNetOidcConfig oidcConfig = new CarNetOidcConfig();
-    public String oidcDate = ""; // Date in getOIDC http response header
-    public String oidcConfigUrl = "";
-    public String clientId = "";
-    public String xClientId = "";
-    public String authScope = "";
-    public String redirect_uri = "";
-    public String xrequest = "";
-    public String responseType = "";
-    public String xappName = "";
-    public String xappVersion = "";
 
     public String tokenSetId = "";
     public CarNetAccountConfiguration account = new CarNetAccountConfiguration();
     public CarNetVehicleConfiguration vehicle = new CarNetVehicleConfiguration();
     public CarNetUserInfo user = new CarNetUserInfo();
+    public CarNetApiProperties api = new CarNetApiProperties();
 }

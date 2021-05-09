@@ -26,7 +26,7 @@ import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.unit.SIUnits;
 import org.eclipse.smarthome.core.library.unit.SmartHomeUnits;
 import org.openhab.binding.carnet.internal.CarNetException;
-import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiBase;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetTripData.CarNetTripDataList.CarNetTripDataEntry;
 import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
@@ -40,7 +40,7 @@ import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.Channe
  */
 @NonNullByDefault
 public class CarNetVehicleServiceTripData extends CarNetVehicleBaseService {
-    public CarNetVehicleServiceTripData(CarNetVehicleHandler thingHandler, CarNetApi api) {
+    public CarNetVehicleServiceTripData(CarNetVehicleHandler thingHandler, CarNetApiBase api) {
         super(thingHandler, api);
         serviceId = CNAPI_SERVICE_REMOTE_TRIP_STATISTICS;
     }

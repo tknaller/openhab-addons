@@ -14,7 +14,7 @@ package org.openhab.binding.carnet.internal.services;
 
 import static org.openhab.binding.carnet.internal.CarNetBindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarNetUtils.getStringType;
-import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_MY_AUDI_DESTINATIONS;
+import static org.openhab.binding.carnet.internal.api.CarNetApiConstants.CNAPI_SERVICE_DESTINATIONS;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -25,7 +25,7 @@ import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.PointType;
 import org.eclipse.smarthome.core.types.UnDefType;
 import org.openhab.binding.carnet.internal.CarNetException;
-import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiBase;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNDestinations.CarNetDestination;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNDestinations.CarNetDestinationList;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
@@ -37,9 +37,9 @@ import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.Channe
  * @author Markus Michels - Initial contribution
  */
 public class CarNetVehicleServiceDestinations extends CarNetVehicleBaseService {
-    public CarNetVehicleServiceDestinations(CarNetVehicleHandler thingHandler, CarNetApi api) {
+    public CarNetVehicleServiceDestinations(CarNetVehicleHandler thingHandler, CarNetApiBase api) {
         super(thingHandler, api);
-        serviceId = CNAPI_SERVICE_MY_AUDI_DESTINATIONS;
+        serviceId = CNAPI_SERVICE_DESTINATIONS;
     }
 
     @Override

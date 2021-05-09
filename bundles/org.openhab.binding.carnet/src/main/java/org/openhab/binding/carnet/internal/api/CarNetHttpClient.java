@@ -238,8 +238,7 @@ public class CarNetHttpClient {
      *
      */
     private String getBrandUrl(String uriTemplate, String args, String vin) throws MalformedURLException {
-        String path = MessageFormat.format(uriTemplate, config.account.brand, config.account.country, vin,
-                config.user.id);
+        String path = MessageFormat.format(uriTemplate, config.account.brand, config.api.xcountry, vin, config.user.id);
         if (!uriTemplate.contains("://")) { // not a full URL
             return getUrl(path.isEmpty() ? path : path + (!args.isEmpty() ? "?" + args : ""));
         } else {
@@ -252,47 +251,13 @@ public class CarNetHttpClient {
      */
     public Map<String, String> fillAppHeaders(Map<String, String> headers, String token) throws CarNetException {
         headers.put(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT);
-        headers.put(CNAPI_HEADER_APP, config.xappName);
-        headers.put(CNAPI_HEADER_VERS, config.xappVersion);
+        headers.put(CNAPI_HEADER_APP, config.api.xappName);
+        headers.put(CNAPI_HEADER_VERS, config.api.xappVersion);
         headers.put(HttpHeader.ACCEPT.toString(), CNAPI_ACCEPTT_JSON);
         headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
         headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + token);
         headers.put("X-Country-Id", "DE");
         headers.put("X-Language-Id", "de");
-        return headers;
-    }
-
-    /**
-     * Fill http headers for SOAP requests
-     */
-    public static Map<String, String> fillActionHeaders(Map<String, String> headers, String contentType, String token,
-            String securityToken) throws CarNetException {
-        // "User-Agent": "okhttp/3.7.0",
-        // "Host": "msg.volkswagen.de",
-        // "X-App-Version": "3.14.0",
-        // "X-App-Name": "myAudi",
-        // "Authorization": "Bearer " + self.vwToken.get("access_token"),
-        // "Accept-charset": "UTF-8",
-        // "Content-Type": content_type,
-        // "Accept": "application/json,
-        // application/vnd.vwg.mbb.ChargerAction_v1_0_0+xml,application/vnd.volkswagenag.com-error-v1+xml,application/vnd.vwg.mbb.genericError_v1_0_2+xml,
-        // application/vnd.vwg.mbb.RemoteStandheizung_v2_0_0+xml,
-        // application/vnd.vwg.mbb.genericError_v1_0_2+xml,application/vnd.vwg.mbb.RemoteLockUnlock_v1_0_0+xml,*/*","
-        headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0)");
-        headers.put(CNAPI_HEADER_APP, CNAPI_HEADER_APP_MYAUDI);
-        headers.put(CNAPI_HEADER_VERS, "3.14.0");
-        if (!contentType.isEmpty()) {
-            headers.put(HttpHeader.CONTENT_TYPE.toString(), contentType);
-        }
-        headers.put(HttpHeader.ACCEPT.toString(),
-                "application/json, application/vnd.vwg.mbb.ChargerAction_v1_0_0+xml,application/vnd.volkswagenag.com-error-v1+xml,application/vnd.vwg.mbb.genericError_v1_0_2+xml,application/vnd.vwg.mbb.RemoteStandheizung_v2_0_0+xml,application/vnd.vwg.mbb.genericError_v1_0_2+xml,application/vnd.vwg.mbb.RemoteLockUnlock_v1_0_0+xml,application/vnd.vwg.mbb.operationList_v3_0_2+xml,application/vnd.vwg.mbb.genericError_v1_0_2+xml,*/*");
-        headers.put(HttpHeader.ACCEPT_CHARSET.toString(), StandardCharsets.UTF_8.toString());
-
-        headers.put(HttpHeader.AUTHORIZATION.toString(), "Bearer " + token);
-        headers.put(HttpHeader.HOST.toString(), "msg.volkswagen.de");
-        if (!securityToken.isEmpty()) {
-            headers.put("x-mbbSecToken", securityToken);
-        }
         return headers;
     }
 
@@ -304,10 +269,10 @@ public class CarNetHttpClient {
     public Map<String, String> fillRefreshHeaders() {
         Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeader.USER_AGENT.toString(), "okhttp/3.7.0");
-        headers.put(CNAPI_HEADER_APP, config.xappName);
-        headers.put(CNAPI_HEADER_VERS, config.xappVersion);
+        headers.put(CNAPI_HEADER_APP, config.api.xappName);
+        headers.put(CNAPI_HEADER_VERS, config.api.xappVersion);
         headers.put(HttpHeader.CONTENT_TYPE.toString(), "application/x-www-form-urlencoded");
-        headers.put("X-Client-Id", config.xClientId);
+        headers.put("X-Client-Id", config.api.xClientId);
         return headers;
     }
 
@@ -371,14 +336,8 @@ public class CarNetHttpClient {
      * @throws MalformedURLException
      */
     public String getBaseUrl() throws MalformedURLException {
-        if (!config.vehicle.apiUrlPrefix.isEmpty()) {
-            return config.vehicle.apiUrlPrefix;
-        }
-        if (config.account.brand.equalsIgnoreCase(CNAPI_BRAND_AUDI)) {
-            return CNAPI_BASE_URL_AUDI;
-        }
-        if (config.account.brand.equalsIgnoreCase(CNAPI_BRAND_VW)) {
-            return CNAPI_BASE_URL_VW;
+        if (!config.api.apiUrlPrefix.isEmpty()) {
+            return config.api.apiUrlPrefix;
         }
         throw new MalformedURLException("Unknown brand for base URL");
     }

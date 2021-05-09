@@ -22,7 +22,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.carnet.internal.CarNetException;
 import org.openhab.binding.carnet.internal.CarNetUtils;
-import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiBase;
 import org.openhab.binding.carnet.internal.config.CarNetCombinedConfig;
 import org.openhab.binding.carnet.internal.handler.CarNetAccountHandler;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
@@ -40,14 +40,14 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 public class CarNetVehicleBaseService {
     private final Logger logger = LoggerFactory.getLogger(CarNetVehicleBaseService.class);
-    protected final CarNetApi api;
+    protected final CarNetApiBase api;
     protected final CarNetVehicleHandler thingHandler;
     protected final CarNetIChanneldMapper idMapper;
     protected final String thingId;
     protected String serviceId = "";
     protected boolean enabled = true;
 
-    public CarNetVehicleBaseService(CarNetVehicleHandler thingHandler, CarNetApi api) {
+    public CarNetVehicleBaseService(CarNetVehicleHandler thingHandler, CarNetApiBase api) {
         this.thingHandler = thingHandler;
         this.thingId = thingHandler.thingId;
         this.idMapper = thingHandler.getIdMapper();

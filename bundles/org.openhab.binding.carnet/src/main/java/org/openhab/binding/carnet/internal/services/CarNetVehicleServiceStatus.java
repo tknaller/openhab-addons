@@ -33,7 +33,7 @@ import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.UnDefType;
 import org.openhab.binding.carnet.internal.CarNetException;
-import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiBase;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CarNetVehicleStatus.CNStoredVehicleDataResponse.CNVehicleData.CNStatusData.CNStatusField;
@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
 public class CarNetVehicleServiceStatus extends CarNetVehicleBaseService {
     private final Logger logger = LoggerFactory.getLogger(CarNetVehicleServiceStatus.class);
 
-    public CarNetVehicleServiceStatus(CarNetVehicleHandler thingHandler, CarNetApi api) {
+    public CarNetVehicleServiceStatus(CarNetVehicleHandler thingHandler, CarNetApiBase api) {
         super(thingHandler, api);
         serviceId = CNAPI_SERVICE_VEHICLE_STATUS_REPORT;
     }

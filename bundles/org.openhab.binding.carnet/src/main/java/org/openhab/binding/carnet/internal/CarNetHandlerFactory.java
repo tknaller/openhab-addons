@@ -40,6 +40,8 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link CarNetHandlerFactory} is responsible for creating things and thing
@@ -50,6 +52,8 @@ import org.osgi.service.component.annotations.Reference;
 @NonNullByDefault
 @Component(configurationPid = "binding.carnet", service = ThingHandlerFactory.class)
 public class CarNetHandlerFactory extends BaseThingHandlerFactory {
+    private final Logger logger = LoggerFactory.getLogger(CarNetHandlerFactory.class);
+
     private final CarNetTextResources resources;
     private final CarNetIChanneldMapper channelIdMapper;
     private final CarNetTokenManager tokenManager;
@@ -77,13 +81,17 @@ public class CarNetHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
-        if (THING_TYPE_MYAUDI.equals(thingTypeUID) || THING_TYPE_MYVOLKSWAGEN.equals(thingTypeUID)) {
-            CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, resources, tokenManager);
-            registerDeviceDiscoveryService(handler);
-            return handler;
-        } else if (THING_TYPE_VEHICLE.equals(thingTypeUID)) {
-            return new CarNetVehicleHandler(thing, resources, zoneId, channelIdMapper, tokenManager,
-                    channelTypeProvider);
+        try {
+            if (THING_TYPE_MYAUDI.equals(thingTypeUID) || THING_TYPE_VW.equals(thingTypeUID)
+                    || THING_TYPE_SKODA.equals(thingTypeUID)) {
+                CarNetAccountHandler handler = new CarNetAccountHandler((Bridge) thing, resources, tokenManager);
+                registerDeviceDiscoveryService(handler);
+                return handler;
+            } else if (THING_TYPE_VEHICLE.equals(thingTypeUID)) {
+                return new CarNetVehicleHandler(thing, resources, zoneId, channelIdMapper, channelTypeProvider);
+            }
+        } catch (CarNetException e) {
+            logger.warn("Unable to create thing of type {}", thingTypeUID);
         }
 
         return null;

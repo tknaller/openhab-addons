@@ -22,7 +22,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.openhab.binding.carnet.internal.CarNetException;
-import org.openhab.binding.carnet.internal.api.CarNetApi;
+import org.openhab.binding.carnet.internal.api.CarNetApiBase;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHistory.CarNetRluHistory;
 import org.openhab.binding.carnet.internal.api.CarNetApiGSonDTO.CNEluActionHistory.CarNetRluHistory.CarNetRluLockActionList.CarNetRluLockAction;
 import org.openhab.binding.carnet.internal.handler.CarNetVehicleHandler;
@@ -35,7 +35,7 @@ import org.openhab.binding.carnet.internal.provider.CarNetIChanneldMapper.Channe
  */
 @NonNullByDefault
 public class CarNetVehicleServiceRLU extends CarNetVehicleBaseService {
-    public CarNetVehicleServiceRLU(CarNetVehicleHandler thingHandler, CarNetApi api) {
+    public CarNetVehicleServiceRLU(CarNetVehicleHandler thingHandler, CarNetApiBase api) {
         super(thingHandler, api);
         serviceId = CNAPI_SERVICE_REMOTE_LOCK_UNLOCK;
     }

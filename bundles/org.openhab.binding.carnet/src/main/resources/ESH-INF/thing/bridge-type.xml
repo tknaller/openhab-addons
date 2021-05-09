@@ -11,4 +11,18 @@
 		<config-description-ref uri="bridge-type:carnet:account"/>
 	</bridge-type>
 
+	<bridge-type id="volkswagen">
+		<label>Volkswagen Account (CarNet)</label>
+		<description>This thing represents a VW CarNet Account.</description>
+
+		<config-description-ref uri="bridge-type:carnet:account"/>
+	</bridge-type>
+
+	<bridge-type id="skoda">
+		<label>Skoda Account (CarNet)</label>
+		<description>This thing represents a Skoda CarNet Account.</description>
+
+		<config-description-ref uri="bridge-type:carnet:account"/>
+	</bridge-type>
+
 </thing:thing-descriptions>
