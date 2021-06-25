@@ -318,6 +318,7 @@ public class ShellyChannelDefinitions {
 
         ShellySettingsRgbwLight light = profile.settings.lights.get(idx);
         // The is no brightness channel in color mode, so we need a power channel
+        addChannel(thing, add, profile.isBulb, group, CHANNEL_LIGHT_COLOR_MODE);
         addChannel(thing, add, profile.inColor, group, CHANNEL_LIGHT_POWER);
 
         addChannel(thing, add, light.autoOn != null, group, CHANNEL_TIMER_AUTOON);
