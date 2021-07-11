@@ -30,6 +30,7 @@ import org.openhab.core.config.discovery.DiscoveryResult;
 import org.openhab.core.config.discovery.DiscoveryResultBuilder;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
+import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.ThingUID;
 import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
@@ -66,9 +67,18 @@ public class ConnectedCarDiscoveryService extends AbstractDiscoveryService imple
         for (VehicleDetails vehicle : vehicleList) {
             logger.debug("VIN {} discovery, create thing", vehicle.getId());
             Map<String, Object> properties = new TreeMap<String, Object>();
-            ThingUID uid = new ThingUID(
-                    CNAPI_BRAND_VWID.equals(vehicle.brand) ? THING_TYPE_IDVEHICLE : THING_TYPE_CNVEHICLE, bridgeUID,
-                    vehicle.getId());
+            ThingTypeUID tuid;
+            switch (vehicle.brand) {
+                case API_BRAND_VWID:
+                    tuid = THING_TYPE_IDVEHICLE;
+                    break;
+                case API_BRAND_ENYAK:
+                    tuid = THING_TYPE_ENYAKVEHICLE;
+                    break;
+                default:
+                    tuid = THING_TYPE_CNVEHICLE;
+            }
+            ThingUID uid = new ThingUID(tuid, bridgeUID, vehicle.getId());
             properties.put(PROPERTY_VIN, vehicle.vin);
             properties.put(PROPERTY_MODEL, vehicle.model);
             properties.put(PROPERTY_COLOR, vehicle.color);

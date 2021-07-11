@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * The {@link VehicleWeConnectHandler} implements the Vehicle Handler for WeConnect
- * sent to one of the channels.
  *
  * @author Markus Michels - Initial contribution
  *

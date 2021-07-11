@@ -40,6 +40,7 @@ public class ApiResult {
     private String location = "";
     public int httpCode = 0;
     public String httpReason = "";
+    public String etag = "";
     public int rateLimit = -1;
     public HttpFields responseHeaders = new HttpFields();
     ApiErrorDTO apiError = new ApiErrorDTO();
@@ -110,6 +111,10 @@ public class ApiResult {
         return location;
     }
 
+    public String getETag() {
+        return etag;
+    }
+
     public String getResponseDate() {
         String value = responseHeaders.get("Date");
         return value != null ? value : "";
@@ -124,6 +129,7 @@ public class ApiResult {
 
             responseHeaders = contentResponse.getHeaders();
             location = getString(responseHeaders.get("Location"));
+            etag = getString(responseHeaders.get("ETag"));
             if (responseHeaders.containsKey("X-RateLimit-Remaining")) {
                 rateLimit = Integer.parseInt(responseHeaders.get("X-RateLimit-Remaining"));
             }

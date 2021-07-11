@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.carnet.internal.api.weconnect;
+package org.openhab.binding.carnet.internal.api.skodaenyak;
 
 import static org.openhab.binding.carnet.internal.BindingConstants.*;
 import static org.openhab.binding.carnet.internal.CarUtils.*;
@@ -33,15 +33,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link WCServiceStatus} implements the Status Service for WeConnect.
+ * The {@link SEServiceStatus} implements the Status Service for Skoda Enyak.
  *
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class WCServiceStatus extends ApiBaseService {
-    private final Logger logger = LoggerFactory.getLogger(WCServiceStatus.class);
+public class SEServiceStatus extends ApiBaseService {
+    private final Logger logger = LoggerFactory.getLogger(SEServiceStatus.class);
 
-    public WCServiceStatus(VehicleBaseHandler thingHandler, ApiBase api) {
+    public SEServiceStatus(VehicleBaseHandler thingHandler, ApiBase api) {
         super(CNAPI_SERVICE_VEHICLE_STATUS_REPORT, thingHandler, api);
     }
 

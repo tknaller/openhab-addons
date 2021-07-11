@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.carnet.internal.api.brand;
 
-import static org.openhab.binding.carnet.internal.BindingConstants.CNAPI_BRAND_AUDI;
+import static org.openhab.binding.carnet.internal.BindingConstants.API_BRAND_AUDI;
 import static org.openhab.binding.carnet.internal.CarUtils.getString;
 import static org.openhab.binding.carnet.internal.api.carnet.CarNetApiConstants.CNAPI_VW_TOKEN_URL;
 
@@ -77,7 +77,7 @@ public class BrandCarNetAudi extends CarNetApi implements BrandAuthenticator {
 
     private static BrandApiProperties properties = new BrandApiProperties();
     static {
-        properties.brand = CNAPI_BRAND_AUDI;
+        properties.brand = API_BRAND_AUDI;
         properties.xcountry = "DE";
         properties.apiDefaultUrl = "https://msg.audi.de/fs-car";
         properties.oidcConfigUrl = "https://app-api.live-my.audi.com/myaudiappidk/v1/openid-configuration";

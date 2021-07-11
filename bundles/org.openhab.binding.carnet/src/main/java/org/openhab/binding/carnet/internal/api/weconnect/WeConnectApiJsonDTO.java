@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.carnet.internal.api.weconnect;
 
-import static org.openhab.binding.carnet.internal.BindingConstants.API_REQUEST_TIMEOUT_SEC;
+import static org.openhab.binding.carnet.internal.BindingConstants.*;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,13 +28,6 @@ public class WeConnectApiJsonDTO {
     public static final String WCSERVICE_STATUS = "status";
     public static final String WCSERVICE_CLIMATISATION = "climatisation";
     public static final String WCSERVICE_CHARGING = "charging";
-
-    // request status codes
-    public static final String WCAPI_REQUEST_QUEUED = "queued";
-    public static final String WCAPI_REQUEST_STARTED = "started";
-    public static final String WCAPI_REQUEST_SUCCESSFUL = "successful";
-    public static final String WCAPI_REQUEST_ERROR = "api_error";
-    public static final String WCAPI_REQUEST_TIMEOUT = "timeout";
 
     public static class WCVehicleList {
         public static class WCVehicle {
@@ -335,7 +328,7 @@ public class WeConnectApiJsonDTO {
 
         public static boolean isInProgress(String status) {
             String st = status.toLowerCase();
-            return WCAPI_REQUEST_QUEUED.equals(st) || WCAPI_REQUEST_STARTED.equals(st);
+            return API_REQUEST_QUEUED.equals(st) || API_REQUEST_STARTED.equals(st);
         }
 
         public boolean isExpired() {

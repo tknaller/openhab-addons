@@ -78,7 +78,6 @@ public class ApiToken {
         int value = expiresIn <= 0 ? DEFAULT_TOKEN_VALIDITY_SEC : expiresIn;
         double offset = value * 0.2;
         this.validity = value - (int) offset; // reduce by 20% treshhold
-        this.validity = 30;
     }
 
     public void setService(String service) {

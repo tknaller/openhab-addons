@@ -20,6 +20,8 @@ import java.util.TreeMap;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.carnet.internal.api.carnet.CarNetApiGSonDTO.CNVehicleDetails.CarNetVehicleDetails;
 import org.openhab.binding.carnet.internal.api.carnet.CarNetApiGSonDTO.CarNetVehicleStatus;
+import org.openhab.binding.carnet.internal.api.skodaenyak.SEApiJsonDTO.SEVehicleList.SEVehicle;
+import org.openhab.binding.carnet.internal.api.skodaenyak.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus;
 import org.openhab.binding.carnet.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleList.WCVehicle;
 import org.openhab.binding.carnet.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleStatusData.WCVehicleStatus;
 import org.openhab.binding.carnet.internal.config.CombinedConfig;
@@ -61,7 +63,14 @@ public class ApiDataTypesDTO {
         public VehicleDetails(CombinedConfig config, WCVehicle vehicle) {
             vin = vehicle.vin;
             brand = config.api.brand;
-            model = getString(vehicle.model) + "(" + getString(vehicle.nickname) + ")";
+            model = getString(vehicle.nickname) + "(" + brand + " " + getString(vehicle.model) + ")";
+        }
+
+        public VehicleDetails(CombinedConfig config, SEVehicle vehicle) {
+            vin = getString(vehicle.vin);
+            brand = getString(vehicle.specification.brand);
+            model = getString(vehicle.specification.title) + "(" + brand + " " + getString(vehicle.specification.model)
+                    + ")";
         }
 
         public Map<String, String> getProperties() {
@@ -86,8 +95,13 @@ public class ApiDataTypesDTO {
             wcStatus = status;
         }
 
+        public VehicleStatus(SEVehicleStatus status) {
+            seStatus = status;
+        }
+
         public @Nullable CarNetVehicleStatus cnStatus;
         public @Nullable WCVehicleStatus wcStatus;
+        public @Nullable SEVehicleStatus seStatus;
     }
 
     public static class JwtToken {

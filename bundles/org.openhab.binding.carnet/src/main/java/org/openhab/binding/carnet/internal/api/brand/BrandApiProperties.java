@@ -22,6 +22,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 @NonNullByDefault
 public class BrandApiProperties {
     public boolean weakSsl = false;
+    public String userAgent = "";
     public String oidcDate = ""; // Date in getOIDC http response header
     public String oidcConfigUrl = "";
     public String issuerRegionMappingUrl = "https://identity.vwgroup.io";

@@ -42,6 +42,7 @@ import org.openhab.binding.carnet.internal.api.brand.BrandCarNetSeat;
 import org.openhab.binding.carnet.internal.api.brand.BrandCarNetSkoda;
 import org.openhab.binding.carnet.internal.api.brand.BrandCarNetVW;
 import org.openhab.binding.carnet.internal.api.brand.BrandNull;
+import org.openhab.binding.carnet.internal.api.brand.BrandSkodaEnyak;
 import org.openhab.binding.carnet.internal.api.brand.BrandWeConnect;
 import org.openhab.binding.carnet.internal.config.AccountConfiguration;
 import org.openhab.binding.carnet.internal.config.CombinedConfig;
@@ -87,11 +88,14 @@ public class AccountHandler extends BaseBridgeHandler {
 
     private static Map<String, String> brandMap = new HashMap<>();
     static {
-        brandMap.put(THING_MYAUDI, CNAPI_BRAND_AUDI);
-        brandMap.put(THING_VOLKSWAGEN, CNAPI_BRAND_VW);
-        brandMap.put(THING_VWID, CNAPI_BRAND_VWID);
-        brandMap.put(THING_SKODA, CNAPI_BRAND_SKODA);
-        brandMap.put(THING_SEAT, CNAPI_BRAND_SEAT);
+        brandMap.put(THING_MYAUDI, API_BRAND_AUDI);
+        brandMap.put(THING_VOLKSWAGEN, API_BRAND_VW);
+        brandMap.put(THING_VWID, API_BRAND_VWID);
+        brandMap.put(THING_VWGO, API_BRAND_VWGO);
+        brandMap.put(THING_VWWC, API_BRAND_WECHARGE);
+        brandMap.put(THING_SEAT, API_BRAND_SEAT);
+        brandMap.put(THING_SKODA, API_BRAND_SKODA);
+        brandMap.put(THING_ENYAK, API_BRAND_ENYAK);
     }
 
     /**
@@ -202,19 +206,21 @@ public class AccountHandler extends BaseBridgeHandler {
     public ApiBase createApi(CombinedConfig config, @Nullable ApiEventListener apiListener) {
         ApiHttpClient httpClient = createHttpClient(apiListener);
         switch (config.account.brand) {
-            case CNAPI_BRAND_AUDI:
+            case API_BRAND_AUDI:
                 return new BrandCarNetAudi(httpClient, tokenManager, apiListener);
-            case CNAPI_BRAND_VW:
+            case API_BRAND_VW:
                 return new BrandCarNetVW(httpClient, tokenManager, apiListener);
-            case CNAPI_BRAND_VWID:
+            case API_BRAND_VWID:
                 return new BrandWeConnect(httpClient, tokenManager, apiListener);
-            case CNAPI_BRAND_VWGO:
+            case API_BRAND_VWGO:
                 return new BrandCarNetVW(httpClient, tokenManager, apiListener);
-            case CNAPI_BRAND_SKODA:
+            case API_BRAND_SKODA:
                 return new BrandCarNetSkoda(httpClient, tokenManager, apiListener);
-            case CNAPI_BRAND_SEAT:
+            case API_BRAND_SEAT:
                 return new BrandCarNetSeat(httpClient, tokenManager, apiListener);
-            case CNAPI_BRAND_NULL:
+            case API_BRAND_ENYAK:
+                return new BrandSkodaEnyak(httpClient, tokenManager, apiListener);
+            case API_BRAND_NULL:
             default:
                 return api;
 

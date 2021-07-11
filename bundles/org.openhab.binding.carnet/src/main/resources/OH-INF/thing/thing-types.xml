@@ -58,8 +58,8 @@
 	</thing-type>
 
 	<thing-type id="idvehicle">
-		<label>@text/thing-type.carnet.vehicle.label</label>
-		<description>@text/thing-type.carnet.vehicle.description</description>
+		<label>@text/thing-type.carnet.idvehicle.label</label>
+		<description>@text/thing-type.carnet.idvehicle.description</description>
 
 		<channel-groups>
 			<channel-group id="general" typeId="general"/>
@@ -68,6 +68,19 @@
 		<representation-property>vin</representation-property>
 		<config-description-ref uri="thing-type:carnet:idvehicle"/>
 	</thing-type>
+
+	<thing-type id="enyakvehicle">
+		<label>@text/thing-type.carnet.enyakvehicle.label</label>
+		<description>@text/thing-type.carnet.enyakvehicle.description</description>
+
+		<channel-groups>
+			<channel-group id="general" typeId="general"/>
+		</channel-groups>
+
+		<representation-property>vin</representation-property>
+		<config-description-ref uri="thing-type:carnet:enyakvehicle"/>
+	</thing-type>
+
 
 	<channel-group-type id="general">
 		<label>@text/thing-type.carnet.vehicle.group.general.label</label>

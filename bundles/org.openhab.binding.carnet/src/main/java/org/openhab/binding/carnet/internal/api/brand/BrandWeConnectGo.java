@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.carnet.internal.api.brand;
 
-import static org.openhab.binding.carnet.internal.BindingConstants.CNAPI_BRAND_VWGO;
+import static org.openhab.binding.carnet.internal.BindingConstants.API_BRAND_VWGO;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -36,7 +36,7 @@ public class BrandWeConnectGo extends WeConnectApi {
     @Override
     public BrandApiProperties getProperties() {
         BrandApiProperties properties = new BrandApiProperties();
-        properties.brand = CNAPI_BRAND_VWGO;
+        properties.brand = API_BRAND_VWGO;
         properties.apiDefaultUrl = "https://mobileapi.apps.emea.vwapps.io";
         properties.clientId = "ac42b0fa-3b11-48a0-a941-43a399e7ef84@apps_vw-dilab_com";
         properties.authScope = "openid profile";

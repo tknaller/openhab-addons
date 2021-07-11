@@ -115,7 +115,7 @@ public class TokenManager {
         try {
             logger.debug("{}: Logging in, account={}", config.vehicle.vin, config.account.user);
             String authUrl = "";
-            if (CNAPI_BRAND_VWID.equals(config.api.brand)) {
+            if (API_BRAND_VWID.equals(config.api.brand)) {
                 res = oauth.get(config.api.loginUrl);
                 authUrl = res.response;
                 url = res.getLocation();
@@ -231,7 +231,7 @@ public class TokenManager {
             CNApiToken token;
             String json = "";
 
-            if (CNAPI_BRAND_VWID.equals(config.api.brand)) { // config.api.xClientId.isEmpty()) {
+            if (API_BRAND_VWID.equals(config.api.brand)) { // config.api.xClientId.isEmpty()) {
                 // We Connect
                 logger.debug("{}: Login to We Connect", config.vehicle.vin);
                 /*
@@ -450,7 +450,7 @@ public class TokenManager {
             logger.debug("{}: Refreshing Token {}", config.vehicle.vin, token.accessToken);
             try {
                 String json = "";
-                if (CNAPI_BRAND_VWID.equals(config.api.brand)) {
+                if (API_BRAND_VWID.equals(config.api.brand)) {
                     ApiHttpMap headers = new ApiHttpMap().header(HttpHeaders.AUTHORIZATION,
                             "Bearer " + token.refreshToken);
                     json = http.get(config.api.tokenRefreshUrl, headers.getHeaders()).response;

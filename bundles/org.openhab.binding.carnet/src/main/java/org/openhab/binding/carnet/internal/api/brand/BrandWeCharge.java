@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.carnet.internal.api.brand;
 
-import static org.openhab.binding.carnet.internal.BindingConstants.CNAPI_BRAND_WECHARGE;
+import static org.openhab.binding.carnet.internal.BindingConstants.API_BRAND_WECHARGE;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -37,7 +37,7 @@ public class BrandWeCharge extends WeConnectApi {
     @Override
     public BrandApiProperties getProperties() {
         BrandApiProperties properties = new BrandApiProperties();
-        properties.brand = CNAPI_BRAND_WECHARGE;
+        properties.brand = API_BRAND_WECHARGE;
         properties.xcountry = "DE";
         properties.apiDefaultUrl = "https://mobileapi.apps.emea.vwapps.io";
         properties.oidcConfigUrl = "https://identity.vwgroup.io/.well-known/openid-configuration";

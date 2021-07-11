@@ -46,9 +46,11 @@ public class BindingConstants {
     public static final String THING_MYAUDI = "myaudi";
     public static final String THING_VOLKSWAGEN = "volkswagen";
     public static final String THING_VWID = "vwid";
-    public static final String THING_VWGO = "vwgo";
-    public static final String THING_SKODA = "skoda";
+    public static final String THING_VWGO = "wcgo";
+    public static final String THING_VWWC = "wecharge";
     public static final String THING_SEAT = "seat";
+    public static final String THING_SKODA = "skoda";
+    public static final String THING_ENYAK = "enyak";
 
     public static final ThingTypeUID THING_TYPE_MYAUDI = new ThingTypeUID(BINDING_ID, THING_MYAUDI);
     public static final ThingTypeUID THING_TYPE_VW = new ThingTypeUID(BINDING_ID, THING_VOLKSWAGEN);
@@ -56,11 +58,18 @@ public class BindingConstants {
     public static final ThingTypeUID THING_TYPE_VWGO = new ThingTypeUID(BINDING_ID, THING_VWGO);
     public static final ThingTypeUID THING_TYPE_SKODA = new ThingTypeUID(BINDING_ID, THING_SKODA);
     public static final ThingTypeUID THING_TYPE_SEAT = new ThingTypeUID(BINDING_ID, THING_SEAT);
+    public static final ThingTypeUID THING_TYPE_ENYAK = new ThingTypeUID(BINDING_ID, THING_ENYAK);
+
     public static final ThingTypeUID THING_TYPE_CNVEHICLE = new ThingTypeUID(BINDING_ID, "vehicle");
     public static final ThingTypeUID THING_TYPE_IDVEHICLE = new ThingTypeUID(BINDING_ID, "idvehicle");
-    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.unmodifiableSet(
-            Stream.of(THING_TYPE_MYAUDI, THING_TYPE_VW, THING_TYPE_VWID, THING_TYPE_VWGO, THING_TYPE_SKODA,
-                    THING_TYPE_SEAT, THING_TYPE_CNVEHICLE, THING_TYPE_IDVEHICLE).collect(Collectors.toSet()));
+    public static final ThingTypeUID THING_TYPE_GOPLUG = new ThingTypeUID(BINDING_ID, "goplug");
+    public static final ThingTypeUID THING_TYPE_WCWALLBOX = new ThingTypeUID(BINDING_ID, "wcbox");
+    public static final ThingTypeUID THING_TYPE_ENYAKVEHICLE = new ThingTypeUID(BINDING_ID, "enyakvehicle");
+    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections
+            .unmodifiableSet(Stream
+                    .of(THING_TYPE_MYAUDI, THING_TYPE_VW, THING_TYPE_VWID, THING_TYPE_VWGO, THING_TYPE_SKODA,
+                            THING_TYPE_SEAT, THING_TYPE_CNVEHICLE, THING_TYPE_IDVEHICLE, THING_TYPE_ENYAKVEHICLE)
+                    .collect(Collectors.toSet()));
 
     // List of all ChannelGroups and Channels
     public static final String CHANNEL_GROUP_GENERAL = "general";
@@ -215,14 +224,15 @@ public class BindingConstants {
     public static final String ITEMT_VOLT = "Number:ElectricPotential";
     public static final String ITEMT_AMP = "Number:ElectricCurrent";
 
-    public static final String CNAPI_BRAND_AUDI = "Audi";
-    public static final String CNAPI_BRAND_VW = "VW";
-    public static final String CNAPI_BRAND_VWID = "Id";
-    public static final String CNAPI_BRAND_VWGO = "Go";
-    public static final String CNAPI_BRAND_WECHARGE = "Wc";
-    public static final String CNAPI_BRAND_SKODA = "Skoda";
-    public static final String CNAPI_BRAND_SEAT = "Seat";
-    public static final String CNAPI_BRAND_NULL = "NULL";
+    public static final String API_BRAND_AUDI = "Audi";
+    public static final String API_BRAND_VW = "VW";
+    public static final String API_BRAND_VWID = "Id";
+    public static final String API_BRAND_VWGO = "Go";
+    public static final String API_BRAND_WECHARGE = "Wc";
+    public static final String API_BRAND_SKODA = "Skoda";
+    public static final String API_BRAND_ENYAK = "Enyak";
+    public static final String API_BRAND_SEAT = "Seat";
+    public static final String API_BRAND_NULL = "NULL";
 
     public static final String API_REQUEST_SUCCESSFUL = "request_successful";
     public static final String API_REQUEST_SUCCEEDED = "succeeded";
@@ -242,7 +252,7 @@ public class BindingConstants {
     public static final String CONTENT_TYPE_JSON = "application/json";
 
     public static final int POLL_INTERVAL_SEC = 3; // poll cycle evey 3sec
-    public static final int API_TOKEN_REFRESH_INTERVAL_SEC = 1 * 60; // interval to check for valid token
+    public static final int API_TOKEN_REFRESH_INTERVAL_SEC = 5 * 60; // interval to check for valid token
     public static final int API_REQUEST_TIMEOUT_SEC = 120 + 5;
     public static final int API_REQUEST_CHECK_INT = 15 / POLL_INTERVAL_SEC; // interval for checking pending requests
     public static final int API_TIMEOUT_MS = 60 * 1000;

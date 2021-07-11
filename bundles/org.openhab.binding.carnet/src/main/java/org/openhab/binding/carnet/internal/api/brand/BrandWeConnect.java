@@ -12,8 +12,9 @@
  */
 package org.openhab.binding.carnet.internal.api.brand;
 
-import static org.openhab.binding.carnet.internal.BindingConstants.CNAPI_BRAND_VWID;
+import static org.openhab.binding.carnet.internal.BindingConstants.API_BRAND_VWID;
 import static org.openhab.binding.carnet.internal.CarUtils.generateNonce;
+import static org.openhab.binding.carnet.internal.api.weconnect.WeConnectApiJsonDTO.WCAPI_BASE_URL;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -40,9 +41,11 @@ public class BrandWeConnect extends WeConnectApi {
     public BrandApiProperties getProperties() {
         BrandApiProperties properties = new BrandApiProperties();
         String nonce = generateNonce();
-        properties.brand = CNAPI_BRAND_VWID;
+        properties.brand = API_BRAND_VWID;
+
+        properties.userAgent = "WeConnect/5 CFNetwork/1206 Darwin/20.1.0";
         properties.xcountry = "DE";
-        properties.apiDefaultUrl = "https://mobileapi.apps.emea.vwapps.io";
+        properties.apiDefaultUrl = WCAPI_BASE_URL;
         properties.loginUrl = "https://login.apps.emea.vwapps.io/authorize?nonce=" + nonce
                 + "&redirect_uri=weconnect://authenticated";
         properties.tokenUrl = properties.apiDefaultUrl + "/login/v1";

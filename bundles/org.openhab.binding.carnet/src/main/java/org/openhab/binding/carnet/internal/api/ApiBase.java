@@ -253,7 +253,8 @@ public class ApiBase implements BrandAuthenticator, ApiBrandInterface {
             throws ApiException {
         String json = "";
         try {
-            json = http.get(uri, vin, headers).response;
+            ApiResult res = http.get(uri, vin, headers);
+            json = res.response;
         } catch (ApiException e) {
             ApiResult res = e.getApiResult();
             if (e.isSecurityException() || res.isHttpUnauthorized()) {

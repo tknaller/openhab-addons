@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.carnet.internal.api.brand;
 
-import static org.openhab.binding.carnet.internal.BindingConstants.CNAPI_BRAND_VW;
+import static org.openhab.binding.carnet.internal.BindingConstants.API_BRAND_VW;
 import static org.openhab.binding.carnet.internal.api.carnet.CarNetApiConstants.CNAPI_VW_TOKEN_URL;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -43,7 +43,7 @@ public class BrandCarNetVW extends CarNetApi implements BrandAuthenticator {
     @Override
     public BrandApiProperties getProperties() {
         BrandApiProperties properties = new BrandApiProperties();
-        properties.brand = CNAPI_BRAND_VW;
+        properties.brand = API_BRAND_VW;
         properties.xcountry = "DE";
         properties.apiDefaultUrl = "https://msg.volkswagen.de/fs-car";
         properties.clientId = "9496332b-ea03-4091-a224-8c746b885068@apps_vw-dilab_com";

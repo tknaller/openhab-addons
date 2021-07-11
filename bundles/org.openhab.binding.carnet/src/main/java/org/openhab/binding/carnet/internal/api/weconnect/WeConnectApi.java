@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.carnet.internal.api.weconnect;
 
-import static org.openhab.binding.carnet.internal.BindingConstants.API_REQUEST_STARTED;
+import static org.openhab.binding.carnet.internal.BindingConstants.*;
 import static org.openhab.binding.carnet.internal.api.weconnect.WeConnectApiJsonDTO.*;
 
 import java.util.ArrayList;
@@ -98,7 +98,7 @@ public class WeConnectApi extends ApiBase implements BrandAuthenticator {
     @Override
     public String refreshVehicleStatus() {
         // For now it's unclear if there is an API call to request a status update from the vehicle
-        return WCAPI_REQUEST_SUCCESSFUL;
+        return API_REQUEST_SUCCESSFUL;
     }
 
     private WCVehicleStatus getWCStatus() throws ApiException {
@@ -178,11 +178,10 @@ public class WeConnectApi extends ApiBase implements BrandAuthenticator {
 
     @Override
     public void checkPendingRequests() {
-
     }
 
     public String getRequestStatus(String requestId, String rstatus) throws ApiException {
-        return WCAPI_REQUEST_SUCCESSFUL;
+        return API_REQUEST_SUCCESSFUL;
     }
 
     private ApiHttpMap crerateParameters() throws ApiException {
@@ -196,8 +195,7 @@ public class WeConnectApi extends ApiBase implements BrandAuthenticator {
          * authorization: "Bearer " + this.config.atoken,
          */
         return new ApiHttpMap().header(HttpHeaders.ACCEPT, "*/*").header("content-version", "1")
-                .header("x-newrelic-id", "VgAEWV9QDRAEXFlRAAYPUA==")
-                .header(HttpHeader.USER_AGENT, "WeConnect/5 CFNetwork/1206 Darwin/20.1.0")
+                .header("x-newrelic-id", "VgAEWV9QDRAEXFlRAAYPUA==").header(HttpHeader.USER_AGENT, config.api.userAgent)
                 .header(HttpHeader.ACCEPT_LANGUAGE, "de-de")
                 .header(HttpHeader.AUTHORIZATION, "Bearer " + createAccessToken());
     }
