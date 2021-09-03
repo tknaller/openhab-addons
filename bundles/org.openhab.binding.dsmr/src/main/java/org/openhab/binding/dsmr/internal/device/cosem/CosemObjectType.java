@@ -155,25 +155,23 @@ public enum CosemObjectType {
 
     /** aditional austrian non-kilo values */
 
-    EMETER_DELIVERY_TARIFF0_NON_KILO(new OBISIdentifier(1, null, 1, 8, 0, null), CosemQuantity.WATT_HOUR),
-    EMETER_DELIVERY_TARIFF1_NON_KILO(new OBISIdentifier(1, null, 1, 8, 1, null), CosemQuantity.WATT_HOUR),
-    EMETER_DELIVERY_TARIFF2_NON_KILO(new OBISIdentifier(1, null, 1, 8, 2, null), CosemQuantity.WATT_HOUR),
+    EMETER_DELIVERY_TARIFF0_NON_KILO(new OBISIdentifier(1, 0, 1, 8, 0, null), CosemQuantity.WATT_HOUR),
+    EMETER_DELIVERY_TARIFF1_NON_KILO(new OBISIdentifier(1, 0, 1, 8, 1, null), CosemQuantity.WATT_HOUR),
+    EMETER_DELIVERY_TARIFF2_NON_KILO(new OBISIdentifier(1, 0, 1, 8, 2, null), CosemQuantity.WATT_HOUR),
     EMETER_ACTUAL_DELIVERY_NON_KILO(new OBISIdentifier(1, 0, 1, 7, 0, null), CosemQuantity.WATT),
-    EMETER_PRODUCTION_TARIFF0_NON_KILO(new OBISIdentifier(1, null, 2, 8, 0, null), CosemQuantity.WATT_HOUR),
-    EMETER_PRODUCTION_TARIFF1_NON_KILO(new OBISIdentifier(1, null, 2, 8, 1, null), CosemQuantity.WATT_HOUR),
-    EMETER_PRODUCTION_TARIFF2_NON_KILO(new OBISIdentifier(1, null, 2, 8, 2, null), CosemQuantity.WATT_HOUR),
+    EMETER_PRODUCTION_TARIFF0_NON_KILO(new OBISIdentifier(1, 0, 2, 8, 0, null), CosemQuantity.WATT_HOUR),
+    EMETER_PRODUCTION_TARIFF1_NON_KILO(new OBISIdentifier(1, 0, 2, 8, 1, null), CosemQuantity.WATT_HOUR),
+    EMETER_PRODUCTION_TARIFF2_NON_KILO(new OBISIdentifier(1, 0, 2, 8, 2, null), CosemQuantity.WATT_HOUR),
     EMETER_ACTUAL_PRODUCTION_NON_KILO(new OBISIdentifier(1, 0, 2, 7, 0, null), CosemQuantity.WATT),
-    EMETER_TOTAL_IMPORTED_ENERGY_REGISTER_Q_NON_KILO(new OBISIdentifier(1, null, 3, 8, 0, null),
+    EMETER_TOTAL_IMPORTED_ENERGY_REGISTER_Q_NON_KILO(new OBISIdentifier(1, 0, 3, 8, 0, null), CosemQuantity.VAR_HOUR),
+    EMETER_TOTAL_IMPORTED_ENERGY_REGISTER_R_RATE1_NON_KILO(new OBISIdentifier(1, 0, 3, 8, 1, null),
             CosemQuantity.VAR_HOUR),
-    EMETER_TOTAL_IMPORTED_ENERGY_REGISTER_R_RATE1_NON_KILO(new OBISIdentifier(1, null, 3, 8, 1, null),
+    EMETER_TOTAL_IMPORTED_ENERGY_REGISTER_R_RATE2_NON_KILO(new OBISIdentifier(1, 0, 3, 8, 2, null),
             CosemQuantity.VAR_HOUR),
-    EMETER_TOTAL_IMPORTED_ENERGY_REGISTER_R_RATE2_NON_KILO(new OBISIdentifier(1, null, 3, 8, 2, null),
+    EMETER_TOTAL_EXPORTED_ENERGY_REGISTER_Q_NON_KILO(new OBISIdentifier(1, 0, 4, 8, 0, null), CosemQuantity.VAR_HOUR),
+    EMETER_TOTAL_EXPORTED_ENERGY_REGISTER_R_RATE1_NON_KILO(new OBISIdentifier(1, 0, 4, 8, 1, null),
             CosemQuantity.VAR_HOUR),
-    EMETER_TOTAL_EXPORTED_ENERGY_REGISTER_Q_NON_KILO(new OBISIdentifier(1, null, 4, 8, 0, null),
-            CosemQuantity.VAR_HOUR),
-    EMETER_TOTAL_EXPORTED_ENERGY_REGISTER_R_RATE1_NON_KILO(new OBISIdentifier(1, null, 4, 8, 1, null),
-            CosemQuantity.VAR_HOUR),
-    EMETER_TOTAL_EXPORTED_ENERGY_REGISTER_R_RATE2_NON_KILO(new OBISIdentifier(1, null, 4, 8, 2, null),
+    EMETER_TOTAL_EXPORTED_ENERGY_REGISTER_R_RATE2_NON_KILO(new OBISIdentifier(1, 0, 4, 8, 2, null),
             CosemQuantity.VAR_HOUR);
 
     /** OBIS reduced identifier */
