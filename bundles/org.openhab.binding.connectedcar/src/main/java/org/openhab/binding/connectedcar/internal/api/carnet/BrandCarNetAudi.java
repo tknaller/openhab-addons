@@ -82,7 +82,7 @@ public class BrandCarNetAudi extends CarNetApi implements BrandAuthenticator {
         properties.brand = API_BRAND_AUDI;
         properties.xcountry = "DE";
         properties.apiDefaultUrl = "https://msg.audi.de/fs-car";
-        properties.oidcConfigUrl = "https://app-api.live-my.audi.com/myaudiappidk/v1/openid-configuration";
+        // properties.oidcConfigUrl = "https://app-api.live-my.audi.com/myaudiappidk/v1/openid-configuration";
         properties.tokenUrl = CNAPI_VW_TOKEN_URL;
         properties.tokenRefreshUrl = properties.tokenUrl;
         properties.clientId = "09b6cbec-cd19-4589-82fd-363dfa8c24da@apps_vw-dilab_com";
