@@ -147,6 +147,9 @@ public class IdentityOAuthFlow extends ApiHttpMap {
             if (res.response.contains("name=\"hmac\" value=")) {
                 hmac = substringBetween(res.response, "name=\"hmac\" value=\"", "\"/>");
             }
+            if (res.response.contains("\"hmac\":")) {
+                hmac = substringBetween(res.response, "\"hmac\":\"", "\",\"");
+            }
         }
 
         if (!location.isEmpty()) {

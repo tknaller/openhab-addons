@@ -101,10 +101,11 @@ public class ApiWithOAuth extends ApiBase implements BrandAuthenticator {
             // Authenticate: Password
             logger.trace("{}: OAuth: Input password", logId);
             url = config.api.issuerRegionMappingUrl + oauth.location; // Signin URL
+            var authUrl = url.split("\\?")[0];
             res = oauth.get(url);
 
             logger.trace("{}: OAuth: Authenticate", logId);
-            url = config.api.issuerRegionMappingUrl + oauth.action;
+            url = authUrl;
             res = oauth.clearData().data("_csrf", oauth.csrf).data("relayState", oauth.relayState)
                     .data("hmac", oauth.hmac).data("email", URLEncoder.encode(config.account.user, UTF_8))
                     .data("password", URLEncoder.encode(config.account.password, UTF_8)) //

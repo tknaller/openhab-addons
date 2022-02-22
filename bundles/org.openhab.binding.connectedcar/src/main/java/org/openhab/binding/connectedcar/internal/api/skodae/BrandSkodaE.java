@@ -78,8 +78,9 @@ public class BrandSkodaE extends SkodaEApi implements BrandAuthenticator {
         ApiBrandProperties properties = BrandCarNetSkoda.getSkodaProperties();
         properties.brand = API_BRAND_SKODA_E;
         properties.apiDefaultUrl = API_URL;
-        properties.authScope = "openid profile phone address cars email birthdate badge dealers driversLicense mbb";
+        properties.authScope = "openid profile address cars email birthdate badge mbb phone driversLicense dealers profession vin mileage";
         properties.responseType = "code id_token";
+        properties.clientId = "7f045eee-7003-4379-9968-9355ed2adb06@apps_vw-dilab_com";
         return properties;
     }
 
