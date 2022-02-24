@@ -39,6 +39,8 @@ import org.openhab.binding.connectedcar.internal.api.IdentityManager;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleList;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleList.SEVehicle;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleSettings.SEChargerSettings;
+import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleSettings.SEChargerSettingsRequest;
+import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleSettings.SEClimaZoneSettingsRequest;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleSettings.SEClimaterSettings;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus;
@@ -142,16 +144,29 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
     @Override
     public String controlClimater(boolean start, String heaterSource) throws ApiException {
         String action = (start ? "Start" : "Stop");
-        return sendAction(SESERVICE_CLIMATISATION, "", action);
+        var body = "{\"type\":\"" + action + "\"}";
+        return sendAction(SESERVICE_CLIMATISATION, "", body);
+    }
+
+    @Override
+    public String controlWindowHeating(boolean start) throws ApiException {
+        SEClimaZoneSettingsRequest request = new SEClimaZoneSettingsRequest();
+        request.airConditioningSettings = getClimaterSettings();
+        request.airConditioningSettings.windowHeatingEnabled = start;
+        request.type = "UpdateSettings";
+        String payload = gson.toJson(request);
+        return sendSettings(SESERVICE_CLIMATISATION, payload);
     }
 
     @Override
     public String controlClimaterTemp(double tempC, String heaterSource) throws ApiException {
         try {
-            SEClimaterSettings settings = getClimaterSettings();
+            SEClimaZoneSettingsRequest request = new SEClimaZoneSettingsRequest();
+            request.airConditioningSettings = getClimaterSettings();
             Double tempK = SIUnits.CELSIUS.getConverterToAny(Units.KELVIN).convert(tempC);
-            settings.targetTemperatureInKelvin = tempK;
-            String payload = gson.toJson(settings);
+            request.airConditioningSettings.targetTemperatureInKelvin = tempK;
+            request.type = "UpdateSettings";
+            String payload = gson.toJson(request);
             return sendSettings(SESERVICE_CLIMATISATION, payload);
         } catch (IncommensurableException e) {
             throw new ApiException("Unable to convert temperature", e);
@@ -161,7 +176,8 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
     @Override
     public String controlCharger(boolean start) throws ApiException {
         String action = (start ? "Start" : "Stop");
-        return sendAction(SESERVICE_CHARGING, "", action);
+        var body = "{\"type\":\"" + action + "\"}";
+        return sendAction(SESERVICE_CHARGING, "", body);
     }
 
     @Override
@@ -174,9 +190,11 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
 
     @Override
     public String controlTargetChgLevel(int targetLevel) throws ApiException {
-        SEChargerSettings settings = getChargerSettings();
-        settings.targetStateOfChargeInPercent = targetLevel;
-        String payload = gson.toJson(settings);
+        SEChargerSettingsRequest request = new SEChargerSettingsRequest();
+        request.chargingSettings = getChargerSettings();
+        request.chargingSettings.targetStateOfChargeInPercent = targetLevel;
+        request.type = "UpdateSettings";
+        String payload = gson.toJson(request);
         return sendSettings(SESERVICE_CHARGING, payload);
     }
 

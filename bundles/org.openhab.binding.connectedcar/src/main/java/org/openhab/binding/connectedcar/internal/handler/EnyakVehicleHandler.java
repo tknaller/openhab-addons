@@ -17,6 +17,9 @@ import static org.openhab.binding.connectedcar.internal.BindingConstants.*;
 import java.time.ZoneId;
 import java.util.Map;
 
+import javax.measure.quantity.Dimensionless;
+import javax.measure.quantity.Temperature;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.connectedcar.internal.api.ApiException;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEServiceStatus;
@@ -26,6 +29,7 @@ import org.openhab.binding.connectedcar.internal.provider.ChannelDefinitions.Cha
 import org.openhab.binding.connectedcar.internal.util.TextResources;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
+import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.types.Command;
@@ -61,6 +65,7 @@ public class EnyakVehicleHandler extends ThingBaseHandler {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean handleBrandCommand(ChannelUID channelUID, Command command) throws ApiException {
         String channelId = channelUID.getIdWithoutGroup();
         boolean processed = true;
@@ -79,7 +84,8 @@ public class EnyakVehicleHandler extends ThingBaseHandler {
                     actionStatus = api.controlCharger(switchOn);
                     break;
                 case CHANNEL_CONTROL_TARGET_TEMP:
-                    actionStatus = api.controlClimaterTemp(((DecimalType) command).doubleValue(), "electric");
+                    actionStatus = api.controlClimaterTemp(((QuantityType<Temperature>) command).doubleValue(),
+                            "electric");
                     break;
                 case CHANNEL_CHARGER_MAXCURRENT:
                     int maxCurrent = ((DecimalType) command).intValue();
@@ -88,7 +94,7 @@ public class EnyakVehicleHandler extends ThingBaseHandler {
                     actionStatus = api.controlMaxCharge(maxCurrent);
                     break;
                 case CHANNEL_CONTROL_TARGETCHG:
-                    int maxLevel = ((DecimalType) command).intValue();
+                    int maxLevel = ((QuantityType<Dimensionless>) command).intValue();
                     logger.info("{}: Setting target charge level to {}", thingId, maxLevel);
                     action = "controlTargetChgLevel";
                     actionStatus = api.controlTargetChgLevel(maxLevel);

@@ -101,6 +101,11 @@ public class SEApiJsonDTO {
             public Integer targetStateOfChargeInPercent;
         }
 
+        public static class SEChargerSettingsRequest {
+            public SEChargerSettings chargingSettings;
+            public String type;
+        }
+
         public static class SEClimaterSettings {
             /*
              * {
@@ -124,6 +129,11 @@ public class SEApiJsonDTO {
             public Boolean airConditioningAtUnlock;
             public Boolean windowHeatingEnabled;
             public SEClimaZoneSettings zonesSettings;
+        }
+
+        public static class SEClimaZoneSettingsRequest {
+            public SEClimaterSettings airConditioningSettings;
+            public String type;
         }
 
         SEChargerSettings charger;
