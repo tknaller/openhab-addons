@@ -184,6 +184,7 @@ public class ApiHttpClient {
                 case HttpStatus.METHOD_NOT_ALLOWED_405:
                     throw new ApiSecurityException("Forbidden", apiResult);
                 case HttpStatus.OK_200:
+                case HttpStatus.CREATED_201:
                 case HttpStatus.ACCEPTED_202:
                 case HttpStatus.NO_CONTENT_204:
                 case HttpStatus.SEE_OTHER_303:
