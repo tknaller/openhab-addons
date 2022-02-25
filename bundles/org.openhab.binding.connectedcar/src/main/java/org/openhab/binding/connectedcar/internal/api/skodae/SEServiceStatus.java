@@ -117,10 +117,9 @@ public class SEServiceStatus extends ApiBaseService {
 
         if (data.settings.charger != null) {
             SEChargerSettings s = data.settings.charger;
-            updated |= updateChannel(group, CHANNEL_CONTROL_TARGETCHG,
+            updated |= updateChannel(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_TARGETCHG,
                     toQuantityType(getInteger(s.targetStateOfChargeInPercent), 0, PERCENT));
-            updated |= updateChannel(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_MAXCURRENT,
-                    getStringType(s.maxChargeCurrentAc));
+            updated |= updateChannel(group, CHANNEL_CHARGER_MAXCURRENT, getStringType(s.maxChargeCurrentAc));
         }
 
         return updated;
@@ -141,7 +140,8 @@ public class SEServiceStatus extends ApiBaseService {
         if (settings != null) {
             Double tempC = Units.KELVIN.getConverterTo(SIUnits.CELSIUS).convert(settings.targetTemperatureInKelvin)
                     .doubleValue();
-            updated |= updateChannel(group, CHANNEL_CONTROL_TARGET_TEMP, toQuantityType(tempC, 1, SIUnits.CELSIUS));
+            updated |= updateChannel(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_TARGET_TEMP,
+                    toQuantityType(tempC, 1, SIUnits.CELSIUS));
         }
         return updated;
     }
