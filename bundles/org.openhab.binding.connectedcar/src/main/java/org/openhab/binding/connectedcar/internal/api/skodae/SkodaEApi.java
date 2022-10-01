@@ -43,12 +43,15 @@ import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehic
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleSettings.SEClimaZoneSettingsRequest;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleSettings.SEClimaterSettings;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData;
-import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEChargerStatus;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEClimaterStatus;
+import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEParkingPositionStatus;
+import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEVehicleStatusV2;
 import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link SkodaEApi} implements the Skoda-E API calls
@@ -57,6 +60,7 @@ import org.openhab.core.library.unit.Units;
  */
 @NonNullByDefault
 public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
+    private final Logger logger = LoggerFactory.getLogger(SkodaEApi.class);
     private Map<String, SEVehicle> vehicleData = new HashMap<>();
 
     public SkodaEApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
@@ -106,6 +110,8 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
         s.status.charger = getChargerStatus();
         s.settings.climater = getClimaterSettings();
         s.status.climatisation = getClimaterStatus();
+        s.status.vehicleStatus = getVehicleStatusV2();
+        s.status.parkingPosition = getParkingPosition();
         return new VehicleStatus(s);
     }
 
@@ -125,9 +131,12 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
         return getValues(SESERVICE_CLIMATISATION, SEENDPOINT_SETTINGS, SEClimaterSettings.class);
     }
 
-    private SEVehicleStatus getStatus() throws ApiException {
-        return callApi("", "v1/vehicle-status/{2}", crerateParameters().getHeaders(), "getVehicleStatus",
-                SEVehicleStatus.class);
+    public SEParkingPositionStatus getParkingPosition() throws ApiException {
+        return getValues2(SESERVICE_POSITIONVEHICLES, SEENDPOINT_PARKINGPOSITION, SEParkingPositionStatus.class);
+    }
+
+    public SEVehicleStatusV2 getVehicleStatusV2() throws ApiException {
+        return getValuesV2(SESERVICE_VEHICLESTATUS, "", SEVehicleStatusV2.class);
     }
 
     @Override
@@ -139,6 +148,20 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
     private <T> T getValues(String service, String type, Class<T> classOfT) throws ApiException {
         ApiHttpMap params = crerateParameters();
         String json = callApi("", "v1/" + service + "/{2}/" + type, params.getHeaders(),
+                "getValues_" + service + "." + type, String.class);
+        return fromJson(gson, json, classOfT);
+    }
+
+    private <T> T getValues2(String service, String type, Class<T> classOfT) throws ApiException {
+        ApiHttpMap params = crerateParameters2();
+        String json = callApi("", "v1/" + service + "/{2}/" + type, params.getHeaders(),
+                "getValues_" + service + "." + type, String.class);
+        return fromJson(gson, json, classOfT);
+    }
+
+    private <T> T getValuesV2(String service, String type, Class<T> classOfT) throws ApiException {
+        ApiHttpMap params = crerateParameters();
+        String json = callApi("", "v2/" + service + "/{2}/" + type, params.getHeaders(),
                 "getValues_" + service + "." + type, String.class);
         return fromJson(gson, json, classOfT);
     }
@@ -224,5 +247,19 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
                 .header(HttpHeaders.ACCEPT, CONTENT_TYPE_JSON).header(HttpHeader.ACCEPT_LANGUAGE, "de-de")
                 .header(HttpHeader.HOST, "api.connect.skoda-auto.cz")
                 .header(HttpHeader.AUTHORIZATION, "Bearer " + createAccessToken());
+    }
+
+    private ApiHttpMap crerateParameters2() throws ApiException {
+        /*
+         * accept: "application/json",
+         * "content-type": "application/json;charset=utf-8",
+         * "user-agent": "OneConnect/000000023 CFNetwork/978.0.7 Darwin/18.7.0",
+         * "accept-language": "de-de",
+         * authorization: "Bearer " + this.config.atoken,
+         */
+        return new ApiHttpMap().header(HttpHeader.USER_AGENT, config.prevoiusConfig.api.userAgent)
+                .header(HttpHeaders.ACCEPT, CONTENT_TYPE_JSON).header(HttpHeader.ACCEPT_LANGUAGE, "de-de")
+                .header(HttpHeader.HOST, "api.connect.skoda-auto.cz")
+                .header(HttpHeader.AUTHORIZATION, "Bearer " + createAccessToken2());
     }
 }

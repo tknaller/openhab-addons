@@ -16,6 +16,7 @@ import static org.openhab.binding.connectedcar.internal.BindingConstants.*;
 import static org.openhab.binding.connectedcar.internal.api.ApiDataTypesDTO.API_SERVICE_VEHICLE_STATUS_REPORT;
 import static org.openhab.binding.connectedcar.internal.util.Helpers.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -28,13 +29,19 @@ import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehic
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEChargerStatus;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEClimaterStatus;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEClimaterStatus.SEHeatingStatus;
+import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEParkingPositionStatus;
+import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEVehicleStatusV2;
+import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEVehicleStatusV2.SEVehicleStatusRemote.SEVehicleStatusItem;
 import org.openhab.binding.connectedcar.internal.handler.ThingBaseHandler;
 import org.openhab.binding.connectedcar.internal.provider.ChannelDefinitions.ChannelIdMapEntry;
+import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
+import org.openhab.core.library.types.OpenClosedType;
+import org.openhab.core.library.types.PointType;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.openhab.core.types.State;
+import org.openhab.core.types.UnDefType;
 
 /**
  * The {@link SEServiceStatus} implements the Status Service for Skoda Enyak.
@@ -43,7 +50,24 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class SEServiceStatus extends ApiBaseService {
-    private final Logger logger = LoggerFactory.getLogger(SEServiceStatus.class);
+    static Map<String, String> MAP_DOOR_NAME = new HashMap<>();
+    static Map<String, String> MAP_WINDOW_NAME = new HashMap<>();
+    static {
+        MAP_DOOR_NAME.put("BONNET", "hood");
+        MAP_DOOR_NAME.put("FRONT_LEFT", "doorFrontLeft");
+        MAP_DOOR_NAME.put("FRONT_RIGHT", "doorFrontRight");
+        MAP_DOOR_NAME.put("REAR_LEFT", "doorRearLeft");
+        MAP_DOOR_NAME.put("REAR_RIGHT", "doorRearRight");
+        MAP_DOOR_NAME.put("TRUNK", "trunkLid");
+
+        MAP_WINDOW_NAME.put("FRONT_LEFT", "windowFrontLeft");
+        MAP_WINDOW_NAME.put("FRONT_RIGHT", "windowFrontRight");
+        MAP_WINDOW_NAME.put("REAR_LEFT", "windowRearLeft");
+        MAP_WINDOW_NAME.put("REAR_RIGHT", "windowRearRight");
+        MAP_WINDOW_NAME.put("ROOF_COVER", "roofFrontCover");
+        MAP_WINDOW_NAME.put("SUN_ROOF", "sunRoofCover");
+        MAP_WINDOW_NAME.put("SUN_ROOF_REAR", "roofRearCover");
+    }
 
     public SEServiceStatus(ThingBaseHandler thingHandler, ApiBase api) {
         super(API_SERVICE_VEHICLE_STATUS_REPORT, thingHandler, api);
@@ -55,14 +79,18 @@ public class SEServiceStatus extends ApiBaseService {
                 CHANNEL_CHARGER_MODE, CHANNEL_CONTROL_TARGETCHG, CHANNEL_CHARGER_CHGLVL, CHANNEL_CHARGER_REMAINING,
                 CHANNEL_CHARGER_RATE, CHANNEL_CHARGER_POWER, CHANNEL_RANGE_TOTAL, CHANNEL_CHARGER_PLUG_STATE,
                 CHANNEL_CHARGER_LOCK_STATE, CHANNEL_CLIMATER_GEN_STATE, CHANNEL_CLIMATER_REMAINING,
-                CHANNEL_CONTROL_CLIMATER, CHANNEL_CONTROL_TARGET_TEMP, CHANNEL_CONTROL_WINHEAT);
+                CHANNEL_CONTROL_CLIMATER, CHANNEL_CONTROL_TARGET_TEMP, CHANNEL_CONTROL_WINHEAT, CHANNEL_PARK_LOCATION,
+                CHANNEL_PARK_ADDRESS, CHANNEL_PARK_TIME, CHANNEL_STATUS_LOCKED, CHANNEL_DOORS_HOODSTATE,
+                CHANNEL_DOORS_TRUNKLLOCKED, CHANNEL_DOORS_FLLOCKED, CHANNEL_DOORS_FRLOCKED, CHANNEL_DOORS_RLLOCKED,
+                CHANNEL_DOORS_RRLOCKED, CHANNEL_WIN_FLSTATE, CHANNEL_WIN_RLSTATE, CHANNEL_WIN_FRSTATE,
+                CHANNEL_WIN_RRSTATE, CHANNEL_WIN_SROOFSTATE, CHANNEL_WIN_RROOFSTATE, CHANNEL_STATUS_ODOMETER,
+                CHANNEL_GENERAL_UPDATED, CHANNEL_STATUS_DOORSCLOSED, CHANNEL_STATUS_WINCLOSED, CHANNEL_STATUS_LIGHTS);
         return true;
     }
 
     @Override
     public boolean serviceUpdate() throws ApiException {
         // Try to query status information from vehicle
-        logger.debug("{}: Get Vehicle Status", thingId);
         boolean updated = false;
 
         SEVehicleStatusData status = api.getVehicleStatus().seStatus;
@@ -71,6 +99,8 @@ public class SEServiceStatus extends ApiBaseService {
             updated |= updateChargingStatus(status);
             updated |= updateClimatisationStatus(status);
             updated |= updateWindowHeatStatus(status);
+            updated |= updatePositionStatus(status);
+            updated |= updateVehicleStatus(status);
         }
         return updated;
     }
@@ -158,5 +188,81 @@ public class SEServiceStatus extends ApiBaseService {
             updated |= updateChannel(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_WINHEAT, getOnOff(on));
         }
         return updated;
+    }
+
+    private boolean updatePositionStatus(SEVehicleStatusData data) {
+        boolean updated = false;
+        String group = CHANNEL_GROUP_LOCATION;
+        SEParkingPositionStatus s = data.status.parkingPosition;
+        if (s != null) {
+            PointType point = new PointType(new DecimalType(s.latitude), new DecimalType(s.longitude));
+            updated |= updateChannel(group, CHANNEL_PARK_LOCATION, point);
+            updated |= updateLocationAddress(point, CHANNEL_PARK_ADDRESS);
+            updated |= updateChannel(CHANNEL_PARK_TIME, getDateTime(s.lastUpdatedAt));
+        }
+        return updated;
+    }
+
+    private boolean updateVehicleStatus(SEVehicleStatusData data) {
+        boolean updated = false;
+        SEVehicleStatusV2 s = data.status.vehicleStatus;
+        if (s != null) {
+            String group = CHANNEL_GROUP_STATUS;
+            updated |= updateChannel(group, CHANNEL_STATUS_LOCKED,
+                    "yes".equalsIgnoreCase(s.remote.status.open) ? OpenClosedType.OPEN : OpenClosedType.CLOSED);
+            OnOffType state = getOnOff("yes".equalsIgnoreCase(s.remote.status.open));
+            updated |= updateChannel(group, CHANNEL_STATUS_WINCLOSED, state);
+            updated |= updateChannel(group, CHANNEL_STATUS_DOORSCLOSED, state);
+            double odometer = s.remote.mileageInKm;
+            updated |= updateChannel(group, CHANNEL_STATUS_ODOMETER,
+                    odometer > 0 ? getDecimal(odometer) : UnDefType.UNDEF);
+            updated |= updateChannel(group, CHANNEL_STATUS_LIGHTS, getOnOff(s.remote.lights.overallStatus == "ON"));
+
+            group = CHANNEL_GROUP_GENERAL;
+            updated |= updateChannel(group, CHANNEL_GENERAL_UPDATED, getDateTime(s.remote.capturedAt));
+
+            group = CHANNEL_GROUP_DOORS;
+            for (SEVehicleStatusItem door : s.remote.doors) {
+                String channelPre = MAP_DOOR_NAME.get(door.name);
+                if (channelPre == null) {
+                    // unknown name
+                    continue;
+                }
+                updated |= updateStatusItem(door, group, channelPre, "Locked");
+            }
+            group = CHANNEL_GROUP_WINDOWS;
+            for (SEVehicleStatusItem window : s.remote.windows) {
+                String channelPre = MAP_WINDOW_NAME.get(window.name);
+                if (channelPre == null) {
+                    // unknown name
+                    continue;
+                }
+                updated |= updateStatusItem(window, group, channelPre, "Pos");
+            }
+        }
+        return updated;
+    }
+
+    private boolean updateStatusItem(SEVehicleStatusItem item, String group, String channelPre, String sufLock) {
+        String channelSuf = "";
+        State value = UnDefType.UNDEF;
+        String state = item.status.toLowerCase();
+        switch (state) {
+            case "locked":
+            case "unlocked":
+                channelSuf = sufLock;
+                value = getOnOff("locked".equalsIgnoreCase(state));
+                break;
+            case "open":
+            case "closed":
+                channelSuf = "State";
+                value = "closed".equalsIgnoreCase(state) ? OpenClosedType.CLOSED : OpenClosedType.OPEN;
+                break;
+            case "unsupported":
+                channelSuf = "State";
+                value = UnDefType.UNDEF;
+                break;
+        }
+        return updateChannel(channelPre + channelSuf, value);
     }
 }

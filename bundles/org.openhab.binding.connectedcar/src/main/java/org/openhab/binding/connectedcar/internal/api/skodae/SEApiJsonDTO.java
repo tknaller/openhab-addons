@@ -23,9 +23,12 @@ public class SEApiJsonDTO {
     public static final String SESERVICE_STATUS = "status";
     public static final String SESERVICE_CLIMATISATION = "air-conditioning";
     public static final String SESERVICE_CHARGING = "charging";
+    public static final String SESERVICE_POSITIONVEHICLES = "position/vehicles";
+    public static final String SESERVICE_VEHICLESTATUS = "vehicle-status";
 
     public static final String SEENDPOINT_STATUS = "status";
     public static final String SEENDPOINT_SETTINGS = "settings";
+    public static final String SEENDPOINT_PARKINGPOSITION = "parking-position";
 
     public static class SEVehicleList {
         public static class SEVehicle {
@@ -197,8 +200,44 @@ public class SEApiJsonDTO {
                 public ArrayList<SEHeatingStatus> windowsHeatingStatuses;
             }
 
+            public static class SEParkingPositionStatus {
+                public Double latitude;
+                public Double longitude;
+                public String lastUpdatedAt;
+            }
+
+            public static class SEVehicleStatusV2 {
+                public static class SEVehicleStatusRemote {
+                    public static class SEVehicleStatusStatus {
+                        public String open; // "NO"
+                        public String locked; // "YES"
+                    }
+
+                    public static class SEVehicleStatusItem {
+                        public String name;
+                        public String status;
+                    }
+
+                    public static class SEVehicleStatusLights {
+                        public String overallStatus;
+                        public ArrayList<SEVehicleStatusItem> lightsStatus;
+                    }
+
+                    public String capturedAt;
+                    public SEVehicleStatusStatus status;
+                    public double mileageInKm;
+                    public ArrayList<SEVehicleStatusItem> doors;
+                    public ArrayList<SEVehicleStatusItem> windows;
+                    public SEVehicleStatusLights lights;
+                }
+
+                public SEVehicleStatusRemote remote;
+            }
+
             public SEChargerStatus charger;
             public SEClimaterStatus climatisation;
+            public SEParkingPositionStatus parkingPosition;
+            public SEVehicleStatusV2 vehicleStatus;
         }
 
         public SEVehicleStatus status;

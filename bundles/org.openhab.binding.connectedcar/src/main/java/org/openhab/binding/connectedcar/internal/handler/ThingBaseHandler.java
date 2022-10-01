@@ -200,6 +200,7 @@ public abstract class ThingBaseHandler extends BaseThingHandler implements Accou
 
             // Some providers require a 2nd login (e. g. Skoda-E)
             ApiBrandProperties prop = api.getProperties2();
+            config.prevoiusConfig = new CombinedConfig(config);
             if (prop != null) {
                 // Vehicle endpoint uses different properties
                 config.api = prop;

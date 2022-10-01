@@ -58,12 +58,23 @@ public class CombinedConfig {
     public ThingConfiguration vehicle = new ThingConfiguration();
     public VehicleConfig vstatus = new VehicleConfig();
     public UserConfig user = new UserConfig();
+    @Nullable
+    public CombinedConfig prevoiusConfig;
 
     public CombinedConfig() {
     }
 
     public CombinedConfig(CombinedConfig aconfig, ThingConfiguration vconfig) {
         this(vconfig);
+        this.api = aconfig.api;
+        this.account = aconfig.account;
+        this.tokenSetId = aconfig.tokenSetId;
+        this.authenticator = aconfig.authenticator;
+        this.oidcConfig = new CarNetOidcConfig();
+        this.user = new UserConfig();
+    }
+
+    public CombinedConfig(CombinedConfig aconfig) {
         this.api = aconfig.api;
         this.account = aconfig.account;
         this.tokenSetId = aconfig.tokenSetId;
