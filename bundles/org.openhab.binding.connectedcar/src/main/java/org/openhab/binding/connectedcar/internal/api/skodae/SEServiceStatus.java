@@ -210,7 +210,7 @@ public class SEServiceStatus extends ApiBaseService {
             String group = CHANNEL_GROUP_STATUS;
             updated |= updateChannel(group, CHANNEL_STATUS_LOCKED,
                     "yes".equalsIgnoreCase(s.remote.status.open) ? OpenClosedType.OPEN : OpenClosedType.CLOSED);
-            OnOffType state = getOnOff("yes".equalsIgnoreCase(s.remote.status.open));
+            OnOffType state = getOnOff("no".equalsIgnoreCase(s.remote.status.open));
             updated |= updateChannel(group, CHANNEL_STATUS_WINCLOSED, state);
             updated |= updateChannel(group, CHANNEL_STATUS_DOORSCLOSED, state);
             double odometer = s.remote.mileageInKm;
