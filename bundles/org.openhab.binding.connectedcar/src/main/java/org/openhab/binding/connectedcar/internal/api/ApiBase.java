@@ -208,6 +208,10 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
         return tokenManager.createAccessToken(config);
     }
 
+    protected String createAccessToken2() throws ApiException {
+        return tokenManager.createAccessToken(config.prevoiusConfig);
+    }
+
     protected String createIdToken() throws ApiException {
         return tokenManager.createIdToken(config);
     }
