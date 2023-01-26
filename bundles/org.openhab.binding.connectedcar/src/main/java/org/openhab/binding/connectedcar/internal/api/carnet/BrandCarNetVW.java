@@ -23,7 +23,6 @@ import org.openhab.binding.connectedcar.internal.api.ApiException;
 import org.openhab.binding.connectedcar.internal.api.ApiHttpClient;
 import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
-import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CarNetImageUrlsVW;
 import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 
 /**
@@ -64,16 +63,5 @@ public class BrandCarNetVW extends CarNetApi implements BrandAuthenticator {
     @Override
     public String updateAuthorizationUrl(String url) throws ApiException {
         return url + "&prompt=login";
-    }
-
-    @Override
-    public String[] getImageUrls() throws ApiException {
-        if (config.vstatus.imageUrls.length == 0) {
-            config.vstatus.imageUrls = super.callApi("",
-                    "https://vehicle-image.apps.emea.vwapps.io/vehicleimages/exterior/{2}",
-                    fillAppHeaders(tokenManager.createProfileToken(config)), "getImageUrls",
-                    CarNetImageUrlsVW.class).imageUrls;
-        }
-        return config.vstatus.imageUrls;
     }
 }

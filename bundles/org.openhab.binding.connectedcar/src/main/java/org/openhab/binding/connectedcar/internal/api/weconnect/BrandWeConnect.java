@@ -31,7 +31,6 @@ import org.openhab.binding.connectedcar.internal.api.ApiIdentity.OAuthToken;
 import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
 import org.openhab.binding.connectedcar.internal.api.IdentityOAuthFlow;
-import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CarNetImageUrlsVW;
 import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,16 +112,5 @@ public class BrandWeConnect extends WeConnectApi implements BrandAuthenticator {
         ApiHttpMap headers = new ApiHttpMap().header(HttpHeaders.AUTHORIZATION, "Bearer " + token.getRefreshToken());
         String json = http.get(config.api.tokenRefreshUrl, headers.getHeaders()).response;
         return fromJson(gson, json, OAuthToken.class);
-    }
-
-    @Override
-    public String[] getImageUrls() throws ApiException {
-        if (config.vstatus.imageUrls.length == 0) {
-            config.vstatus.imageUrls = super.callApi("",
-                    "https://vehicle-image.apps.emea.vwapps.io/vehicleimages/exterior/{2}",
-                    fillAppHeaders(tokenManager.createProfileToken(config)), "getImageUrls",
-                    CarNetImageUrlsVW.class).imageUrls;
-        }
-        return config.vstatus.imageUrls;
     }
 }
