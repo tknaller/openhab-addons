@@ -36,6 +36,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
+import io.micrometer.core.lang.Nullable;
+
 /**
  * {@link IdentityManager} implements token creation and refreshing.
  *
@@ -69,7 +71,7 @@ public class IdentityManager {
     /**
      * Create the API access token
      */
-    public String createAccessToken(CombinedConfig config) throws ApiException {
+    public String createAccessToken(@Nullable CombinedConfig config) throws ApiException {
         TokenSet tokens = getTokenSet(config.tokenSetId);
         if (tokens.apiToken.isValid() && !tokens.apiToken.isExpired()) {
             // Token is still valid
