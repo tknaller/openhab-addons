@@ -32,7 +32,7 @@ import org.openhab.binding.connectedcar.internal.api.wecharge.WeChargeJsonDTO.We
 import org.openhab.binding.connectedcar.internal.api.wecharge.WeChargeJsonDTO.WeChargeStatus;
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCParkingPosition.WeConnectParkingPosition;
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleList.WCVehicle;
-import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleStatusData.WCVehicleStatus;
+import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleStatusData;
 import org.openhab.binding.connectedcar.internal.config.CombinedConfig;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.PointType;
@@ -132,7 +132,7 @@ public class ApiDataTypesDTO {
 
     public static class VehicleStatus {
         public @Nullable CarNetVehicleStatus cnStatus;
-        public @Nullable WCVehicleStatus wcStatus;
+        public @Nullable WCVehicleStatusData wcStatus;
         public @Nullable SEVehicleStatusData seStatus;
         public @Nullable FPVehicleStatusData fpStatus;
         public @Nullable WeChargeStatus weChargeStatus;
@@ -146,7 +146,7 @@ public class ApiDataTypesDTO {
             cnStatus = status;
         }
 
-        public VehicleStatus(WCVehicleStatus status) {
+        public VehicleStatus(WCVehicleStatusData status) {
             wcStatus = status;
         }
 

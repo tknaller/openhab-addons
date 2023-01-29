@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.measure.IncommensurableException;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.http.HttpHeader;
@@ -40,10 +38,7 @@ import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonD
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleList;
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleList.WCVehicle;
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleStatusData;
-import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleStatusData.WCVehicleStatus;
 import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
-import org.openhab.core.library.unit.SIUnits;
-import org.openhab.core.library.unit.Units;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +60,7 @@ public class WeConnectApi extends ApiWithOAuth implements BrandAuthenticator {
 
     @Override
     public String getApiUrl() {
-        return "https://mobileapi.apps.emea.vwapps.io";
+        return "https://emea.bff.cariad.digital/vehicle/v1";
     }
 
     @Override
@@ -98,9 +93,11 @@ public class WeConnectApi extends ApiWithOAuth implements BrandAuthenticator {
     @Override
     public VehicleStatus getVehicleStatus() throws ApiException {
         VehicleStatus status = new VehicleStatus(getWCStatus());
-        WCVehicleStatus wcStatus = status.wcStatus;
-        if (wcStatus != null && wcStatus.capabilityStatus != null
-                && hasCapability(wcStatus.capabilityStatus.capabilities, WCCAPABILITY_PARKINGPOS)) {
+        WCVehicleStatusData wcStatus = status.wcStatus;
+        if (wcStatus != null && wcStatus.userCapabilities != null
+                && wcStatus.userCapabilities.capabilitiesStatus != null
+                && wcStatus.userCapabilities.capabilitiesStatus.value != null
+                && hasCapability(wcStatus.userCapabilities.capabilitiesStatus.value, WCCAPABILITY_PARKINGPOS)) {
             status.parkingPosition = getParkingPosition();
         }
         // getChargingStations("50.577417", "7.240451");
@@ -144,10 +141,11 @@ public class WeConnectApi extends ApiWithOAuth implements BrandAuthenticator {
         return API_REQUEST_SUCCESSFUL;
     }
 
-    private WCVehicleStatus getWCStatus() throws ApiException {
+    private WCVehicleStatusData getWCStatus() throws ApiException {
         ApiHttpMap params = crerateParameters();
-        return callApi("", "vehicles/{2}/status", params.getHeaders(), "getVehicleStatus",
-                WCVehicleStatusData.class).data;
+        return callApi("",
+                "vehicles/{2}/selectivestatus?jobs=access%2CbatteryChargingCare%2CbatterySupport%2Ccharging%2CchargingProfiles%2Cclimatisation%2CclimatisationTimers%2CfuelStatus%2ChonkAndFlash%2CuserCapabilities%2CvehicleHealthWarnings%2CvehicleHealthInspection%2CvehicleLights",
+                params.getHeaders(), "getVehicleStatus", WCVehicleStatusData.class);
     }
 
     @Override
@@ -156,55 +154,56 @@ public class WeConnectApi extends ApiWithOAuth implements BrandAuthenticator {
         return sendAction(WCSERVICE_CLIMATISATION, action, "");
     }
 
-    @Override
-    public String controlClimaterTemp(double tempC, String heaterSource) throws ApiException {
-        try {
-            WCVehicleStatus status = getWCStatus();
-
-            Double tempK = SIUnits.CELSIUS.getConverterToAny(Units.KELVIN).convert(tempC);
-            status.climatisationSettings.targetTemperature_C = tempC;
-            status.climatisationSettings.targetTemperature_K = tempK;
-            String payload = gson.toJson(status.climatisationSettings);
-            payload = payload.replaceAll("\"carCapturedTimestamp\".*,", payload);
-            return sendSettings(WCSERVICE_CLIMATISATION, payload);
-        } catch (IncommensurableException e) {
-            throw new ApiException("Unable to convert temperature", e);
-        }
-    }
-
-    @Override
-    public String controlWindowHeating(boolean start) throws ApiException {
-        WCVehicleStatus status = getWCStatus();
-        status.climatisationSettings.windowHeatingEnabled = start;
-        String payload = gson.toJson(status.climatisationSettings);
-        payload = payload.replaceAll("\"carCapturedTimestamp\".*,", payload);
-        return sendSettings(WCSERVICE_CLIMATISATION, payload);
-    }
-
-    @Override
-    public String controlCharger(boolean start) throws ApiException {
-        String action = (start ? "start" : "stop");
-        return sendAction(WCSERVICE_CHARGING, action, "");
-    }
-
-    @Override
-    public String controlMaxCharge(int maxCurrent) throws ApiException {
-        WCVehicleStatus status = getWCStatus();
-        status.chargingSettings.maxChargeCurrentAC = "" + maxCurrent;
-        String payload = gson.toJson(status.climatisationSettings);
-        payload = payload.replaceAll("\"carCapturedTimestamp\".*,", payload);
-        return sendSettings(WCSERVICE_CHARGING, payload);
-    }
-
-    @Override
-    public String controlTargetChgLevel(int targetLevel) throws ApiException {
-        WCVehicleStatus status = getWCStatus();
-        status.chargingSettings.targetSOC_pct = targetLevel;
-        String payload = gson.toJson(status.climatisationSettings);
-        payload = payload.replaceAll("\"carCapturedTimestamp\".*,", payload);
-        return sendSettings(WCSERVICE_CHARGING, payload);
-    }
-
+    /*
+     * @Override
+     * public String controlClimaterTemp(double tempC, String heaterSource) throws ApiException {
+     * try {
+     * WCVehicleStatusData status = getWCStatus();
+     * 
+     * Double tempK = SIUnits.CELSIUS.getConverterToAny(Units.KELVIN).convert(tempC);
+     * status.climatisationSettings.targetTemperature_C = tempC;
+     * status.climatisationSettings.targetTemperature_K = tempK;
+     * String payload = gson.toJson(status.climatisationSettings);
+     * payload = payload.replaceAll("\"carCapturedTimestamp\".*,", payload);
+     * return sendSettings(WCSERVICE_CLIMATISATION, payload);
+     * } catch (IncommensurableException e) {
+     * throw new ApiException("Unable to convert temperature", e);
+     * }
+     * }
+     * 
+     * @Override
+     * public String controlWindowHeating(boolean start) throws ApiException {
+     * WCVehicleStatusData status = getWCStatus();
+     * status.climatisationSettings.windowHeatingEnabled = start;
+     * String payload = gson.toJson(status.climatisationSettings);
+     * payload = payload.replaceAll("\"carCapturedTimestamp\".*,", payload);
+     * return sendSettings(WCSERVICE_CLIMATISATION, payload);
+     * }
+     * 
+     * @Override
+     * public String controlCharger(boolean start) throws ApiException {
+     * String action = (start ? "start" : "stop");
+     * return sendAction(WCSERVICE_CHARGING, action, "");
+     * }
+     * 
+     * @Override
+     * public String controlMaxCharge(int maxCurrent) throws ApiException {
+     * WCVehicleStatusData status = getWCStatus();
+     * status.chargingSettings.maxChargeCurrentAC = "" + maxCurrent;
+     * String payload = gson.toJson(status.climatisationSettings);
+     * payload = payload.replaceAll("\"carCapturedTimestamp\".*,", payload);
+     * return sendSettings(WCSERVICE_CHARGING, payload);
+     * }
+     * 
+     * @Override
+     * public String controlTargetChgLevel(int targetLevel) throws ApiException {
+     * WCVehicleStatusData status = getWCStatus();
+     * status.chargingSettings.targetSOC_pct = targetLevel;
+     * String payload = gson.toJson(status.climatisationSettings);
+     * payload = payload.replaceAll("\"carCapturedTimestamp\".*,", payload);
+     * return sendSettings(WCSERVICE_CHARGING, payload);
+     * }
+     */
     private boolean hasCapability(ArrayList<WCCapability> capabilities, String capability) {
         for (WCCapability cap : capabilities) {
             if (capability.equals(cap.id)) {

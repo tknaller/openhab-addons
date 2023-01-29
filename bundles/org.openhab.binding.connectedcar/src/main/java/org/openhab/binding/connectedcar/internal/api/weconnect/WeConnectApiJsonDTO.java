@@ -96,272 +96,317 @@ public class WeConnectApiJsonDTO {
             public ArrayList<String> status;
         }
 
-        public class WCVehicleStatus {
-            public class WCAccessStatus {
+        // public class WCVehicleStatus {
+        public class WCAccessStatus {
 
-                public String carCapturedTimestamp;
-                public String overallStatus;
-                public ArrayList<WCMultiStatusItem> doors;
-                public ArrayList<WCMultiStatusItem> windows;
-            }
-
-            public class WCBatteryStatus {
-                /*
-                 * "batteryStatus": {
-                 * "carCapturedTimestamp": "2021-06-25T14:01:35Z",
-                 * "currentSOC_pct": 52,
-                 * "cruisingRangeElectric_km": 221
-                 * },
-                 */
-                public String carCapturedTimestamp;
-                public Integer currentSOC_pct;
-                public Integer cruisingRangeElectric_km;
-            }
-
-            public class WCLVBatteryStatus {
-                public String batterySupport;
-            }
-
-            public class WCChargingStatus {
-                /*
-                 * "chargingStatus": {
-                 * "carCapturedTimestamp": "2021-06-25T14:01:35Z",
-                 * "remainingChargingTimeToComplete_min": 0,
-                 * "chargingState": "readyForCharging",
-                 * "chargeMode": "manual",
-                 * "chargePower_kW": 0,
-                 * "chargeRate_kmph": 0
-                 * },
-                 */
-                public String carCapturedTimestamp;
-                public Integer remainingChargingTimeToComplete_min;
-                public String chargingState;
-                public String chargeMode;
-                public Integer chargePower_kW;
-                public Integer chargeRate_kmph;
-            }
-
-            public class WCChargingSettings {
-                /*
-                 * "chargingSettings": {
-                 * "carCapturedTimestamp": "2021-06-25T23:06:41Z",
-                 * "maxChargeCurrentAC": "maximum",
-                 * "autoUnlockPlugWhenCharged": "permanent",
-                 * "targetSOC_pct": 90
-                 * },
-                 */
-                public String carCapturedTimestamp;
-                public String maxChargeCurrentAC;
-                public String autoUnlockPlugWhenCharged;
-                public Integer targetSOC_pct;
-            }
-
-            public class WCChargeMode {
-                /*
-                 * "chargeMode":{
-                 * "preferredChargeMode":"manual",
-                 * "availableChargeModes":[
-                 * "invalid"
-                 * ]
-                 * },
-                 *
-                 */
-                public String preferredChargeMode;
-                public ArrayList<String> availableChargeModes;
-            }
-
-            public class WCPlugStatus {
-                /*
-                 * "plugStatus": {
-                 * "carCapturedTimestamp": "2021-06-25T23:06:41Z",
-                 * "plugConnectionState": "disconnected",
-                 * "plugLockState": "unlocked"
-                 * },
-                 */
-                public String carCapturedTimestamp;
-                public String plugConnectionState;
-                public String plugLockState;
-            }
-
-            public class WCClimatisationStatus {
-                /*
-                 * "climatisationStatus": {
-                 * "carCapturedTimestamp": "2021-06-25T23:06:40Z",
-                 * "remainingClimatisationTime_min": 0,
-                 * "climatisationState": "off"
-                 * },
-                 */
-                public String carCapturedTimestamp;
-                public Integer remainingClimatisationTime_min;
-                public String climatisationState;
-            }
-
-            public class WCClimatisationSettings {
-                /*
-                 * "climatisationSettings": {
-                 * "carCapturedTimestamp": "2021-06-25T23:06:47Z",
-                 * "targetTemperature_K": 295.15,
-                 * "targetTemperature_C": 22,
-                 * "climatisationWithoutExternalPower": true,
-                 * "climatizationAtUnlock": false,
-                 * "windowHeatingEnabled": false,
-                 * "zoneFrontLeftEnabled": false,
-                 * "zoneFrontRightEnabled": false
-                 * },
-                 */
-                public String carCapturedTimestamp;
-                public Double targetTemperature_K;
-                public Double targetTemperature_C;
-                public Boolean climatisationWithoutExternalPower;
-                public Boolean climatizationAtUnlock;
-                public Boolean windowHeatingEnabled;
-                public Boolean zoneFrontLeftEnabled;
-                public Boolean zoneFrontRightEnabled;
-            }
-
-            public class WCClimatisationTimer {
-                /*
-                 * {
-                 * "id": 1,
-                 * "enabled": false,
-                 * "singleTimer": {
-                 * "startDateTime": "1999-12-31T22:00:00Z"
-                 * }
-                 */
-                public class WCClimaTimer {
-                    public class WCSingleTimer {
-                        public String startDateTime;
-                    }
-
-                    public String id;
-                    public Boolean enabled;
-                    public WCSingleTimer singleTimer;
-                }
-
-                public ArrayList<WCClimaTimer> timers;
-                public String carCapturedTimestamp;
-                public String timeInCar;
-            }
-
-            public class WCWindowHeatingStatus {
-                /*
-                 * "windowHeatingStatus": {
-                 * "carCapturedTimestamp": "2021-06-25T14:01:37Z",
-                 * "windowHeatingStatus": [
-                 * {
-                 * "windowLocation": "front",
-                 * "windowHeatingState": "off"
-                 * },
-                 * {
-                 * "windowLocation": "rear",
-                 * "windowHeatingState": "off"
-                 * }
-                 * ]
-                 * },
-                 */
-
-                public class WCHeatingStatus {
-                    public String windowLocation;
-                    public String windowHeatingState;
-                }
-
-                public String carCapturedTimestamp;
-                public ArrayList<WCHeatingStatus> windowHeatingStatus;
-            }
-
-            public class WCLightStatus {
-                /*
-                 * "lightsStatus": {
-                 * "carCapturedTimestamp": "2021-09-04T16:59:11Z",
-                 * "lights": [
-                 * {
-                 * "name": "right",
-                 * "status": "off"
-                 * },
-                 * {
-                 * "name": "left",
-                 * "status": "off"
-                 * }
-                 * ]
-                 * },
-                 */
-                public String carCapturedTimestamp;
-                public ArrayList<WCSingleStatusItem> lights;
-            }
-
-            public class WCRangeStatus {
-                /*
-                 * "rangeStatus":
-                 * {
-                 * "carCapturedTimestamp": "2021-06-25T14:01:35Z",
-                 * "carType": "electric",
-                 * "primaryEngine": {
-                 * "type": "electric",
-                 * "currentSOC_pct": 52,
-                 * "remainingRange_km": 221
-                 * },
-                 * "totalRange_km": 221
-                 * },
-                 */
-                public class WCEngine {
-                    public String type;
-                    public Integer currentSOC_pct;
-                    public Integer remainingRange_km;
-                }
-
-                public String carCapturedTimestamp;
-                public String carType;
-                public WCEngine primaryEngine;
-                public Integer totalRange_km;
-            }
-
-            public class WCMaintenanceStatus {
-                public String carCapturedTimestamp;
-                @SerializedName("inspectionDue_days")
-                public Integer inspectionDueDays;
-                @SerializedName("inspectionDue_km")
-                public Integer inspectionDueKm;
-                @SerializedName("mileage_km")
-                public Integer mileageKm;
-                @SerializedName("oilServiceDue_days")
-                public Integer oilServiceDueDays;
-                @SerializedName("oilServiceDue_km")
-                public Integer oilServiceDueKm;
-            }
-
-            public class WCCapabilityStatus {
-                /*
-                 * "capabilityStatus":
-                 * {
-                 * "capabilities": [
-                 * {
-                 * "id": "automation",
-                 * "expirationDate": "2024-05-09T00:00:00Z",
-                 * "userDisablingAllowed": true
-                 * },
-                 */
-                public ArrayList<WCCapability> capabilities;
-            }
-
-            public WCAccessStatus accessStatus;
-            public WCBatteryStatus batteryStatus;
-            public WCLVBatteryStatus lvBatteryStatus;
-            public WCChargingStatus chargingStatus;
-            public WCChargingSettings chargingSettings;
-            public WCChargeMode chargeMode;
-            public WCPlugStatus plugStatus;
-            public WCClimatisationStatus climatisationStatus;
-            public WCClimatisationSettings climatisationSettings;
-            public WCClimatisationTimer climatisationTimer;
-            public WCWindowHeatingStatus windowHeatingStatus;
-            public WCLightStatus lightStatus;
-            public WCRangeStatus rangeStatus;
-            public WCCapabilityStatus capabilityStatus;
-            public WCMaintenanceStatus maintenanceStatus;
-            public String error;
+            public String carCapturedTimestamp;
+            public String overallStatus;
+            public ArrayList<WCMultiStatusItem> doors;
+            public ArrayList<WCMultiStatusItem> windows;
         }
 
-        public WCVehicleStatus data;
+        public class WCBatteryStatus {
+            /*
+             * "batteryStatus": {
+             * "carCapturedTimestamp": "2021-06-25T14:01:35Z",
+             * "currentSOC_pct": 52,
+             * "cruisingRangeElectric_km": 221
+             * },
+             */
+            public String carCapturedTimestamp;
+            public Integer currentSOC_pct;
+            public Integer cruisingRangeElectric_km;
+        }
+
+        public class WCLVBatteryStatus {
+            public String batterySupport;
+        }
+
+        public class WCChargingStatus {
+            /*
+             * "chargingStatus": {
+             * "carCapturedTimestamp": "2021-06-25T14:01:35Z",
+             * "remainingChargingTimeToComplete_min": 0,
+             * "chargingState": "readyForCharging",
+             * "chargeMode": "manual",
+             * "chargePower_kW": 0,
+             * "chargeRate_kmph": 0
+             * },
+             */
+            public String carCapturedTimestamp;
+            public Integer remainingChargingTimeToComplete_min;
+            public String chargingState;
+            public String chargeMode;
+            public Integer chargePower_kW;
+            public Integer chargeRate_kmph;
+        }
+
+        public class WCChargingSettings {
+            /*
+             * "chargingSettings": {
+             * "carCapturedTimestamp": "2021-06-25T23:06:41Z",
+             * "maxChargeCurrentAC": "maximum",
+             * "autoUnlockPlugWhenCharged": "permanent",
+             * "targetSOC_pct": 90
+             * },
+             */
+            public String carCapturedTimestamp;
+            public String maxChargeCurrentAC;
+            public String autoUnlockPlugWhenCharged;
+            public Integer targetSOC_pct;
+        }
+
+        public class WCChargeMode {
+            /*
+             * "chargeMode":{
+             * "preferredChargeMode":"manual",
+             * "availableChargeModes":[
+             * "invalid"
+             * ]
+             * },
+             *
+             */
+            public String preferredChargeMode;
+            public ArrayList<String> availableChargeModes;
+        }
+
+        public class WCPlugStatus {
+            /*
+             * "plugStatus": {
+             * "carCapturedTimestamp": "2021-06-25T23:06:41Z",
+             * "plugConnectionState": "disconnected",
+             * "plugLockState": "unlocked"
+             * },
+             */
+            public String carCapturedTimestamp;
+            public String plugConnectionState;
+            public String plugLockState;
+        }
+
+        public class WCClimatisationStatus {
+            /*
+             * "climatisationStatus": {
+             * "carCapturedTimestamp": "2021-06-25T23:06:40Z",
+             * "remainingClimatisationTime_min": 0,
+             * "climatisationState": "off"
+             * },
+             */
+            public String carCapturedTimestamp;
+            public Integer remainingClimatisationTime_min;
+            public String climatisationState;
+        }
+
+        public class WCClimatisationSettings {
+            /*
+             * "climatisationSettings": {
+             * "carCapturedTimestamp": "2021-06-25T23:06:47Z",
+             * "targetTemperature_K": 295.15,
+             * "targetTemperature_C": 22,
+             * "climatisationWithoutExternalPower": true,
+             * "climatizationAtUnlock": false,
+             * "windowHeatingEnabled": false,
+             * "zoneFrontLeftEnabled": false,
+             * "zoneFrontRightEnabled": false
+             * },
+             */
+            public String carCapturedTimestamp;
+            public Double targetTemperature_K;
+            public Double targetTemperature_C;
+            public Boolean climatisationWithoutExternalPower;
+            public Boolean climatizationAtUnlock;
+            public Boolean windowHeatingEnabled;
+            public Boolean zoneFrontLeftEnabled;
+            public Boolean zoneFrontRightEnabled;
+        }
+
+        public class WCClimatisationTimer {
+            /*
+             * {
+             * "id": 1,
+             * "enabled": false,
+             * "singleTimer": {
+             * "startDateTime": "1999-12-31T22:00:00Z"
+             * }
+             */
+            public class WCClimaTimer {
+                public class WCSingleTimer {
+                    public String startDateTime;
+                }
+
+                public String id;
+                public Boolean enabled;
+                public WCSingleTimer singleTimer;
+            }
+
+            public ArrayList<WCClimaTimer> timers;
+            public String carCapturedTimestamp;
+            public String timeInCar;
+        }
+
+        public class WCWindowHeatingStatus {
+            /*
+             * "windowHeatingStatus": {
+             * "carCapturedTimestamp": "2021-06-25T14:01:37Z",
+             * "windowHeatingStatus": [
+             * {
+             * "windowLocation": "front",
+             * "windowHeatingState": "off"
+             * },
+             * {
+             * "windowLocation": "rear",
+             * "windowHeatingState": "off"
+             * }
+             * ]
+             * },
+             */
+
+            public class WCHeatingStatus {
+                public String windowLocation;
+                public String windowHeatingState;
+            }
+
+            public String carCapturedTimestamp;
+            public ArrayList<WCHeatingStatus> windowHeatingStatus;
+        }
+
+        public class WCLightStatus {
+            /*
+             * "lightsStatus": {
+             * "carCapturedTimestamp": "2021-09-04T16:59:11Z",
+             * "lights": [
+             * {
+             * "name": "right",
+             * "status": "off"
+             * },
+             * {
+             * "name": "left",
+             * "status": "off"
+             * }
+             * ]
+             * },
+             */
+            public String carCapturedTimestamp;
+            public ArrayList<WCSingleStatusItem> lights;
+        }
+
+        public class WCRangeStatus {
+            /*
+             * "rangeStatus":
+             * {
+             * "carCapturedTimestamp": "2021-06-25T14:01:35Z",
+             * "carType": "electric",
+             * "primaryEngine": {
+             * "type": "electric",
+             * "currentSOC_pct": 52,
+             * "remainingRange_km": 221
+             * },
+             * "totalRange_km": 221
+             * },
+             */
+            public class WCEngine {
+                public String type;
+                public Integer currentSOC_pct;
+                public Integer remainingRange_km;
+            }
+
+            public String carCapturedTimestamp;
+            public String carType;
+            public WCEngine primaryEngine;
+            public Integer totalRange_km;
+        }
+
+        public class WCMaintenanceStatus {
+            public String carCapturedTimestamp;
+            @SerializedName("inspectionDue_days")
+            public Integer inspectionDueDays;
+            @SerializedName("inspectionDue_km")
+            public Integer inspectionDueKm;
+            @SerializedName("mileage_km")
+            public Integer mileageKm;
+            @SerializedName("oilServiceDue_days")
+            public Integer oilServiceDueDays;
+            @SerializedName("oilServiceDue_km")
+            public Integer oilServiceDueKm;
+        }
+
+        public class WCCapabilityStatus {
+            /*
+             * "capabilityStatus":
+             * {
+             * "capabilities": [
+             * {
+             * "id": "automation",
+             * "expirationDate": "2024-05-09T00:00:00Z",
+             * "userDisablingAllowed": true
+             * },
+             */
+            public ArrayList<WCCapability> capabilities;
+        }
+
+        /*
+         * public WCAccessStatus accessStatus; ---> OK
+         * public WCBatteryStatus batteryStatus;
+         * public WCLVBatteryStatus lvBatteryStatus;
+         * public WCChargingStatus chargingStatus;
+         * public WCChargingSettings chargingSettings;
+         * public WCChargeMode chargeMode;
+         * public WCPlugStatus plugStatus;
+         * public WCClimatisationStatus climatisationStatus;
+         * public WCClimatisationSettings climatisationSettings;
+         * public WCClimatisationTimer climatisationTimer;
+         * public WCWindowHeatingStatus windowHeatingStatus;
+         * public WCLightStatus lightStatus; ---> OK
+         * public WCRangeStatus rangeStatus; ---> OK
+         * public WCCapabilityStatus capabilityStatus; ---> OK
+         * public WCMaintenanceStatus maintenanceStatus; ---> OK
+         * public String error;
+         */
+        // }
+        public class WCAccessStatusValue {
+            public class WCAccessStatusStatus {
+                public WCAccessStatus value;
+            }
+
+            public WCAccessStatusStatus accessStatus;
+        }
+
+        public class WCVehicleLightsValue {
+            public class WCVehicleLightsStatus {
+                public WCLightStatus value;
+            }
+
+            public WCVehicleLightsStatus lightsStatus;
+        }
+
+        public class WCFuelStatus {
+            public class WCFuelStatusValue {
+                public WCRangeStatus value;
+            }
+
+            public WCFuelStatusValue rangeStatus;
+        }
+
+        public class WCUserCapabilities {
+            public class WCCapcabilitiesStatus {
+                public ArrayList<WCCapability> value;
+            }
+
+            public WCCapcabilitiesStatus capabilitiesStatus;
+        }
+
+        public class WCVehicleHealthInspection {
+            public class WCVehicleHealthInspectionStatus {
+                public WCMaintenanceStatus value;
+            }
+
+            public WCVehicleHealthInspectionStatus maintenanceStatus;
+        }
+
+        public WCAccessStatusValue access;
+        public WCVehicleLightsValue vehicleLights;
+        public WCFuelStatus fuelStatus;
+        public WCUserCapabilities userCapabilities;
+        public WCVehicleHealthInspection vehicleHealthInspection;
     }
 
     public static class WCActionResponse {
