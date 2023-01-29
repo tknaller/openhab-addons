@@ -104,11 +104,16 @@ public class ApiBaseService {
     }
 
     public boolean updateLocationAddress(PointType position, String channel) {
-        if (getConfig().vehicle.enableAddressLookup) {
+        boolean enabled = getConfig().vehicle.enableAddressLookup;
+        logger.trace("updateLocationAddress: {} - enabled: {}", position, enabled);
+        if (enabled) {
             try {
+                logger.trace("osmApi.getAddressFromPosition");
                 String address = osmApi.getAddressFromPosition(api.getHttp(), position);
+                logger.trace("osmApi.getAddressFromPosition: {}", address);
                 return updateChannel(CHANNEL_GROUP_LOCATION, channel, new StringType(address));
             } catch (ApiException e) {
+                logger.debug("updateLocationAddress: {}", e.getMessage());
                 updateChannel(CHANNEL_GROUP_LOCATION, channel, UnDefType.UNDEF);
             }
         }

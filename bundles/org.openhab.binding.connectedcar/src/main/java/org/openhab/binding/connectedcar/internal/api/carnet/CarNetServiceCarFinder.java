@@ -57,23 +57,33 @@ public class CarNetServiceCarFinder extends ApiBaseService {
         try {
             logger.debug("{}: Get Vehicle Position", thingId);
             GeoPosition position = api.getVehiclePosition();
+            logger.trace("{}: Get Vehicle Position: {}", thingId, position);
             updated |= updateChannel(CHANNEL_LOCATTION_GEO, position.asPointType());
 
+            logger.trace("{}: Get Car Sent Time", thingId);
             String time = position.getCarSentTime();
+            logger.trace("{}: Update Car Sent Time: {}", thingId, time);
             updated |= updateChannel(CHANNEL_LOCATTION_TIME, new DateTimeType(time));
+            logger.trace("{}: Update Location Address: {}", thingId, position.asPointType());
             updated |= updateLocationAddress(position.asPointType(), CHANNEL_LOCATTION_ADDRESS);
 
+            logger.debug("{}: Get Stored Position", thingId);
             position = api.getStoredPosition();
+            logger.trace("{}: Update Park Location: {}", thingId, position);
             updated |= updateChannel(CHANNEL_PARK_LOCATION, position.asPointType());
+            logger.trace("{}: Update Park Time: {}", thingId, time);
             updated |= updateChannel(CHANNEL_LOCATTION_TIME, new DateTimeType(time));
+            logger.trace("{}: Update Location Address: {}", thingId, position.asPointType());
             updated |= updateLocationAddress(position.asPointType(), CHANNEL_PARK_ADDRESS);
             String parkingTime = getString(position.getParkingTime());
             updated |= updateChannel(CHANNEL_PARK_TIME,
                     !parkingTime.isEmpty() ? getDateTime(parkingTime) : UnDefType.UNDEF);
             updated |= updateChannel(CHANNEL_CAR_MOVING, OnOffType.OFF);
         } catch (ApiException e) {
+            logger.trace("{}: ApiException: {}", thingId, e.getMessage());
             updateChannel(CHANNEL_LOCATTION_GEO, UnDefType.UNDEF);
             updateChannel(CHANNEL_LOCATTION_TIME, UnDefType.UNDEF);
+            logger.trace("{}: Http Code  {}", thingId, e.getApiResult().httpCode);
             if (e.getApiResult().httpCode == HttpStatus.NO_CONTENT_204) {
                 updated |= updateChannel(CHANNEL_CAR_MOVING, OnOffType.ON);
             } else {
