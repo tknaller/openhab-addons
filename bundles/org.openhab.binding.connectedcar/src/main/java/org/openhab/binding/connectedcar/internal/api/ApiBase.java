@@ -82,7 +82,8 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     }
 
     /**
-     * VIN-based initialization. Initialized the API itself then does the VIN-related initialization
+     * VIN-based initialization. Initialized the API itself then does the
+     * VIN-related initialization
      *
      * @param vin Vehicle ID (VIN)
      * @param configIn Combined config, which gets updated and will be returned
@@ -146,6 +147,16 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
                 logger.debug("{}: Handle HTTP Redirect -> {}", config.vehicle.vin, newLocation);
                 json = http.get(newLocation, vin, fillAppHeaders()).response;
             }
+
+            if (classOfT.isInstance(json)) {
+                // special case on target class == String (return raw info)
+                return wrap(classOfT).cast(json);
+            }
+            try {
+                return fromJson(gson, json, classOfT);
+            } catch (ApiException e) {
+                throw new ApiException("Error parsing JSON", res, e);
+            }
         } catch (ApiException e) {
             ApiResult res = e.getApiResult();
             if (e.isSecurityException() || res.isHttpUnauthorized()) {
@@ -156,16 +167,20 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
                 logger.debug("{}: API call {} failed: {}", config.vehicle.vin, function, e.toString());
                 throw e;
             }
+
+            if (classOfT.isInstance(json)) {
+                // special case on target class == String (return raw info)
+                return wrap(classOfT).cast(json);
+            }
+            try {
+                return fromJson(gson, json, classOfT);
+            } catch (ApiException e2) {
+                throw new ApiException("Error parsing JSON", res, e);
+            }
         } catch (RuntimeException e) {
             logger.debug("{}: API call {} failed", config.vehicle.vin, function, e);
             throw new ApiException("API call failes: RuntimeException", e);
         }
-
-        if (classOfT.isInstance(json)) {
-            // special case on target class == String (return raw info)
-            return wrap(classOfT).cast(json);
-        }
-        return fromJson(gson, json, classOfT);
     }
 
     protected JwtToken decodeJwt(String token) throws ApiException {
