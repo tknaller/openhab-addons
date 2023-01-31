@@ -47,7 +47,7 @@ public class CarNetServiceCarFinder extends ApiBaseService {
     @Override
     public boolean createChannels(Map<String, ChannelIdMapEntry> ch) throws ApiException {
         addChannels(ch, true, CHANNEL_LOCATTION_GEO, CHANNEL_LOCATTION_TIME, CHANNEL_LOCATTION_ADDRESS,
-                CHANNEL_PARK_LOCATION, CHANNEL_PARK_ADDRESS, CHANNEL_PARK_TIME);
+                CHANNEL_PARK_LOCATION, CHANNEL_PARK_ADDRESS, CHANNEL_PARK_TIME, CHANNEL_CAR_MOVING);
         return true;
     }
 
@@ -83,7 +83,7 @@ public class CarNetServiceCarFinder extends ApiBaseService {
             logger.trace("{}: ApiException: {}", thingId, e.getMessage());
             updateChannel(CHANNEL_LOCATTION_GEO, UnDefType.UNDEF);
             updateChannel(CHANNEL_LOCATTION_TIME, UnDefType.UNDEF);
-            logger.trace("{}: Http Code  {}", thingId, e.getApiResult().httpCode);
+            logger.trace("{}: Http Code {}", thingId, e.getApiResult().httpCode);
             if (e.getApiResult().httpCode == HttpStatus.NO_CONTENT_204) {
                 updated |= updateChannel(CHANNEL_CAR_MOVING, OnOffType.ON);
             } else {

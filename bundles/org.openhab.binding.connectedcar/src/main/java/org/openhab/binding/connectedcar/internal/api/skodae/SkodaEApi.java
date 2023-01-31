@@ -111,7 +111,10 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
         s.settings.climater = getClimaterSettings();
         s.status.climatisation = getClimaterStatus();
         s.status.vehicleStatus = getVehicleStatusV2();
-        s.status.parkingPosition = getParkingPosition();
+        try {
+            s.status.parkingPosition = getParkingPosition();
+        } catch (ApiException e) {
+        }
         return new VehicleStatus(s);
     }
 
@@ -141,7 +144,8 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
 
     @Override
     public String refreshVehicleStatus() {
-        // For now it's unclear if there is an API call to request a status update from the vehicle
+        // For now it's unclear if there is an API call to request a status update from
+        // the vehicle
         return API_REQUEST_SUCCESSFUL;
     }
 

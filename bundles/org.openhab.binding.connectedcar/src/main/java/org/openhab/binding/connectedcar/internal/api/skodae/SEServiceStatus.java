@@ -84,7 +84,8 @@ public class SEServiceStatus extends ApiBaseService {
                 CHANNEL_DOORS_TRUNKLLOCKED, CHANNEL_DOORS_FLLOCKED, CHANNEL_DOORS_FRLOCKED, CHANNEL_DOORS_RLLOCKED,
                 CHANNEL_DOORS_RRLOCKED, CHANNEL_WIN_FLSTATE, CHANNEL_WIN_RLSTATE, CHANNEL_WIN_FRSTATE,
                 CHANNEL_WIN_RRSTATE, CHANNEL_WIN_SROOFSTATE, CHANNEL_WIN_RROOFSTATE, CHANNEL_STATUS_ODOMETER,
-                CHANNEL_GENERAL_UPDATED, CHANNEL_STATUS_DOORSCLOSED, CHANNEL_STATUS_WINCLOSED, CHANNEL_STATUS_LIGHTS);
+                CHANNEL_GENERAL_UPDATED, CHANNEL_STATUS_DOORSCLOSED, CHANNEL_STATUS_WINCLOSED, CHANNEL_STATUS_LIGHTS,
+                CHANNEL_CAR_MOVING);
         return true;
     }
 
@@ -99,7 +100,12 @@ public class SEServiceStatus extends ApiBaseService {
             updated |= updateChargingStatus(status);
             updated |= updateClimatisationStatus(status);
             updated |= updateWindowHeatStatus(status);
-            updated |= updatePositionStatus(status);
+            if (status.status.parkingPosition != null) {
+                updated |= updatePositionStatus(status);
+                updated |= updateChannel(CHANNEL_CAR_MOVING, OnOffType.OFF);
+            } else {
+                updated |= updateChannel(CHANNEL_CAR_MOVING, OnOffType.ON);
+            }
             updated |= updateVehicleStatus(status);
         }
         return updated;
