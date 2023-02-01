@@ -224,7 +224,11 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     }
 
     protected String createAccessToken2() throws ApiException {
-        return tokenManager.createAccessToken(config.prevoiusConfig);
+        var pconf = config.previousConfig;
+        if (pconf == null) {
+            throw new ApiException("No previous config found");
+        }
+        return tokenManager.createAccessToken(pconf);
     }
 
     protected String createIdToken() throws ApiException {
@@ -265,8 +269,9 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
 
     @Override
     public OAuthToken refreshToken(ApiIdentity token) throws ApiException {
-        if (config.authenticator != null) {
-            return config.authenticator.refreshToken(token);
+        var a = config.authenticator;
+        if (a != null) {
+            return a.refreshToken(token);
         }
         throw new ApiException("BrandAuthenticator.refreshToken() is missing");
     }
@@ -391,15 +396,17 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     }
 
     public String getProperty(String property) {
-        if (handler != null) {
-            return handler.getProperty(property);
+        var h = handler;
+        if (h != null) {
+            return h.getProperty(property);
         }
         throw new IllegalArgumentException("Handler not initialized!");
     }
 
     public void fillProperty(String property, String value) {
-        if (handler != null) {
-            handler.fillProperty(property, value);
+        var h = handler;
+        if (h != null) {
+            h.fillProperty(property, value);
         } else {
             throw new IllegalArgumentException("Handler not initialized!");
         }

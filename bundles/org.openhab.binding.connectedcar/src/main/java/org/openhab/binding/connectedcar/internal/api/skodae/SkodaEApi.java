@@ -34,7 +34,6 @@ import org.openhab.binding.connectedcar.internal.api.ApiException;
 import org.openhab.binding.connectedcar.internal.api.ApiHttpClient;
 import org.openhab.binding.connectedcar.internal.api.ApiHttpMap;
 import org.openhab.binding.connectedcar.internal.api.ApiWithOAuth;
-import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleList;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleList.SEVehicle;
@@ -50,8 +49,6 @@ import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehic
 import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link SkodaEApi} implements the Skoda-E API calls
@@ -59,8 +56,7 @@ import org.slf4j.LoggerFactory;
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
-    private final Logger logger = LoggerFactory.getLogger(SkodaEApi.class);
+public class SkodaEApi extends ApiWithOAuth {
     private Map<String, SEVehicle> vehicleData = new HashMap<>();
 
     public SkodaEApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
@@ -77,8 +73,12 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
         SEVehicleList apiList = fromJson(gson, json, SEVehicleList.class);
         ArrayList<String> list = new ArrayList<String>();
         for (SEVehicle vehicle : apiList.data) {
-            list.add(vehicle.vin);
-            vehicleData.put(vehicle.vin, vehicle);
+            var vin = vehicle.vin;
+            if (vin == null) {
+                throw new ApiException("VIN is null");
+            }
+            list.add(vin);
+            vehicleData.put(vin, vehicle);
         }
         return list;
     }
@@ -106,11 +106,26 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
     @Override
     public VehicleStatus getVehicleStatus() throws ApiException {
         SEVehicleStatusData s = new SEVehicleStatusData();
-        s.settings.charger = getChargerSettings();
-        s.status.charger = getChargerStatus();
-        s.settings.climater = getClimaterSettings();
-        s.status.climatisation = getClimaterStatus();
-        s.status.vehicleStatus = getVehicleStatusV2();
+        try {
+            s.settings.charger = getChargerSettings();
+        } catch (ApiException e) {
+        }
+        try {
+            s.status.charger = getChargerStatus();
+        } catch (ApiException e) {
+        }
+        try {
+            s.settings.climater = getClimaterSettings();
+        } catch (ApiException e) {
+        }
+        try {
+            s.status.climatisation = getClimaterStatus();
+        } catch (ApiException e) {
+        }
+        try {
+            s.status.vehicleStatus = getVehicleStatusV2();
+        } catch (ApiException e) {
+        }
         try {
             s.status.parkingPosition = getParkingPosition();
         } catch (ApiException e) {
@@ -184,6 +199,9 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
         request.airConditioningSettings.windowHeatingEnabled = start;
         request.type = "UpdateSettings";
         String payload = gson.toJson(request);
+        if (payload == null) {
+            throw new ApiException("Unable to create payload");
+        }
         return sendSettings(SESERVICE_CLIMATISATION, payload);
     }
 
@@ -196,6 +214,9 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
             request.airConditioningSettings.targetTemperatureInKelvin = tempK;
             request.type = "UpdateSettings";
             String payload = gson.toJson(request);
+            if (payload == null) {
+                throw new ApiException("Unable to create payload");
+            }
             return sendSettings(SESERVICE_CLIMATISATION, payload);
         } catch (IncommensurableException e) {
             throw new ApiException("Unable to convert temperature", e);
@@ -213,7 +234,10 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
     public String controlMaxCharge(int maxCurrent) throws ApiException {
         SEChargerSettings settings = getChargerSettings();
         // status.chargingSettings.maxChargeCurrentAC = "" + maxCurrent;
-        String payload = gson.toJson(settings);
+        final String payload = gson.toJson(settings);
+        if (payload == null) {
+            throw new ApiException("Unable to create payload");
+        }
         return sendSettings(SESERVICE_CHARGING, payload);
     }
 
@@ -224,6 +248,9 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
         request.chargingSettings.targetStateOfChargeInPercent = targetLevel;
         request.type = "UpdateSettings";
         String payload = gson.toJson(request);
+        if (payload == null) {
+            throw new ApiException("Unable to create payload");
+        }
         return sendSettings(SESERVICE_CHARGING, payload);
     }
 
@@ -261,7 +288,11 @@ public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
          * "accept-language": "de-de",
          * authorization: "Bearer " + this.config.atoken,
          */
-        return new ApiHttpMap().header(HttpHeader.USER_AGENT, config.prevoiusConfig.api.userAgent)
+        final var pconf = config.previousConfig;
+        if (pconf == null) {
+            throw new ApiException("No previous config found");
+        }
+        return new ApiHttpMap().header(HttpHeader.USER_AGENT, pconf.api.userAgent)
                 .header(HttpHeaders.ACCEPT, CONTENT_TYPE_JSON).header(HttpHeader.ACCEPT_LANGUAGE, "de-de")
                 .header(HttpHeader.HOST, "api.connect.skoda-auto.cz")
                 .header(HttpHeader.AUTHORIZATION, "Bearer " + createAccessToken2());

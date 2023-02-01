@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.connectedcar.internal.api.ApiBase;
 import org.openhab.binding.connectedcar.internal.api.ApiBaseService;
 import org.openhab.binding.connectedcar.internal.api.ApiException;
@@ -100,12 +101,7 @@ public class SEServiceStatus extends ApiBaseService {
             updated |= updateChargingStatus(status);
             updated |= updateClimatisationStatus(status);
             updated |= updateWindowHeatStatus(status);
-            if (status.status.parkingPosition != null) {
-                updated |= updatePositionStatus(status);
-                updated |= updateChannel(CHANNEL_CAR_MOVING, OnOffType.OFF);
-            } else {
-                updated |= updateChannel(CHANNEL_CAR_MOVING, OnOffType.ON);
-            }
+            updated |= updatePositionStatus(status);
             updated |= updateVehicleStatus(status);
         }
         return updated;
@@ -201,10 +197,13 @@ public class SEServiceStatus extends ApiBaseService {
         String group = CHANNEL_GROUP_LOCATION;
         SEParkingPositionStatus s = data.status.parkingPosition;
         if (s != null) {
+            updated |= updateChannel(CHANNEL_CAR_MOVING, OnOffType.OFF);
             PointType point = new PointType(new DecimalType(s.latitude), new DecimalType(s.longitude));
             updated |= updateChannel(group, CHANNEL_PARK_LOCATION, point);
             updated |= updateLocationAddress(point, CHANNEL_PARK_ADDRESS);
             updated |= updateChannel(CHANNEL_PARK_TIME, getDateTime(s.lastUpdatedAt));
+        } else {
+            updated |= updateChannel(CHANNEL_CAR_MOVING, OnOffType.ON);
         }
         return updated;
     }
@@ -214,36 +213,47 @@ public class SEServiceStatus extends ApiBaseService {
         SEVehicleStatusV2 s = data.status.vehicleStatus;
         if (s != null) {
             String group = CHANNEL_GROUP_STATUS;
-            updated |= updateChannel(group, CHANNEL_STATUS_LOCKED,
-                    getOnOff(!"yes".equalsIgnoreCase(s.remote.status.open)));
-            OnOffType state = getOnOff("no".equalsIgnoreCase(s.remote.status.open));
-            updated |= updateChannel(group, CHANNEL_STATUS_WINCLOSED, state);
-            updated |= updateChannel(group, CHANNEL_STATUS_DOORSCLOSED, state);
-            double odometer = s.remote.mileageInKm;
-            updated |= updateChannel(group, CHANNEL_STATUS_ODOMETER,
-                    odometer > 0 ? getDecimal(odometer) : UnDefType.UNDEF);
-            updated |= updateChannel(group, CHANNEL_STATUS_LIGHTS, getOnOff(s.remote.lights.overallStatus == "ON"));
-
-            group = CHANNEL_GROUP_GENERAL;
-            updated |= updateChannel(group, CHANNEL_GENERAL_UPDATED, getDateTime(s.remote.capturedAt));
-
-            group = CHANNEL_GROUP_DOORS;
-            for (SEVehicleStatusItem door : s.remote.doors) {
-                String channelPre = MAP_DOOR_NAME.get(door.name);
-                if (channelPre == null) {
-                    // unknown name
-                    continue;
+            if (s.remote != null) {
+                if (s.remote.status != null) {
+                    updated |= updateChannel(group, CHANNEL_STATUS_LOCKED,
+                            getOnOff(!"yes".equalsIgnoreCase(s.remote.status.open)));
+                    OnOffType state = getOnOff("no".equalsIgnoreCase(s.remote.status.open));
+                    updated |= updateChannel(group, CHANNEL_STATUS_WINCLOSED, state);
+                    updated |= updateChannel(group, CHANNEL_STATUS_DOORSCLOSED, state);
                 }
-                updated |= updateStatusItem(door, group, channelPre, "Locked");
-            }
-            group = CHANNEL_GROUP_WINDOWS;
-            for (SEVehicleStatusItem window : s.remote.windows) {
-                String channelPre = MAP_WINDOW_NAME.get(window.name);
-                if (channelPre == null) {
-                    // unknown name
-                    continue;
+                double odometer = s.remote.mileageInKm;
+                updated |= updateChannel(group, CHANNEL_STATUS_ODOMETER,
+                        odometer > 0 ? getDecimal(odometer) : UnDefType.UNDEF);
+                if (s.remote.lights != null) {
+                    updated |= updateChannel(group, CHANNEL_STATUS_LIGHTS,
+                            getOnOff(s.remote.lights.overallStatus == "ON"));
                 }
-                updated |= updateStatusItem(window, group, channelPre, "Pos");
+
+                group = CHANNEL_GROUP_GENERAL;
+                if (s.remote.capturedAt != null) {
+                    updated |= updateChannel(group, CHANNEL_GENERAL_UPDATED, getDateTime(s.remote.capturedAt));
+                }
+
+                group = CHANNEL_GROUP_DOORS;
+                if (s.remote.doors != null) {
+                    for (SEVehicleStatusItem door : s.remote.doors) {
+                        if (door.name != null && MAP_DOOR_NAME.containsKey(door.name)) {
+                            @Nullable
+                            String channelPre = MAP_DOOR_NAME.get(door.name);
+                            updated |= updateStatusItem(door, group, channelPre, "Locked");
+                        }
+                    }
+                }
+                group = CHANNEL_GROUP_WINDOWS;
+                if (s.remote.windows != null) {
+                    for (SEVehicleStatusItem window : s.remote.windows) {
+                        if (window.name != null && MAP_WINDOW_NAME.containsKey(window.name)) {
+                            @Nullable
+                            String channelPre = MAP_WINDOW_NAME.get(window.name);
+                            updated |= updateStatusItem(window, group, channelPre, "Pos");
+                        }
+                    }
+                }
             }
         }
         return updated;

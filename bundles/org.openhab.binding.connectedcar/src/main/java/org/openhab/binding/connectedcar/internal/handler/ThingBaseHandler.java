@@ -77,7 +77,10 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public abstract class ThingBaseHandler extends BaseThingHandler implements AccountListener, ApiEventListener {
+
+    @SuppressWarnings("null")
     private final Logger logger = LoggerFactory.getLogger(ThingBaseHandler.class);
+
     protected final TextResources resources;
     protected final ChannelDefinitions idMapper;
     protected final CarChannelTypeProvider channelTypeProvider;
@@ -152,8 +155,9 @@ public abstract class ThingBaseHandler extends BaseThingHandler implements Accou
      * Initialize config: get config from account thing + vehicle thing
      */
     private void initializeConfig() {
-        if (accountHandler != null) {
-            config = accountHandler.getCombinedConfig();
+        final var ac = accountHandler;
+        if (ac != null) {
+            config = ac.getCombinedConfig();
             config.vehicle = getConfigAs(ThingConfiguration.class);
             skipCount = Math.max(config.vehicle.pollingInterval * 60 / POLL_INTERVAL_SEC, 2);
             cache.clear();
@@ -200,7 +204,13 @@ public abstract class ThingBaseHandler extends BaseThingHandler implements Accou
 
             // Some providers require a 2nd login (e. g. Skoda-E)
             ApiBrandProperties prop = api.getProperties2();
-            config.prevoiusConfig = new CombinedConfig(config);
+            config.previousConfig = new CombinedConfig(config);
+            final var pConf = config.previousConfig;
+            final var accountHandler = this.accountHandler;
+            if (pConf != null && accountHandler != null) {
+                pConf.tokenSetId = accountHandler.getTokenManager().generateTokenSetId();
+            }
+
             if (prop != null) {
                 // Vehicle endpoint uses different properties
                 config.api = prop;
@@ -571,7 +581,10 @@ public abstract class ThingBaseHandler extends BaseThingHandler implements Accou
             return false;
         }
         boolean created = false;
-        for (String ch : channel) {
+        for (final String ch : channel) {
+            if (ch == null) {
+                continue;
+            }
             ChannelIdMapEntry definition = idMapper.find(ch);
             if (definition == null) {
                 throw new IllegalArgumentException("Missing channel definition for " + ch);
@@ -661,8 +674,9 @@ public abstract class ThingBaseHandler extends BaseThingHandler implements Accou
                 logger.debug("{}: {}", thingId, reason);
             }
         }
-        if (error.isSecurityClass()) {
-            String message = getApiStatus(error.description, API_STATUS_CLASS_SECURUTY);
+        final var desc = error.description;
+        if (desc != null && error.isSecurityClass()) {
+            String message = getApiStatus(desc, API_STATUS_CLASS_SECURUTY);
             logger.debug("{}: {}({})", thingId, message, error.description);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING, message);
         }

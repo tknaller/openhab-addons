@@ -14,6 +14,8 @@ package org.openhab.binding.connectedcar.internal.api.skodae;
 
 import java.util.ArrayList;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * {@link SEApiJsonDTO} defines the Skoda-E data formats
  *
@@ -234,10 +236,10 @@ public class SEApiJsonDTO {
                 public SEVehicleStatusRemote remote;
             }
 
-            public SEChargerStatus charger;
-            public SEClimaterStatus climatisation;
-            public SEParkingPositionStatus parkingPosition;
-            public SEVehicleStatusV2 vehicleStatus;
+            public @Nullable SEChargerStatus charger;
+            public @Nullable SEClimaterStatus climatisation;
+            public @Nullable SEParkingPositionStatus parkingPosition;
+            public @Nullable SEVehicleStatusV2 vehicleStatus;
         }
 
         public SEVehicleStatus status;

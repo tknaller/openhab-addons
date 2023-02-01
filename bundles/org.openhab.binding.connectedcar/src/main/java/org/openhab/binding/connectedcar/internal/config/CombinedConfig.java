@@ -59,7 +59,7 @@ public class CombinedConfig {
     public VehicleConfig vstatus = new VehicleConfig();
     public UserConfig user = new UserConfig();
     @Nullable
-    public CombinedConfig prevoiusConfig;
+    public CombinedConfig previousConfig;
 
     public CombinedConfig() {
     }

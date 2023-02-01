@@ -77,6 +77,10 @@ public class AccountHandler extends BaseBridgeHandler implements ThingHandlerInt
     private final TextResources messages;
     private final IdentityManager tokenManager;
 
+    public IdentityManager getTokenManager() {
+        return tokenManager;
+    }
+
     private ApiBase api = new BrandNull();
     private List<VehicleDetails> vehicleList = new CopyOnWriteArrayList<>();
     private List<AccountListener> vehicleInformationListeners = new CopyOnWriteArrayList<>();
