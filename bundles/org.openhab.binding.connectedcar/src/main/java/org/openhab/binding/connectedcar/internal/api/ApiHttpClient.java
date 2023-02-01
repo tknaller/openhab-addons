@@ -213,7 +213,10 @@ public class ApiHttpClient {
     }
 
     public void clearCookies() {
-        httpClient.getCookieStore().removeAll();
+        var store = httpClient.getCookieStore();
+        if (store != null) {
+            store.removeAll();
+        }
     }
 
     /**

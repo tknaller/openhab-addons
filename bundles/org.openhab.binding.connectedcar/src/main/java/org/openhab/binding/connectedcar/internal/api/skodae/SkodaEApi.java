@@ -49,6 +49,8 @@ import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehic
 import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link SkodaEApi} implements the Skoda-E API calls
@@ -57,6 +59,7 @@ import org.openhab.core.library.unit.Units;
  */
 @NonNullByDefault
 public class SkodaEApi extends ApiWithOAuth {
+    private final Logger logger = LoggerFactory.getLogger(SkodaEApi.class);
     private Map<String, SEVehicle> vehicleData = new HashMap<>();
 
     public SkodaEApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
@@ -109,26 +112,32 @@ public class SkodaEApi extends ApiWithOAuth {
         try {
             s.settings.charger = getChargerSettings();
         } catch (ApiException e) {
+            logger.error("getChargerSettings failed {}: {}", e.getApiResult().httpCode, e.getMessage());
         }
         try {
             s.status.charger = getChargerStatus();
         } catch (ApiException e) {
+            logger.error("getChargerStatus failed {}: {}", e.getApiResult().httpCode, e.getMessage());
         }
         try {
             s.settings.climater = getClimaterSettings();
         } catch (ApiException e) {
+            logger.error("getClimaterSettings failed {}: {}", e.getApiResult().httpCode, e.getMessage());
         }
         try {
             s.status.climatisation = getClimaterStatus();
         } catch (ApiException e) {
+            logger.error("getClimaterStatus failed {}: {}", e.getApiResult().httpCode, e.getMessage());
         }
         try {
             s.status.vehicleStatus = getVehicleStatusV2();
         } catch (ApiException e) {
+            logger.error("getVehicleStatusV2 failed {}: {}", e.getApiResult().httpCode, e.getMessage());
         }
         try {
             s.status.parkingPosition = getParkingPosition();
         } catch (ApiException e) {
+            logger.error("getParkingPosition failed {}: {}", e.getApiResult().httpCode, e.getMessage());
         }
         return new VehicleStatus(s);
     }
