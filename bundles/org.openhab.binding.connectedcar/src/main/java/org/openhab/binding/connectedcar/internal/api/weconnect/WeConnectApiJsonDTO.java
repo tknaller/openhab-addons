@@ -345,11 +345,11 @@ public class WeConnectApiJsonDTO {
 
         /*
          * public WCAccessStatus accessStatus; ---> OK
-         * public WCBatteryStatus batteryStatus;
+         * public WCBatteryStatus batteryStatus; ---> OK
          * public WCLVBatteryStatus lvBatteryStatus;
          * public WCChargingStatus chargingStatus;
          * public WCChargingSettings chargingSettings;
-         * public WCChargeMode chargeMode;
+         * public WCChargeMode chargeMode; ---> OK
          * public WCPlugStatus plugStatus;
          * public WCClimatisationStatus climatisationStatus;
          * public WCClimatisationSettings climatisationSettings;
@@ -402,11 +402,23 @@ public class WeConnectApiJsonDTO {
             public WCVehicleHealthInspectionStatus maintenanceStatus;
         }
 
+        public class WCCharging {
+            public class WCBatteryStatusValue {
+                public WCBatteryStatus value;
+            }
+            public class WCChargeModeStatus {
+                public WCChargeMode value;
+            }
+            public WCBatteryStatusValue batteryStatus;
+            public WCChargeModeStatus chargeMode;
+        }
+
         public WCAccessStatusValue access;
         public WCVehicleLightsValue vehicleLights;
         public WCFuelStatus fuelStatus;
         public WCUserCapabilities userCapabilities;
         public WCVehicleHealthInspection vehicleHealthInspection;
+        public WCCharging charging;
     }
 
     public static class WCActionResponse {
