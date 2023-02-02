@@ -46,6 +46,7 @@ import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehic
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEClimaterStatus;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEParkingPositionStatus;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEVehicleStatusV2;
+import org.openhab.binding.connectedcar.internal.config.CombinedConfig;
 import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
@@ -76,7 +77,7 @@ public class SkodaEApi extends ApiWithOAuth {
         SEVehicleList apiList = fromJson(gson, json, SEVehicleList.class);
         ArrayList<String> list = new ArrayList<String>();
         for (SEVehicle vehicle : apiList.data) {
-            var vin = vehicle.vin;
+            String vin = vehicle.vin;
             if (vin == null) {
                 throw new ApiException("VIN is null");
             }
@@ -181,7 +182,7 @@ public class SkodaEApi extends ApiWithOAuth {
     }
 
     private <T> T getValues2(String service, String type, Class<T> classOfT) throws ApiException {
-        ApiHttpMap params = crerateParameters2();
+        ApiHttpMap params = createParameters2();
         String json = callApi("", "v1/" + service + "/{2}/" + type, params.getHeaders(),
                 "getValues_" + service + "." + type, String.class);
         return fromJson(gson, json, classOfT);
@@ -197,7 +198,7 @@ public class SkodaEApi extends ApiWithOAuth {
     @Override
     public String controlClimater(boolean start, String heaterSource) throws ApiException {
         String action = (start ? "Start" : "Stop");
-        var body = "{\"type\":\"" + action + "\"}";
+        String body = "{\"type\":\"" + action + "\"}";
         return sendAction(SESERVICE_CLIMATISATION, "", body);
     }
 
@@ -235,7 +236,7 @@ public class SkodaEApi extends ApiWithOAuth {
     @Override
     public String controlCharger(boolean start) throws ApiException {
         String action = (start ? "Start" : "Stop");
-        var body = "{\"type\":\"" + action + "\"}";
+        String body = "{\"type\":\"" + action + "\"}";
         return sendAction(SESERVICE_CHARGING, "", body);
     }
 
@@ -289,7 +290,7 @@ public class SkodaEApi extends ApiWithOAuth {
                 .header(HttpHeader.AUTHORIZATION, "Bearer " + createAccessToken());
     }
 
-    private ApiHttpMap crerateParameters2() throws ApiException {
+    private ApiHttpMap createParameters2() throws ApiException {
         /*
          * accept: "application/json",
          * "content-type": "application/json;charset=utf-8",
@@ -297,7 +298,7 @@ public class SkodaEApi extends ApiWithOAuth {
          * "accept-language": "de-de",
          * authorization: "Bearer " + this.config.atoken,
          */
-        final var pconf = config.previousConfig;
+        CombinedConfig pconf = config.previousConfig;
         if (pconf == null) {
             throw new ApiException("No previous config found");
         }

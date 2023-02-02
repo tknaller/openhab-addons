@@ -224,7 +224,7 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     }
 
     protected String createAccessToken2() throws ApiException {
-        var pconf = config.previousConfig;
+        CombinedConfig pconf = config.previousConfig;
         if (pconf == null) {
             throw new ApiException("No previous config found");
         }
@@ -269,7 +269,7 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
 
     @Override
     public OAuthToken refreshToken(ApiIdentity token) throws ApiException {
-        var a = config.authenticator;
+        BrandAuthenticator a = config.authenticator;
         if (a != null) {
             return a.refreshToken(token);
         }
@@ -396,7 +396,7 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     }
 
     public String getProperty(String property) {
-        var h = handler;
+        ThingHandlerInterface h = handler;
         if (h != null) {
             return h.getProperty(property);
         }
@@ -404,7 +404,7 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     }
 
     public void fillProperty(String property, String value) {
-        var h = handler;
+        ThingHandlerInterface h = handler;
         if (h != null) {
             h.fillProperty(property, value);
         } else {

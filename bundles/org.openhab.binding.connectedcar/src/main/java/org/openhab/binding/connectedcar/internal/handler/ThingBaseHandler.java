@@ -155,7 +155,7 @@ public abstract class ThingBaseHandler extends BaseThingHandler implements Accou
      * Initialize config: get config from account thing + vehicle thing
      */
     private void initializeConfig() {
-        final var ac = accountHandler;
+        AccountHandler ac = accountHandler;
         if (ac != null) {
             config = ac.getCombinedConfig();
             config.vehicle = getConfigAs(ThingConfiguration.class);
@@ -204,15 +204,17 @@ public abstract class ThingBaseHandler extends BaseThingHandler implements Accou
 
             // Some providers require a 2nd login (e. g. Skoda-E)
             ApiBrandProperties prop = api.getProperties2();
-            config.previousConfig = new CombinedConfig(config);
-            final var pConf = config.previousConfig;
-            final var accountHandler = this.accountHandler;
-            if (pConf != null && accountHandler != null) {
-                pConf.tokenSetId = accountHandler.getTokenManager().generateTokenSetId();
-            }
 
             if (prop != null) {
                 // Vehicle endpoint uses different properties
+                CombinedConfig pConf = new CombinedConfig(config);
+                config.previousConfig = pConf;
+                AccountHandler accountHandler = this.accountHandler;
+                if (accountHandler != null) {
+                    config.tokenSetId = accountHandler.getTokenManager().generateTokenSetId();
+                    logger.trace("{}: config.api.brand: {} pConf.api.brand: {}", thingId, config.api.brand,
+                            pConf.api.brand);
+                }
                 config.api = prop;
                 handler.createTokenSet(config);
             }
@@ -674,7 +676,7 @@ public abstract class ThingBaseHandler extends BaseThingHandler implements Accou
                 logger.debug("{}: {}", thingId, reason);
             }
         }
-        final var desc = error.description;
+        String desc = error.description;
         if (desc != null && error.isSecurityClass()) {
             String message = getApiStatus(desc, API_STATUS_CLASS_SECURUTY);
             logger.debug("{}: {}({})", thingId, message, error.description);

@@ -102,7 +102,7 @@ public class ApiWithOAuth extends ApiBase implements BrandAuthenticator {
             // Authenticate: Password
             logger.trace("{}: OAuth: Input password", logId);
             url = config.api.issuerRegionMappingUrl + oauth.location; // Signin URL
-            var authUrl = url.split("\\?")[0];
+            String authUrl = url.split("\\?")[0];
             res = oauth.get(url);
 
             logger.trace("{}: OAuth: Authenticate", logId);

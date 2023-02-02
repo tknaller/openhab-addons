@@ -16,6 +16,7 @@ import static org.openhab.binding.connectedcar.internal.BindingConstants.*;
 import static org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.*;
 import static org.openhab.binding.connectedcar.internal.util.Helpers.*;
 
+import java.net.CookieStore;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Map;
@@ -213,7 +214,7 @@ public class ApiHttpClient {
     }
 
     public void clearCookies() {
-        var store = httpClient.getCookieStore();
+        CookieStore store = httpClient.getCookieStore();
         if (store != null) {
             store.removeAll();
         }
@@ -225,7 +226,7 @@ public class ApiHttpClient {
      */
     private String getBrandUrl(String template, String args, String vin) throws ApiException {
         if (config.api.brand.isEmpty()) {
-            throw new ApiException("Brand for API access not set");
+            throw new ApiException(String.format("Brand for API access not set (%s)", config.api.brand));
         }
         String path = MessageFormat.format(template, config.api.brand, config.api.xcountry, vin, config.user.id);
         if (!template.contains("://")) { // not a full URL
