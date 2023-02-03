@@ -142,7 +142,7 @@ public class WeConnectServiceStatus extends ApiBaseService {
             updated |= updateClimatisationStatus(status);
             updated |= updateWindowHeatStatus(status);
             updated |= updateMaintenanceStatus(status);
-            updated |= updatLightStatus(status);
+            updated |= updateLightStatus(status);
             updated |= updatePosition(data);
         }
         return updated;
@@ -262,7 +262,7 @@ public class WeConnectServiceStatus extends ApiBaseService {
         return updated;
     }
 
-    private boolean updatLightStatus(WCVehicleStatusData status) {
+    private boolean updateLightStatus(WCVehicleStatusData status) {
         boolean updated = false;
         if (status != null && status.vehicleLights != null && status.vehicleLights.lightsStatus != null
                 && status.vehicleLights.lightsStatus.value != null) {
