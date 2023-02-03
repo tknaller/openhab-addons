@@ -30,6 +30,7 @@ import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonD
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleStatusData.WCSingleStatusItem;
 import org.openhab.binding.connectedcar.internal.handler.ThingBaseHandler;
 import org.openhab.binding.connectedcar.internal.provider.ChannelDefinitions.ChannelIdMapEntry;
+import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.OpenClosedType;
 import org.openhab.core.library.types.PointType;
 import org.openhab.core.types.State;
@@ -38,7 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link WeConnectServiceStatus} implements the Status Service for WeConnect.
+ * The {@link WeConnectServiceStatus} implements the Status Service for
+ * WeConnect.
  *
  * @author Markus Michels - Initial contribution
  */
@@ -82,19 +84,22 @@ public class WeConnectServiceStatus extends ApiBaseService {
         addChannels(channels, true, CHANNEL_STATUS_ERROR);
         addChannels(channels, status.fuelStatus != null && status.fuelStatus.rangeStatus != null
                 && status.fuelStatus.rangeStatus.value != null, CHANNEL_RANGE_TOTAL, CHANNEL_RANGE_PRANGE);
-        // addChannels(channels, status.batteryStatus != null, CHANNEL_CHARGER_CHGLVL);
-        /*
-         * addChannels(channels, status.chargingStatus != null, CHANNEL_CONTROL_CHARGER, CHANNEL_CHARGER_CHG_STATE,
-         * CHANNEL_CHARGER_MODE, CHANNEL_CHARGER_REMAINING, CHANNEL_CHARGER_MAXCURRENT, CHANNEL_CONTROL_TARGETCHG,
-         * CHANNEL_CHARGER_POWER, CHANNEL_CHARGER_RATE);
-         * addChannels(channels, status.plugStatus != null, CHANNEL_CHARGER_PLUG_STATE, CHANNEL_CHARGER_LOCK_STATE);
-         * addChannels(channels, status.climatisationStatus != null, CHANNEL_CLIMATER_GEN_STATE,
-         * CHANNEL_CLIMATER_REMAINING);
-         * addChannels(channels, status.climatisationSettings != null, CHANNEL_CONTROL_CLIMATER,
-         * CHANNEL_CONTROL_TARGET_TEMP);
-         * addChannels(channels, status.climatisationTimer != null, CHANNEL_STATUS_TIMEINCAR);
-         * addChannels(channels, status.windowHeatingStatus != null, CHANNEL_CONTROL_WINHEAT);
-         */
+        addChannels(channels, status.charging != null && status.charging.batteryStatus != null, CHANNEL_CHARGER_CHGLVL);
+
+        addChannels(channels, status.charging != null && status.charging.chargingStatus != null,
+                CHANNEL_CONTROL_CHARGER, CHANNEL_CHARGER_CHG_STATE, CHANNEL_CHARGER_MODE, CHANNEL_CHARGER_REMAINING,
+                CHANNEL_CHARGER_MAXCURRENT, CHANNEL_CONTROL_TARGETCHG, CHANNEL_CHARGER_POWER, CHANNEL_CHARGER_RATE);
+        addChannels(channels, status.charging != null && status.charging.plugStatus != null, CHANNEL_CHARGER_PLUG_STATE,
+                CHANNEL_CHARGER_LOCK_STATE);
+        addChannels(channels, status.climatisation != null && status.climatisation.climatisationStatus != null,
+                CHANNEL_CLIMATER_GEN_STATE, CHANNEL_CLIMATER_REMAINING);
+        addChannels(channels, status.climatisation != null && status.climatisation.climatisationSettings != null,
+                CHANNEL_CONTROL_CLIMATER, CHANNEL_CONTROL_TARGET_TEMP);
+        addChannels(channels, status.climatisation != null && status.climatisation.climatisationTimer != null,
+                CHANNEL_STATUS_TIMEINCAR);
+        addChannels(channels, status.climatisation != null && status.climatisation.windowHeatingStatus != null,
+                CHANNEL_CONTROL_WINHEAT);
+
         addChannels(channels,
                 status.vehicleHealthInspection != null
                         && status.vehicleHealthInspection.maintenanceStatus.value != null,
@@ -133,9 +138,9 @@ public class WeConnectServiceStatus extends ApiBaseService {
             // updated |= updateChannel(CHANNEL_STATUS_ERROR, getStringType(status.error));
             updated |= updateAccess(status);
             updated |= updateRange(status);
-            // updated |= updateChargingStatus(status);
-            // updated |= updateClimatisationStatus(status);
-            // updated |= updateWindowHeatStatus(status);
+            updated |= updateChargingStatus(status);
+            updated |= updateClimatisationStatus(status);
+            updated |= updateWindowHeatStatus(status);
             updated |= updateMaintenanceStatus(status);
             updated |= updatLightStatus(status);
             updated |= updatePosition(data);
@@ -154,73 +159,92 @@ public class WeConnectServiceStatus extends ApiBaseService {
         }
         return updated;
     }
-    /*
-     * private boolean updateChargingStatus(WCVehicleStatus status) {
-     * boolean updated = false;
-     * if (status.chargingStatus != null) {
-     * updated |= updateChannel(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CHARGER,
-     * "charging".equalsIgnoreCase(getString(status.chargingStatus.chargingState)) ? OnOffType.ON
-     * : OnOffType.OFF);
-     * updated |= updateChannel(CHANNEL_CHARGER_CHG_STATE, getStringType(status.chargingStatus.chargingState));
-     * updated |= updateChannel(CHANNEL_CHARGER_MODE, getStringType(status.chargingStatus.chargeMode));
-     * updated |= updateChannel(CHANNEL_CHARGER_REMAINING,
-     * getDecimal(status.chargingStatus.remainingChargingTimeToComplete_min));
-     * updated |= updateChannel(CHANNEL_CHARGER_POWER, getDecimal(status.chargingStatus.chargePower_kW));
-     * updated |= updateChannel(CHANNEL_CHARGER_RATE, getDecimal(status.chargingStatus.chargeRate_kmph));
-     * updated |= updateChannel(CHANNEL_CONTROL_TARGETCHG, getDecimal(status.chargingSettings.targetSOC_pct));
-     * String maxCurrent = getString(status.chargingSettings.maxChargeCurrentAC);
-     * if ("maximum".equalsIgnoreCase(maxCurrent)) {
-     * maxCurrent = "255";
-     * }
-     * if (Character.isDigit(maxCurrent.charAt(0))) {
-     * updated |= updateChannel(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_MAXCURRENT,
-     * getDecimal(Integer.parseInt(maxCurrent)));
-     * } else {
-     * logger.debug("{}: MaxCurrent returned String {}", thingId, maxCurrent);
-     * }
-     * }
-     * if (status.batteryStatus != null) {
-     * updated |= updateChannel(CHANNEL_CHARGER_CHGLVL, getDecimal(status.batteryStatus.currentSOC_pct));
-     * }
-     * if (status.plugStatus != null) {
-     * updated |= updateChannel(CHANNEL_CHARGER_LOCK_STATE,
-     * getOnOff("locked".equals(getString(status.plugStatus.plugLockState))));
-     * updated |= updateChannel(CHANNEL_CHARGER_PLUG_STATE, getStringType(status.plugStatus.plugConnectionState));
-     * }
-     * return updated;
-     * }
-     * 
-     * private boolean updateClimatisationStatus(WCVehicleStatus status) {
-     * boolean updated = false;
-     * if (status.climatisationStatus != null) {
-     * updated |= updateChannel(CHANNEL_CLIMATER_GEN_STATE,
-     * getStringType(status.climatisationStatus.climatisationState));
-     * updated |= updateChannel(CHANNEL_CLIMATER_REMAINING,
-     * getDecimal(status.climatisationStatus.remainingClimatisationTime_min));
-     * }
-     * if (status.climatisationSettings != null) {
-     * updated |= updateChannel(CHANNEL_CONTROL_TARGET_TEMP,
-     * getDecimal(status.climatisationSettings.targetTemperature_C));
-     * }
-     * if (status.climatisationTimer != null) {
-     * updated |= updateChannel(CHANNEL_STATUS_TIMEINCAR, getDateTime(status.climatisationTimer.timeInCar));
-     * }
-     * return updated;
-     * }
-     * 
-     * private boolean updateWindowHeatStatus(WCVehicleStatus status) {
-     * boolean updated = false;
-     * if (status.windowHeatingStatus != null) {
-     * // show only aggregated status
-     * boolean on = false;
-     * for (int i = 0; i < status.windowHeatingStatus.windowHeatingStatus.size(); i++) {
-     * on |= "on".equals(getString(status.windowHeatingStatus.windowHeatingStatus.get(i).windowHeatingState));
-     * }
-     * updated |= updateChannel(CHANNEL_CONTROL_WINHEAT, on ? OnOffType.ON : OnOffType.OFF);
-     * }
-     * return updated;
-     * }
-     */
+
+    private boolean updateChargingStatus(WCVehicleStatusData status) {
+        boolean updated = false;
+        if (status.charging != null) {
+            if (status.charging.chargingStatus != null && status.charging.chargingStatus.value != null) {
+                updated |= updateChannel(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CHARGER,
+                        "charging".equalsIgnoreCase(getString(status.charging.chargingStatus.value.chargingState))
+                                ? OnOffType.ON
+                                : OnOffType.OFF);
+                updated |= updateChannel(CHANNEL_CHARGER_CHG_STATE,
+                        getStringType(status.charging.chargingStatus.value.chargingState));
+                updated |= updateChannel(CHANNEL_CHARGER_MODE,
+                        getStringType(status.charging.chargingStatus.value.chargeMode));
+                updated |= updateChannel(CHANNEL_CHARGER_REMAINING,
+                        getDecimal(status.charging.chargingStatus.value.remainingChargingTimeToComplete_min));
+                updated |= updateChannel(CHANNEL_CHARGER_POWER,
+                        getDecimal(status.charging.chargingStatus.value.chargePower_kW));
+                updated |= updateChannel(CHANNEL_CHARGER_RATE,
+                        getDecimal(status.charging.chargingStatus.value.chargeRate_kmph));
+            }
+            if (status.charging.chargingSettings != null && status.charging.chargingSettings.value != null) {
+                updated |= updateChannel(CHANNEL_CONTROL_TARGETCHG,
+                        getDecimal(status.charging.chargingSettings.value.targetSOC_pct));
+                String maxCurrent = getString(status.charging.chargingSettings.value.maxChargeCurrentAC);
+                if ("maximum".equalsIgnoreCase(maxCurrent)) {
+                    maxCurrent = "255";
+                }
+                if (Character.isDigit(maxCurrent.charAt(0))) {
+                    updated |= updateChannel(CHANNEL_GROUP_CHARGER, CHANNEL_CHARGER_MAXCURRENT,
+                            getDecimal(Integer.parseInt(maxCurrent)));
+                } else {
+                    logger.debug("{}: MaxCurrent returned String {}", thingId, maxCurrent);
+                }
+            }
+
+            if (status.charging.batteryStatus != null && status.charging.batteryStatus.value != null) {
+                updated |= updateChannel(CHANNEL_CHARGER_CHGLVL,
+                        getDecimal(status.charging.batteryStatus.value.currentSOC_pct));
+            }
+            if (status.charging.plugStatus != null && status.charging.plugStatus.value != null) {
+                updated |= updateChannel(CHANNEL_CHARGER_LOCK_STATE,
+                        getOnOff("locked".equals(getString(status.charging.plugStatus.value.plugLockState))));
+                updated |= updateChannel(CHANNEL_CHARGER_PLUG_STATE,
+                        getStringType(status.charging.plugStatus.value.plugConnectionState));
+            }
+        }
+        return updated;
+    }
+
+    private boolean updateClimatisationStatus(WCVehicleStatusData status) {
+        boolean updated = false;
+        if (status.climatisation != null && status.climatisation.climatisationStatus != null
+                && status.climatisation.climatisationStatus.value != null) {
+            updated |= updateChannel(CHANNEL_CLIMATER_GEN_STATE,
+                    getStringType(status.climatisation.climatisationStatus.value.climatisationState));
+
+            updated |= updateChannel(CHANNEL_CLIMATER_REMAINING,
+                    getDecimal(status.climatisation.climatisationStatus.value.remainingClimatisationTime_min));
+        }
+        if (status.climatisation != null && status.climatisation.climatisationSettings != null
+                && status.climatisation.climatisationSettings.value != null) {
+            updated |= updateChannel(CHANNEL_CONTROL_TARGET_TEMP,
+                    getDecimal(status.climatisation.climatisationSettings.value.targetTemperature_C));
+        }
+        if (status.climatisation != null && status.climatisation.climatisationTimer != null
+                && status.climatisation.climatisationTimer.value != null) {
+            updated |= updateChannel(CHANNEL_STATUS_TIMEINCAR,
+                    getDateTime(status.climatisation.climatisationTimer.value.timeInCar));
+        }
+        return updated;
+    }
+
+    private boolean updateWindowHeatStatus(WCVehicleStatusData status) {
+        boolean updated = false;
+        if (status.climatisation != null && status.climatisation.windowHeatingStatus != null
+                && status.climatisation.windowHeatingStatus.value != null) {
+            // show only aggregated status
+            boolean on = false;
+            for (int i = 0; i < status.climatisation.windowHeatingStatus.value.windowHeatingStatus.size(); i++) {
+                on |= "on".equals(getString(
+                        status.climatisation.windowHeatingStatus.value.windowHeatingStatus.get(i).windowHeatingState));
+            }
+            updated |= updateChannel(CHANNEL_CONTROL_WINHEAT, on ? OnOffType.ON : OnOffType.OFF);
+        }
+        return updated;
+    }
 
     private boolean updateMaintenanceStatus(WCVehicleStatusData status) {
         boolean updated = false;

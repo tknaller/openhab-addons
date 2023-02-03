@@ -121,8 +121,8 @@ public class SEServiceStatus extends ApiBaseService {
     private boolean updateChargingStatus(SEVehicleStatusData data) {
         boolean updated = false;
         String group = CHANNEL_GROUP_CHARGER;
-        if (data.status.charger != null) {
-            SEChargerStatus s = data.status.charger;
+        SEChargerStatus s = data.status.charger;
+        if (s != null) {
             if (s.charging != null) {
                 String state = getString(s.charging.state);
                 updated |= updateChannel(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_CHARGER,
@@ -147,11 +147,11 @@ public class SEServiceStatus extends ApiBaseService {
             }
         }
 
-        if (data.settings.charger != null) {
-            SEChargerSettings s = data.settings.charger;
+        SEChargerSettings set = data.settings.charger;
+        if (set != null) {
             updated |= updateChannel(CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_TARGETCHG,
-                    toQuantityType(getInteger(s.targetStateOfChargeInPercent), 0, PERCENT));
-            updated |= updateChannel(group, CHANNEL_CHARGER_MAXCURRENT, getStringType(s.maxChargeCurrentAc));
+                    toQuantityType(getInteger(set.targetStateOfChargeInPercent), 0, PERCENT));
+            updated |= updateChannel(group, CHANNEL_CHARGER_MAXCURRENT, getStringType(set.maxChargeCurrentAc));
         }
 
         return updated;

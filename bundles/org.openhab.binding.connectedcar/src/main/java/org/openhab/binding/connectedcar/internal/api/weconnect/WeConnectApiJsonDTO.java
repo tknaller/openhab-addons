@@ -13,7 +13,8 @@
 package org.openhab.binding.connectedcar.internal.api.weconnect;
 
 import static org.openhab.binding.connectedcar.internal.BindingConstants.API_REQUEST_TIMEOUT_SEC;
-import static org.openhab.binding.connectedcar.internal.api.ApiDataTypesDTO.*;
+import static org.openhab.binding.connectedcar.internal.api.ApiDataTypesDTO.API_REQUEST_QUEUED;
+import static org.openhab.binding.connectedcar.internal.api.ApiDataTypesDTO.API_REQUEST_STARTED;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -118,10 +119,6 @@ public class WeConnectApiJsonDTO {
             public Integer cruisingRangeElectric_km;
         }
 
-        public class WCLVBatteryStatus {
-            public String batterySupport;
-        }
-
         public class WCChargingStatus {
             /*
              * "chargingStatus": {
@@ -206,7 +203,8 @@ public class WeConnectApiJsonDTO {
              * "climatizationAtUnlock": false,
              * "windowHeatingEnabled": false,
              * "zoneFrontLeftEnabled": false,
-             * "zoneFrontRightEnabled": false
+             * "zoneFrontRightEnabled": false,
+             * "unitInCar": "celsius"
              * },
              */
             public String carCapturedTimestamp;
@@ -217,6 +215,7 @@ public class WeConnectApiJsonDTO {
             public Boolean windowHeatingEnabled;
             public Boolean zoneFrontLeftEnabled;
             public Boolean zoneFrontRightEnabled;
+            public String unitInCar;
         }
 
         public class WCClimatisationTimer {
@@ -343,25 +342,6 @@ public class WeConnectApiJsonDTO {
             public ArrayList<WCCapability> capabilities;
         }
 
-        /*
-         * public WCAccessStatus accessStatus; ---> OK
-         * public WCBatteryStatus batteryStatus; ---> OK
-         * public WCLVBatteryStatus lvBatteryStatus;
-         * public WCChargingStatus chargingStatus;
-         * public WCChargingSettings chargingSettings;
-         * public WCChargeMode chargeMode; ---> OK
-         * public WCPlugStatus plugStatus;
-         * public WCClimatisationStatus climatisationStatus;
-         * public WCClimatisationSettings climatisationSettings;
-         * public WCClimatisationTimer climatisationTimer;
-         * public WCWindowHeatingStatus windowHeatingStatus;
-         * public WCLightStatus lightStatus; ---> OK
-         * public WCRangeStatus rangeStatus; ---> OK
-         * public WCCapabilityStatus capabilityStatus; ---> OK
-         * public WCMaintenanceStatus maintenanceStatus; ---> OK
-         * public String error;
-         */
-        // }
         public class WCAccessStatusValue {
             public class WCAccessStatusStatus {
                 public WCAccessStatus value;
@@ -406,11 +386,63 @@ public class WeConnectApiJsonDTO {
             public class WCBatteryStatusValue {
                 public WCBatteryStatus value;
             }
+
             public class WCChargeModeStatus {
                 public WCChargeMode value;
             }
+
+            public class WCChargingSettingsValue {
+                WCChargingSettings value;
+            }
+
+            public class WCChargingStatusValue {
+                public WCChargingStatus value;
+            }
+
+            public class WCPlugStatusValue {
+                public WCPlugStatus value;
+            }
+
+            public class WCChargingCareSettingsValue {
+                public class WCChargingCareSettings {
+                    /*
+                     * "batteryCareMode": "activated"
+                     */
+                    public String batteryCareMode;
+                }
+
+                public WCChargingCareSettings value;
+            }
+
             public WCBatteryStatusValue batteryStatus;
+            public WCChargingCareSettingsValue chargingCareSettings;
             public WCChargeModeStatus chargeMode;
+            public WCChargingSettingsValue chargingSettings;
+            public WCChargingStatusValue chargingStatus;
+            public WCPlugStatusValue plugStatus;
+        }
+
+        public class WCClimatistation {
+            public class WCClimatisationSettingsValue {
+                public WCClimatisationSettings value;
+            }
+
+            public class WCClimatisationStatusValue {
+                public WCClimatisationStatus value;
+            }
+
+            public class WCClimatisationTimerValue {
+                public WCClimatisationTimer value;
+            }
+
+            public class WCWindowHeatingStatusValue {
+                public WCWindowHeatingStatus value;
+            }
+
+            public WCClimatisationSettingsValue climatisationSettings;
+            public WCClimatisationStatusValue climatisationStatus;
+            public WCClimatisationTimerValue climatisationTimer;
+            public WCWindowHeatingStatusValue windowHeatingStatus;
         }
 
         public WCAccessStatusValue access;
@@ -419,6 +451,7 @@ public class WeConnectApiJsonDTO {
         public WCUserCapabilities userCapabilities;
         public WCVehicleHealthInspection vehicleHealthInspection;
         public WCCharging charging;
+        public WCClimatistation climatisation;
     }
 
     public static class WCActionResponse {
