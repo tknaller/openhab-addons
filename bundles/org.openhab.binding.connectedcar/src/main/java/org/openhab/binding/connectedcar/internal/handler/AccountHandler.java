@@ -198,7 +198,7 @@ public class AccountHandler extends BaseBridgeHandler implements ThingHandlerInt
 
         vehicleList = new ArrayList<VehicleDetails>();
         for (String vin : api.getVehicles()) {
-            CombinedConfig vconfig = config;
+            CombinedConfig vconfig = new CombinedConfig(config);
             vconfig.vehicle.vin = vin;
             api.setConfig(vconfig);
             vconfig.vstatus.apiUrlPrefix = api.getApiUrl();
