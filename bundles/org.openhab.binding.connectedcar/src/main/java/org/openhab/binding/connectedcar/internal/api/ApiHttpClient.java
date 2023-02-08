@@ -62,7 +62,13 @@ public class ApiHttpClient {
     }
 
     public void setConfig(CombinedConfig config) {
+        logger.trace("{}: HTTP Update config from {}}/{} to {}/{}", this.config.getLogId(), this.config.tokenSetId,
+                this.config.api.clientId, config.tokenSetId, config.api.clientId);
         this.config = config;
+    }
+
+    public CombinedConfig getConfig() {
+        return config;
     }
 
     /**

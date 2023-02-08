@@ -141,6 +141,7 @@ public class AccountHandler extends BaseBridgeHandler implements ThingHandlerInt
 
     public void createTokenSet(CombinedConfig config) {
         config.tokenSetId = tokenManager.generateTokenSetId();
+        logger.trace("{}: New TokenSetId {} for {}", thingId, config.tokenSetId, config.api.clientId);
         tokenManager.setup(config.tokenSetId, api.getHttp());
         api.setConfig(config);
     }

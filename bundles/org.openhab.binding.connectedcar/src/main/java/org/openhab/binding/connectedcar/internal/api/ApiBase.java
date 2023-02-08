@@ -220,15 +220,33 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     }
 
     protected String createAccessToken() throws ApiException {
+        logger.trace("{}: createAccessToken for {}/{}", config.getLogId(), config.tokenSetId, config.api.clientId);
         return tokenManager.createAccessToken(config);
     }
 
     protected String createAccessToken2() throws ApiException {
-        CombinedConfig pconf = config.previousConfig;
-        if (pconf == null) {
+        CombinedConfig cfg = config;
+        CombinedConfig previousConfig = cfg.previousConfig;
+        if (previousConfig == null) {
             throw new ApiException("No previous config found");
         }
-        return tokenManager.createAccessToken(pconf);
+        logger.trace("{}: createAccessToken2 setConfig from {}/{} to {}/{}", previousConfig.vehicle.vin,
+                config.tokenSetId, config.api.clientId, previousConfig.tokenSetId, previousConfig.api.clientId);
+        setConfig(previousConfig);
+        http.setConfig(previousConfig);
+        ApiBase auth = (ApiBase) previousConfig.authenticator;
+        if (auth == null) {
+            throw new ApiException("No previous authenticator found");
+        }
+        auth.setConfig(previousConfig);
+        logger.trace("{}: createAccessToken2 ", config.getLogId());
+        logger.trace("{}: createAccessToken2 for {}/{}", previousConfig.vehicle.vin, previousConfig.tokenSetId,
+                previousConfig.api.clientId);
+        String token = tokenManager.createAccessToken(previousConfig);
+        auth.setConfig(cfg);
+        setConfig(cfg);
+        http.setConfig(cfg);
+        return token;
     }
 
     protected String createIdToken() throws ApiException {

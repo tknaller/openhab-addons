@@ -72,18 +72,21 @@ public class IdentityManager {
      * Create the API access token
      */
     public String createAccessToken(@Nullable CombinedConfig config) throws ApiException {
+        logger.trace("{}: createAccessToken for {}/{}", config.getLogId(), config.tokenSetId, config.api.clientId);
         TokenSet tokens = getTokenSet(config.tokenSetId);
+        CombinedConfig httpconf = tokens.http.getConfig();
         if (tokens.apiToken.isValid() && !tokens.apiToken.isExpired()) {
-            // Token is still valid
+            logger.trace("{}: token for {} is still valid", config.getLogId(), config.api.clientId);
             return tokens.apiToken.accessToken;
         }
 
-        // First try to refresh token
+        logger.trace("{}: try to refresh token for {}", config.getLogId(), config.api.clientId);
         if (!tokens.apiToken.refreshToken.isEmpty() && refreshToken(config, tokens, tokens.apiToken)) {
-            // successful, return new token, otherwise re-login
+            logger.trace("{}: refreshed token for {}, returning it", config.getLogId(), config.api.clientId);
             return tokens.apiToken.accessToken;
         }
 
+        logger.trace("{}: createAccessToken for {} - reauthenticating", config.getLogId(), config.api.clientId);
         BrandAuthenticator authenticator = config.authenticator;
         if (authenticator == null) {
             throw new ApiSecurityException("No authenticator available");
@@ -99,9 +102,17 @@ public class IdentityManager {
          * The token service also provides the option to revoke a token, this is not used. Token stays until unless the
          * refresh fails.
          */
-        logger.debug("{}: Logging in, account={}", config.getLogId(), config.account.user);
+
+        if (!httpconf.api.clientId.equals(config.api.clientId)) {
+            logger.debug("{}: clientId mismatch between http {} and config {}", config.getLogId(),
+                    httpconf.api.clientId, config.api.clientId);
+            tokens.http.setConfig(config);
+        }
+        logger.debug("{}: Logging in, account={} tokenSetId={} clientId={}", config.getLogId(), config.account.user,
+                config.tokenSetId, config.api.clientId);
         IdentityOAuthFlow oauth = new IdentityOAuthFlow(tokens.http).headers(config.api.loginHeaders);
         String url = authenticator.getLoginUrl(oauth);
+
         tokens.idToken = authenticator.login(url, oauth);
 
         logger.debug("{}: Login successful, grating API access", config.getLogId());
@@ -280,18 +291,24 @@ public class IdentityManager {
      */
     public boolean refreshToken(CombinedConfig config, TokenSet tokenSet, ApiIdentity token) throws ApiException {
         if (!token.isValid()) {
+            logger.trace("{}: refreshToken: Token for {} is not valid, returning false", config.getLogId(),
+                    config.api.clientId);
             return false;
         }
 
         if (tokenSet.apiToken.refreshToken.isEmpty()) {
-            logger.debug("{}: No refreshToken available, token is now invalid", config.getLogId());
+            logger.debug("{}: No refreshToken available, token for {} is now invalid", config.getLogId(),
+                    config.api.clientId);
             token.invalidate();
             return false;
         }
 
         if (token.isExpired()) {
+            logger.trace("{}: refreshToken: Token for {} is expired, refreshing", config.getLogId(),
+                    config.api.clientId);
             try {
-                logger.debug("{}: Refreshing Token {}", config.getLogId(), token.accessToken);
+                logger.debug("{}: Refreshing Token {} for {}", config.getLogId(), token.accessToken,
+                        config.api.clientId);
                 BrandAuthenticator authenticator = config.authenticator;
                 if (authenticator == null) {
                     throw new ApiSecurityException("No authenticator available");
@@ -300,17 +317,21 @@ public class IdentityManager {
                 // OAuthToken newToken = authenticator.refreshToken(token).normalize();
                 OAuthToken newToken = authenticator.refreshToken(token);
                 token.updateToken(newToken.normalize());
-                logger.debug("{}: Token refresh successful, valid for {} sec", config.getLogId(), token.validity);
+                logger.debug("{}: Token refresh successful, valid for {} sec for {}", config.getLogId(), token.validity,
+                        config.api.clientId);
                 logger.trace("{}: new token={}", config.getLogId(), token.accessToken);
             } catch (ApiException e) {
-                logger.debug("{}: Unable to refresh token: {}", config.getLogId(), e.toString());
+                logger.debug("{}: Unable to refresh token: {} for {}", config.getLogId(), e.toString(),
+                        config.api.clientId);
                 // Invalidate token (triggers a new login when accessToken is required)
                 if (token.isExpired()) {
                     token.invalidate();
-                    logger.debug("{}: Token refresh failed and current accessToken is expired", config.getLogId());
+                    logger.debug("{}: Token refresh for {} failed and current accessToken is expired",
+                            config.getLogId(), config.api.clientId);
                     return false;
                 } else {
-                    logger.debug("{}: Token refresh failed, but accessToken is still valid", config.getLogId());
+                    logger.debug("{}: Token refresh for {} failed, but accessToken is still valid", config.getLogId(),
+                            config.api.clientId);
                 }
             }
         }
@@ -325,6 +346,7 @@ public class IdentityManager {
      */
     public boolean createTokenSet(String tokenSetId) {
         if (!accountTokens.containsKey(tokenSetId)) {
+            logger.trace("createTokenSet {}", tokenSetId);
             accountTokens.put(tokenSetId, new TokenSet());
             return true;
         }
@@ -333,6 +355,8 @@ public class IdentityManager {
 
     TokenSet getTokenSet(String tokenSetId) {
         TokenSet ts = accountTokens.get(tokenSetId);
+        logger.trace("getTokenSet {}: HTTP ClientId: {} API Token: {}", tokenSetId, ts.http.getConfig().api.clientId,
+                ts.apiToken.accessToken);
         if (ts != null) {
             return ts;
         }

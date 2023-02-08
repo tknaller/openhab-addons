@@ -54,6 +54,8 @@ public class ApiWithOAuth extends ApiBase implements BrandAuthenticator {
         if (!config.api.xrequest.isEmpty()) {
             oauth.header("x-requested-with", config.api.xrequest).header("upgrade-insecure-requests", "1");
         }
+        logger.trace("{}: getLoginUrl tokenSetId: {} clientId: {}", config.getLogId(), config.tokenSetId,
+                config.api.clientId);
         String url = authUrl + "?client_id=" + urlEncode(config.api.clientId) //
                 + "&scope=" + urlEncode(config.api.authScope).replace("%20", "+") //
                 + "&response_type=" + urlEncode(config.api.responseType).replace("%20", "+") //
@@ -167,6 +169,8 @@ public class ApiWithOAuth extends ApiBase implements BrandAuthenticator {
 
     @Override
     public OAuthToken refreshToken(ApiIdentity token) throws ApiException {
+        logger.trace("{}: ApiWithOAuth.refreshToken for {}/{}", config.getLogId(), config.tokenSetId,
+                config.api.clientId);
         ApiHttpMap map = new ApiHttpMap().header(HttpHeader.USER_AGENT.toString(), CNAPI_HEADER_USER_AGENT)
                 .header(HttpHeader.CONTENT_TYPE.toString(), "application/x-www-form-urlencoded")
                 .header(HttpHeader.HOST, "mbboauth-1d.prd.ece.vwg-connect.com")

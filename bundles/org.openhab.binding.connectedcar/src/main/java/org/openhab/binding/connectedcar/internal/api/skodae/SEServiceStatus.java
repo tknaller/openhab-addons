@@ -33,7 +33,6 @@ import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehic
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEParkingPositionStatus;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEVehicleStatusV2;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEVehicleStatusV2.SEVehicleStatusRemote.SEVehicleStatusItem;
-import org.openhab.binding.connectedcar.internal.config.CombinedConfig;
 import org.openhab.binding.connectedcar.internal.handler.ThingBaseHandler;
 import org.openhab.binding.connectedcar.internal.provider.ChannelDefinitions.ChannelIdMapEntry;
 import org.openhab.core.library.types.DecimalType;
@@ -98,18 +97,11 @@ public class SEServiceStatus extends ApiBaseService {
 
         SEVehicleStatusData status = api.getVehicleStatus().seStatus;
         if (status != null) {
-            CombinedConfig config = this.getConfig();
-            CombinedConfig previousConfig = config.previousConfig;
-            api.setConfig(config);
             updated |= updateRangeStatus(status);
             updated |= updateChargingStatus(status);
             updated |= updateClimatisationStatus(status);
             updated |= updateWindowHeatStatus(status);
-            if (previousConfig != null) {
-                api.setConfig(previousConfig);
-                updated |= updatePositionStatus(status);
-            }
-            api.setConfig(config);
+            updated |= updatePositionStatus(status);
             updated |= updateVehicleStatus(status);
         }
         return updated;

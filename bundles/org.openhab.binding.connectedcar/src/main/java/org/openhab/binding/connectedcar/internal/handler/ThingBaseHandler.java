@@ -204,10 +204,11 @@ public abstract class ThingBaseHandler extends BaseThingHandler implements Accou
 
             // Some providers require a 2nd login (e. g. Skoda-E)
             ApiBrandProperties prop = api.getProperties2();
-
-            if (prop != null) {
+            CombinedConfig pConf = config.previousConfig;
+            if (prop != null && pConf == null) {
+                logger.trace("{}: new previousConfig for {}/{}", thingId, config.tokenSetId, config.api.clientId);
                 // Vehicle endpoint uses different properties
-                CombinedConfig pConf = new CombinedConfig(config);
+                pConf = new CombinedConfig(config);
                 config.previousConfig = pConf;
                 AccountHandler accountHandler = this.accountHandler;
                 if (accountHandler != null) {
@@ -217,6 +218,7 @@ public abstract class ThingBaseHandler extends BaseThingHandler implements Accou
                 }
                 config.api = prop;
                 handler.createTokenSet(config);
+                logger.trace("{}: updated config for {}/{}", thingId, config.tokenSetId, config.api.clientId);
             }
             config = api.initialize(config.vehicle.vin, config);
             if (!config.user.id.isEmpty()) {
