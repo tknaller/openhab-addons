@@ -240,6 +240,7 @@ public class SEApiJsonDTO {
             public @Nullable SEClimaterStatus climatisation;
             public @Nullable SEParkingPositionStatus parkingPosition;
             public @Nullable SEVehicleStatusV2 vehicleStatus;
+            public boolean carMoving;
         }
 
         public SEVehicleStatus status;

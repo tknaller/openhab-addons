@@ -195,16 +195,17 @@ public class SEServiceStatus extends ApiBaseService {
     private boolean updatePositionStatus(SEVehicleStatusData data) {
         boolean updated = false;
         String group = CHANNEL_GROUP_LOCATION;
+        if (data.status == null) {
+            return updated;
+        }
         SEParkingPositionStatus s = data.status.parkingPosition;
         if (s != null) {
-            updated |= updateChannel(CHANNEL_CAR_MOVING, OnOffType.OFF);
             PointType point = new PointType(new DecimalType(s.latitude), new DecimalType(s.longitude));
             updated |= updateChannel(group, CHANNEL_PARK_LOCATION, point);
             updated |= updateLocationAddress(point, CHANNEL_PARK_ADDRESS);
             updated |= updateChannel(CHANNEL_PARK_TIME, getDateTime(s.lastUpdatedAt));
-        } else {
-            updated |= updateChannel(CHANNEL_CAR_MOVING, OnOffType.ON);
         }
+        updated |= updateChannel(CHANNEL_CAR_MOVING, data.status.carMoving ? OnOffType.ON : OnOffType.OFF);
         return updated;
     }
 

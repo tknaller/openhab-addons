@@ -113,32 +113,42 @@ public class SkodaEApi extends ApiWithOAuth {
         try {
             s.settings.charger = getChargerSettings();
         } catch (ApiException e) {
-            logger.error("getChargerSettings failed {}: {}", e.getApiResult().httpCode, e.getMessage());
+            logger.error("getChargerSettings failed {}: {} --- {}", e.getApiResult().httpCode, e.getMessage(),
+                    e.getApiResult().response);
         }
         try {
             s.status.charger = getChargerStatus();
         } catch (ApiException e) {
-            logger.error("getChargerStatus failed {}: {}", e.getApiResult().httpCode, e.getMessage());
+            logger.error("getChargerStatus failed {}: {} --- {}", e.getApiResult().httpCode, e.getMessage(),
+                    e.getApiResult().response);
         }
         try {
             s.settings.climater = getClimaterSettings();
         } catch (ApiException e) {
-            logger.error("getClimaterSettings failed {}: {}", e.getApiResult().httpCode, e.getMessage());
+            logger.error("getClimaterSettings failed {}: {} --- {}", e.getApiResult().httpCode, e.getMessage(),
+                    e.getApiResult().response);
         }
         try {
             s.status.climatisation = getClimaterStatus();
         } catch (ApiException e) {
-            logger.error("getClimaterStatus failed {}: {}", e.getApiResult().httpCode, e.getMessage());
+            logger.error("getClimaterStatus failed {}: {} --- {}", e.getApiResult().httpCode, e.getMessage(),
+                    e.getApiResult().response);
         }
         try {
             s.status.vehicleStatus = getVehicleStatusV2();
         } catch (ApiException e) {
-            logger.error("getVehicleStatusV2 failed {}: {}", e.getApiResult().httpCode, e.getMessage());
+            logger.error("getVehicleStatusV2 failed {}: {} --- {}", e.getApiResult().httpCode, e.getMessage(),
+                    e.getApiResult().response);
         }
         try {
             s.status.parkingPosition = getParkingPosition();
+            s.status.carMoving = false;
         } catch (ApiException e) {
-            logger.error("getParkingPosition failed {}: {}", e.getApiResult().httpCode, e.getMessage());
+            logger.error("getParkingPosition failed {}: {} --- {}", e.getApiResult().httpCode, e.getMessage(),
+                    e.getApiResult().response);
+            if (e.getApiResult().httpCode == 204) {
+                s.status.carMoving = true;
+            }
         }
         return new VehicleStatus(s);
     }
@@ -176,23 +186,20 @@ public class SkodaEApi extends ApiWithOAuth {
 
     private <T> T getValues(String service, String type, Class<T> classOfT) throws ApiException {
         ApiHttpMap params = crerateParameters();
-        String json = callApi("", "v1/" + service + "/{2}/" + type, params.getHeaders(),
-                "getValues_" + service + "." + type, String.class);
-        return fromJson(gson, json, classOfT);
+        return callApi("", "v1/" + service + "/{2}/" + type, params.getHeaders(), "getValues_" + service + "." + type,
+                classOfT);
     }
 
     private <T> T getValues2(String service, String type, Class<T> classOfT) throws ApiException {
         ApiHttpMap params = createParameters2();
-        String json = callApi("", "v1/" + service + "/{2}/" + type, params.getHeaders(),
-                "getValues_" + service + "." + type, String.class);
-        return fromJson(gson, json, classOfT);
+        return callApi("", "v1/" + service + "/{2}/" + type, params.getHeaders(), "getValues_" + service + "." + type,
+                classOfT);
     }
 
     private <T> T getValuesV2(String service, String type, Class<T> classOfT) throws ApiException {
         ApiHttpMap params = crerateParameters();
-        String json = callApi("", "v2/" + service + "/{2}/" + type, params.getHeaders(),
-                "getValues_" + service + "." + type, String.class);
-        return fromJson(gson, json, classOfT);
+        return callApi("", "v2/" + service + "/{2}/" + type, params.getHeaders(), "getValues_" + service + "." + type,
+                classOfT);
     }
 
     @Override
