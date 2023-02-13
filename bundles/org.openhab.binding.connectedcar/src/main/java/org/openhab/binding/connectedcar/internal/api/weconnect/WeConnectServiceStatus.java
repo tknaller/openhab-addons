@@ -81,45 +81,53 @@ public class WeConnectServiceStatus extends ApiBaseService {
             return false;
         }
 
-        addChannels(channels, true, CHANNEL_STATUS_ERROR);
-        addChannels(channels, status.fuelStatus != null && status.fuelStatus.rangeStatus != null
+        addChannels(channels, CHANNEL_GROUP_STATUS, true, CHANNEL_STATUS_ERROR);
+        addChannels(channels, CHANNEL_GROUP_RANGE, status.fuelStatus != null && status.fuelStatus.rangeStatus != null
                 && status.fuelStatus.rangeStatus.value != null, CHANNEL_RANGE_TOTAL, CHANNEL_RANGE_PRANGE);
-        addChannels(channels, status.charging != null && status.charging.batteryStatus != null, CHANNEL_CHARGER_CHGLVL);
+        addChannels(channels, CHANNEL_GROUP_CHARGER, status.charging != null && status.charging.batteryStatus != null,
+                CHANNEL_CHARGER_CHGLVL);
 
-        addChannels(channels, status.charging != null && status.charging.chargingStatus != null,
+        addChannels(channels, CHANNEL_GROUP_CHARGER, status.charging != null && status.charging.chargingStatus != null,
                 CHANNEL_CONTROL_CHARGER, CHANNEL_CHARGER_CHG_STATE, CHANNEL_CHARGER_MODE, CHANNEL_CHARGER_REMAINING,
                 CHANNEL_CHARGER_MAXCURRENT, CHANNEL_CONTROL_TARGETCHG, CHANNEL_CHARGER_POWER, CHANNEL_CHARGER_RATE);
-        addChannels(channels, status.charging != null && status.charging.plugStatus != null, CHANNEL_CHARGER_PLUG_STATE,
-                CHANNEL_CHARGER_LOCK_STATE);
-        addChannels(channels, status.climatisation != null && status.climatisation.climatisationStatus != null,
+        addChannels(channels, CHANNEL_GROUP_CHARGER, status.charging != null && status.charging.plugStatus != null,
+                CHANNEL_CHARGER_PLUG_STATE, CHANNEL_CHARGER_LOCK_STATE);
+        addChannels(channels, CHANNEL_GROUP_CLIMATER,
+                status.climatisation != null && status.climatisation.climatisationStatus != null,
                 CHANNEL_CLIMATER_GEN_STATE, CHANNEL_CLIMATER_REMAINING);
-        addChannels(channels, status.climatisation != null && status.climatisation.climatisationSettings != null,
+        addChannels(channels, CHANNEL_GROUP_CONTROL,
+                status.climatisation != null && status.climatisation.climatisationSettings != null,
                 CHANNEL_CONTROL_CLIMATER, CHANNEL_CONTROL_TARGET_TEMP);
-        addChannels(channels, status.climatisation != null && status.climatisation.climatisationTimer != null,
+        addChannels(channels, CHANNEL_GROUP_CLIMATER,
+                status.climatisation != null && status.climatisation.climatisationTimer != null,
                 CHANNEL_STATUS_TIMEINCAR);
-        addChannels(channels, status.climatisation != null && status.climatisation.windowHeatingStatus != null,
+        addChannels(channels, CHANNEL_GROUP_CONTROL,
+                status.climatisation != null && status.climatisation.windowHeatingStatus != null,
                 CHANNEL_CONTROL_WINHEAT);
 
-        addChannels(channels,
+        addChannels(channels, CHANNEL_GROUP_MAINT,
                 status.vehicleHealthInspection != null
                         && status.vehicleHealthInspection.maintenanceStatus.value != null,
                 CHANNEL_STATUS_ODOMETER, CHANNEL_MAINT_DISTINSP, CHANNEL_MAINT_DISTTIME, CHANNEL_MAINT_OILDIST,
                 CHANNEL_MAINT_OILINTV);
-        addChannels(channels, status.vehicleLights != null && status.vehicleLights.lightsStatus != null
-                && status.vehicleLights.lightsStatus.value != null, CHANNEL_STATUS_LIGHTS);
-        addChannels(channels, data.vehicleLocation.isValid(), CHANNEL_LOCATTION_GEO, CHANNEL_LOCATTION_ADDRESS,
-                CHANNEL_LOCATTION_TIME);
-        addChannels(channels, data.parkingPosition.isValid(), CHANNEL_PARK_LOCATION, CHANNEL_PARK_ADDRESS,
-                CHANNEL_PARK_TIME);
+        addChannels(
+                channels, CHANNEL_GROUP_STATUS, status.vehicleLights != null
+                        && status.vehicleLights.lightsStatus != null && status.vehicleLights.lightsStatus.value != null,
+                CHANNEL_STATUS_LIGHTS);
+        addChannels(channels, CHANNEL_GROUP_LOCATION, data.vehicleLocation.isValid(), CHANNEL_LOCATTION_GEO,
+                CHANNEL_LOCATTION_ADDRESS, CHANNEL_LOCATTION_TIME);
+        addChannels(channels, CHANNEL_GROUP_LOCATION, data.parkingPosition.isValid(), CHANNEL_PARK_LOCATION,
+                CHANNEL_PARK_ADDRESS, CHANNEL_PARK_TIME);
         if (status.access != null && status.access.accessStatus != null && status.access.accessStatus.value != null) {
-            addChannels(channels, status.access.accessStatus.value.overallStatus != null, CHANNEL_STATUS_LOCKED);
-            addChannels(channels, status.access.accessStatus.value.doors != null, CHANNEL_DOORS_FLSTATE,
-                    CHANNEL_DOORS_FLLOCKED, CHANNEL_DOORS_FRSTATE, CHANNEL_DOORS_FRLOCKED, CHANNEL_DOORS_RLSTATE,
-                    CHANNEL_DOORS_RLLOCKED, CHANNEL_DOORS_RRSTATE, CHANNEL_DOORS_RRLOCKED, CHANNEL_DOORS_HOODSTATE,
-                    CHANNEL_DOORS_TRUNKLSTATE, CHANNEL_DOORS_TRUNKLLOCKED);
-            addChannels(channels, status.access.accessStatus.value.windows != null, CHANNEL_WIN_FLSTATE,
-                    CHANNEL_WIN_RLSTATE, CHANNEL_WIN_FRSTATE, CHANNEL_WIN_RRSTATE, CHANNEL_WIN_FROOFSTATE,
-                    CHANNEL_WIN_SROOFSTATE);
+            addChannels(channels, CHANNEL_GROUP_STATUS, status.access.accessStatus.value.overallStatus != null,
+                    CHANNEL_STATUS_LOCKED);
+            addChannels(channels, CHANNEL_GROUP_DOORS, status.access.accessStatus.value.doors != null,
+                    CHANNEL_DOORS_FLSTATE, CHANNEL_DOORS_FLLOCKED, CHANNEL_DOORS_FRSTATE, CHANNEL_DOORS_FRLOCKED,
+                    CHANNEL_DOORS_RLSTATE, CHANNEL_DOORS_RLLOCKED, CHANNEL_DOORS_RRSTATE, CHANNEL_DOORS_RRLOCKED,
+                    CHANNEL_DOORS_HOODSTATE, CHANNEL_DOORS_TRUNKLSTATE, CHANNEL_DOORS_TRUNKLLOCKED);
+            addChannels(channels, CHANNEL_GROUP_WINDOWS, status.access.accessStatus.value.windows != null,
+                    CHANNEL_WIN_FLSTATE, CHANNEL_WIN_RLSTATE, CHANNEL_WIN_FRSTATE, CHANNEL_WIN_RRSTATE,
+                    CHANNEL_WIN_FROOFSTATE, CHANNEL_WIN_SROOFSTATE);
         }
         return true;
     }
@@ -129,7 +137,8 @@ public class WeConnectServiceStatus extends ApiBaseService {
         // Try to query status information from vehicle
         logger.debug("{}: Get Vehicle Status", thingId);
         boolean updated = false;
-
+        api.setConfig(this.getConfig());
+        api.getHttp().setConfig(this.getConfig());
         VehicleStatus data = api.getVehicleStatus();
         WCVehicleStatusData status = data.wcStatus;
         if (status != null) {

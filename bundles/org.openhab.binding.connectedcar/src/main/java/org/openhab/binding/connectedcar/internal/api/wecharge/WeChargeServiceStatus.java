@@ -65,8 +65,8 @@ public class WeChargeServiceStatus extends ApiBaseService {
 
         // ID.Charger Pro provides number of charging cycles and total energy
         boolean chargerPro = (status.chargingHistory.totalCount > 0 || status.chargingHistory.totalEngergyWh > 0);
-        addChannels(channels, true, CHANNEL_CHARGER_NAME, CHANNEL_CHARGER_ADDRESS, CHANNEL_CHARGER_LAST_CONNECT,
-                CHANNEL_CHARGER_PLUG_STATE, CHANNEL_CONTROL_RESTART);
+        addChannels(channels, CHANNEL_GROUP_CHARGER, true, CHANNEL_CHARGER_NAME, CHANNEL_CHARGER_ADDRESS,
+                CHANNEL_CHARGER_LAST_CONNECT, CHANNEL_CHARGER_PLUG_STATE, CHANNEL_CONTROL_RESTART);
         addChannels(channels, chargerPro, CHANNEL_CHARGER_CYCLES, CHANNEL_CHARGER_ENERGY);
 
         // Create subscriptions

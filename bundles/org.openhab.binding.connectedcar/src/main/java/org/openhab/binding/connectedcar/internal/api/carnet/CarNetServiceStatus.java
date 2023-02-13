@@ -118,7 +118,7 @@ public class CarNetServiceStatus extends ApiBaseService {
         boolean windowsClosed = true; // true if all Windows are closed
         boolean tiresOk = true; // tire if all tire pressures are ok
         boolean updated = false;
-
+        api.setConfig(getConfig());
         CarNetVehicleStatus status = api.getVehicleStatus().cnStatus;
         if (status == null) {
             return false; // make the compiler happy, should never happen, because on failure an exception is thrown

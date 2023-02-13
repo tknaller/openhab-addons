@@ -47,8 +47,9 @@ public class CarNetServiceClimater extends ApiBaseService {
 
     @Override
     public boolean createChannels(Map<String, ChannelIdMapEntry> ch) throws ApiException {
-        addChannels(ch, true, CHANNEL_CONTROL_CLIMATER, CHANNEL_CONTROL_TARGET_TEMP, CHANNEL_CONTROL_WINHEAT,
-                CHANNEL_CLIMATER_HEATSOURCE, CHANNEL_CLIMATER_GEN_STATE, CHANNEL_CLIMATER_MIRROR_HEAT);
+        addChannels(ch, CHANNEL_GROUP_CLIMATER, true, CHANNEL_CONTROL_CLIMATER, CHANNEL_CONTROL_TARGET_TEMP,
+                CHANNEL_CONTROL_WINHEAT, CHANNEL_CLIMATER_HEATSOURCE, CHANNEL_CLIMATER_GEN_STATE,
+                CHANNEL_CLIMATER_MIRROR_HEAT);
         return true;
     }
 

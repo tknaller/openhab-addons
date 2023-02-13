@@ -46,8 +46,9 @@ public class CarNetServiceCarFinder extends ApiBaseService {
 
     @Override
     public boolean createChannels(Map<String, ChannelIdMapEntry> ch) throws ApiException {
-        addChannels(ch, true, CHANNEL_LOCATTION_GEO, CHANNEL_LOCATTION_TIME, CHANNEL_LOCATTION_ADDRESS,
-                CHANNEL_PARK_LOCATION, CHANNEL_PARK_ADDRESS, CHANNEL_PARK_TIME, CHANNEL_CAR_MOVING);
+        addChannels(ch, CHANNEL_GROUP_LOCATION, true, CHANNEL_LOCATTION_GEO, CHANNEL_LOCATTION_TIME,
+                CHANNEL_LOCATTION_ADDRESS, CHANNEL_PARK_LOCATION, CHANNEL_PARK_ADDRESS, CHANNEL_PARK_TIME,
+                CHANNEL_CAR_MOVING);
         return true;
     }
 
